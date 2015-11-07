@@ -119,12 +119,13 @@ Most systems employ at least two street types. [@cities2001] introduces highways
 
 ### L-system with global goals and local constraints
 
-- global goals for general direction and order like road patterns, population density
-- local constraints for obstacles like water / existing elements
+In [@cities2001] a complex L-system is used to produce the road network. The L-system has two external functions: `localConstraints` and `globalGoals`. GlobalGoals is used for the general structure of the roads. For the highways this is done by searching for the nearest population centers and navigating in that direction. Secondarily, highways and also streets are directed according to road patterns, described in the next section.
+
+LocalConstraints contains more local rules relevant for specific points on the map. In these specific points (described in [@sec:constraints]) the localConstraints function can adjust the parameters of the next iteration, or return FAILED if no there is no solution.
 
 ### Road patterns, [see @cities2001, sec. 3.2.2] {#sec:road-pattern}
 
-[@cities2001] mentions the following three general street patterns (seee [@fig:roadp])
+[@cities2001] mentions the following three general street patterns (see [@fig:roadp])
 
 * Rectangular raster -- aligned to one angle and perpendicular to that. This is common in planned cities that are built in modern times
 * Radial / concentric -- streets go around a center point and perpendicular streets go straight to the center
@@ -133,7 +134,7 @@ Most systems employ at least two street types. [@cities2001] introduces highways
 ![An overview of the street pattern used in the
 CityEngine system with a short description and an example [@cities2001]](img/road-patterns.pdf){#fig:roadp}
 
-### Constraints and solving conflicts
+### Constraints and solving conflicts {#sec:constraints}
 
 Streets are grown in parallel and greedily from starting points, branching off randomly.
 
