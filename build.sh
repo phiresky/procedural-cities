@@ -4,6 +4,7 @@
 
 pandoc \
 	ausarbeitung.md \
+	--filter pandoc-crossref \
 	--filter pandoc-citeproc \
 	--standalone \
 	--template ausarbeitung-template.tex \
