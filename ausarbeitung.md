@@ -10,12 +10,15 @@ header-includes: |
 	\setkeys{Gin}{width=0.8\linewidth}
 csl: ieee.csl
 ---
-
 <style>img {width:400px}</style>
+
+
+
+Summary [@vanegas_modelling_2010]
+
 # General concepts and methods
 
 ## Procedural modeling
-
 
 
 ## Parametric Lindenmayer Systems (L-systems) [@beauty]
@@ -62,10 +65,10 @@ with $R \geq 0$ and $\theta \in [0,2\pi)$. There are various basis fields, such 
 ![Semi-automatically generated tensor field visualized using hyperstreamlines, used for creating
  a street network [@chen_interactive_2008]](img/tensor.png){#fig:tensor}
 
-Tensor fields can be used to create a street network, allowing easy visualization of the flow direction beforehand. In [@chen_interactive_2008] they are used in a graphical user interface, to allow interactive modification of the input parameters.
+Tensor fields can be used to create a street network, based on the observation that most street network have two dominant directions [@vanegas_modelling_2010, pp. 30-31]. This also allows easy visualization of the flow direction beforehand. In [@chen_interactive_2008] they are used in a graphical user interface, to allow interactive modification of the input parameters.
 
 
-## Gradient Noise [@_terragen;@kelly_survey]
+## Gradient Noise [@_terragen;@kelly_survey] {#sec:noise}
 
 Gradient noise created from a map of interpolated random gradients, creating a smooth-looking bumpy surface. It is used in many aspects of content generation in computer graphics to create nature-like effects. It can be used to create or enhance textures and generate terrain [@_terragen]. The simple noise is smooth, but can be summed in multiple scales to create fractal noise as seen in [@fig:perlin].
 
@@ -78,21 +81,43 @@ In the context of procedural cities, noise is mostly used to automate the input 
 
 # Generating a city structure
 
+
 ## Input parameters [@cities2001, p. 2]
 
 Most city generation methods have some form of user input. In [@cities2001], the input is a set of image maps containing elevation, water and population density plus some numbers like city block size or maximum bridge length. All further steps are completely automatic. In [@chen_interactive_2008], the input maps are similar, but the initial street flow is created based on the map boundaries. The user can then modify the tensor field to change the resulting street graph [@peterwonkaresearch_2008].
 
-The commonly used inputs are described below.
+
+In [@kelly_citygen_2007], the user draws the primary streets, which is used as the basis for the secondary street network.
+
+Most of the city modeling systems expect multiple input maps. These are either created from user input, based on real data or also procedurally generated. The commonly used ones are described below.
 
 ### Geographical maps (Elevation maps, Land/water/vegetation maps)
+
+Water map
+~ Water is seen as an obstacle. The modeling system works around this, or in some cases builds bridges.
+
+Elevation map
+~ Terrain. Real streets are often aligned to the terrain map to minimize slope. Too high slopes mean no In some cases this is taken from real world data, in some it is procedurally generated using noise [@sec:noise;@_terragen] or other methods
+
+Vegetation map
+~ forests and shit
+
 ### Sociostatistical maps (Population density, Zones, Street patterns)
 
-- created from user input, based on real data or also procedurally generated [@_terragen]
+[@cities2001] expects a population density input map, which is not found in other programs.
 
-## Generating a street network according to [@cities2001, p. 3]
+## Generating a street network
+
+In [@cities2001, p. 3], the street generation is modeled as follows.
+
+[@kelly_citygen_2007]s approach is very similar to Parish and Mueller [@cities2001].
+
 ### Separate street types
-#### Highways (connect population centers)
-#### Streets
+
+Most systems separate at least two street types. [@cities2001] introduces highways and streets, where highways connect population centers and streets fill the areas according to given patterns. [@kelly_citygen_2007] follows the exact same method.
+
+[@chen_interactive_2008] first generates a sparse network of "major roads" and fills the spaces with minor roads. Both follow the same rules. Highways are hand-drawn by the user in this system.
+
 ### L-system with global goals and local constraints
 
 - global goals for general direction and order like road patterns, population density
@@ -121,7 +146,15 @@ The commonly used inputs are described below.
 - recursively divide area until target size is reached
 - fill target block with buildings
 
-# Generating architecture [@instantArch]
+## Computation time
+
+* @cities2001: few seconds - 10 minutes (!!reread)
+* @kelly_citygen_2007: realtime
+
+# Generating architecture [@wonka_instant_2003]
+
+toread: [@muller_procedural_2006]
+
 ## Procedural architecture
 ## "split grammar" for symmetrical modeling
 
