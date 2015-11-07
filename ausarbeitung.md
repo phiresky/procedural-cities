@@ -13,9 +13,6 @@ csl: ieee.csl
 <style>img {width:400px}</style>
 
 
-
-Summary [@vanegas_modelling_2010]
-
 # General concepts and methods
 
 ## Procedural modeling
@@ -68,7 +65,7 @@ with $R \geq 0$ and $\theta \in [0,2\pi)$. There are various basis fields, such 
 Tensor fields can be used to create a street network, based on the observation that most street network have two dominant directions [@vanegas_modelling_2010, pp. 30-31]. This also allows easy visualization of the flow direction beforehand. In [@chen_interactive_2008] they are used in a graphical user interface, to allow interactive modification of the input parameters.
 
 
-## Gradient Noise [@_terragen;@kelly_survey] {#sec:noise}
+## Gradient Noise [@_terragen;@kelly_survey_2006] {#sec:noise}
 
 Gradient noise created from a map of interpolated random gradients, creating a smooth-looking bumpy surface. It is used in many aspects of content generation in computer graphics to create nature-like effects. It can be used to create or enhance textures and generate terrain [@_terragen]. The simple noise is smooth, but can be summed in multiple scales to create fractal noise as seen in [@fig:perlin].
 
@@ -84,7 +81,7 @@ In the context of procedural cities, noise is mostly used to automate the input 
 
 ## Input parameters [@cities2001, p. 2]
 
-Most city generation methods have some form of user input. In [@cities2001], the input is a set of image maps containing elevation, water and population density plus some numbers like city block size or maximum bridge length. All further steps are completely automatic. In [@chen_interactive_2008], the input maps are similar, but the initial street flow is created based on the map boundaries. The user can then modify the tensor field to change the resulting street graph [@peterwonkaresearch_2008].
+Most city generation methods have some form of user input. In [@cities2001], the input is a set of image maps containing elevation, water and population density plus some numbers like city block size or maximum bridge length. All further steps are completely automatic. In [@chen_interactive_2008], the input maps are similar, but the initial street flow is created based on the map boundaries. The user can then modify the tensor field to change the resulting street graph [@chen_interactive_2008_youtube].
 
 
 In [@kelly_citygen_2007], the user draws the primary streets, which is used as the basis for the secondary street network.
@@ -106,6 +103,8 @@ Vegetation map
 
 [@cities2001] expects a population density input map, which is not found in other programs.
 
+Most programs have the local road pattern (see [@sec:road-pattern]) as inputs, which in real life is determined by the way the city was built.
+
 ## Generating a street network
 
 In [@cities2001, p. 3], the street generation is modeled as follows.
@@ -114,32 +113,45 @@ In [@cities2001, p. 3], the street generation is modeled as follows.
 
 ### Separate street types
 
-Most systems separate at least two street types. [@cities2001] introduces highways and streets, where highways connect population centers and streets fill the areas according to given patterns. [@kelly_citygen_2007] follows the exact same method.
+Most systems employ at least two street types. [@cities2001] introduces highways and streets, where highways connect population centers and streets fill the areas according to given patterns. [@kelly_citygen_2007] follows the exact same method.
 
-[@chen_interactive_2008] first generates a sparse network of "major roads" and fills the spaces with minor roads. Both follow the same rules. Highways are hand-drawn by the user in this system.
+[@chen_interactive_2008] first generates a sparse network of "major roads" and fills the spaces with minor roads. Both major and minor roads follow the same alignment rules. Highways are hand-drawn by the user in this system.
 
 ### L-system with global goals and local constraints
 
 - global goals for general direction and order like road patterns, population density
 - local constraints for obstacles like water / existing elements
 
-### Road patterns, [see @cities2001, sec. 3.2.2]
+### Road patterns, [see @cities2001, sec. 3.2.2] {#sec:road-pattern}
 
-- all streets aligned to one angle (planned city)
-- radial structure around center point
-- random / population based (naturally grown city)
+[@cities2001] mentions the following three general street patterns (seee [@fig:roadp])
+
+* Rectangular raster -- aligned to one angle and perpendicular to that. This is common in planned cities that are built in modern times
+* Radial / concentric -- streets go around a center point and perpendicular streets go straight to the center
+* Branching / random -- smaller streets branch from larger ones. Common in old cities that have naturally grown. In [@cities2001] this is the interpreted as no restrictions / random layout
+
+![An overview of the street pattern used in the
+CityEngine system with a short description and an example [@cities2001]](img/road-patterns.pdf){#fig:roadp}
 
 ### Constraints and solving conflicts
 
-- connect colliding streets at existing intersections
-- for other obstacles:
-    a) ignore up to certains lengths, mark as e.g. bridge
-    b) search up to maximum rotation for possible alternatives
-    c) truncate road segment
+Streets are grown in parallel and greedily from starting points, branching off randomly.
+
+When a new street collides with an existing street, they are connected, preferably at an already existing intersection if one is near enough. The approach in [@kelly_citygen_2007] instead has a set area ("snap radius") around the growing street that is searched for available connections.
+
+For other obstacles such as water or mountains, [@cities2001] proposes the following solution:
+
+If the obstacle is shorter than a preset length, it is ignored. The resulting street is marked as special according to the obstacle, e.g. as a bridge or as a tunnel.
+
+Otherwise, the near space is searched up to a maximum rotation for alternative positions that are valid. This allows the roads to work around boundaries just like they would in reality.
+
+If the maximum angle is reached, the road segment is truncated and simply stops at the maximum valid distance.
 
 ### Approach using tensor fields from [@chen_interactive_2008]
 
-- ...
+In this approach, the obstacle problem is solved before creating the city structure because the tensor fields are adjusted according to map boundaries.
+
+The tensor field is converted into a road network by tracing hyperstreamlines.
 
 ## Splitting areas into building blocks
 
@@ -150,6 +162,7 @@ Most systems separate at least two street types. [@cities2001] introduces highwa
 
 * @cities2001: few seconds - 10 minutes (!!reread)
 * @kelly_citygen_2007: realtime
+* [@chen_interactive_2008]: 5 minutes
 
 # Generating architecture [@wonka_instant_2003]
 
@@ -172,8 +185,8 @@ Andere Projekte / muss ich mir noch ankucken:
 
 * [@subvimpl] implementiert nach [@subversion]
 * [@harmful] (zeigt lsystems ansatz zur straßenmodellierung aus [@cities2001] ist unnötig kompliziert)
-* [@pixelcity; @stadtmorph; @chen_interactive_2008; @kelly_citygen_2007; @kelly_survey]
-
+* [@pixelcity; @stadtmorph; @chen_interactive_2008; @kelly_citygen_2007; @kelly_survey_2006]
+* Summary see [@vanegas_modelling_2010]
 ---
 
 # References
