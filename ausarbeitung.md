@@ -17,12 +17,15 @@ csl: ieee.csl
 
 The first paper about procedural city modeling is [@cities2001] (2001), which contains a general approach to modeling of the street network and building architecture and is citied in basically every subsequent document. It is also the basis for CityEngine [@cityengine] which is a professional software application for semi-automated city modeling. [@instantArch] (2003) contains more specific and complex algorithms for modeling architecture.
 
+[@weber_interactive_2009] uses a time baed approach.
+
+[@vanegas_modelling_2010] and [@vanegas_procedural_2012] give an extensive overview over a lot of other papers.
+
 !!todo others
 
 # General concepts and methods
 
 ## Procedural modeling
-
 
 Procedural modeling is a general term for creating graphics or models from automatically or semi-automatically from an algorithm or a set of rules and a random seed.
 
@@ -81,6 +84,18 @@ number of optimisation to enable it to run in real-time. -- [@kelly_citygen_2007
 
 > While [the approach by Parish and Mueller] creates a high quality solution, there remains a significant challenge: the method does not allow extensive user-control of
 the outcome to be easily integrated into a production environment. [@chen_interactive_2008, sec. 1]
+
+> We chose not to embed the
+expansion in an L-system framework to make the implemen-
+tation more efficient. -- [@weber_interactive_2009]
+
+> While parallel
+grammars like L-systems are suited to capture growth over time,
+a sequential application of rules allows for the characterization
+of structure i.e. the spatial distribution of features and compo-
+nents [Prusinkiewicz et al. 2001]. Therefore, CGA Shape is a se-
+quential grammar (similar to Chomsky grammars)
+> -- [@muller_procedural_2006, sec. 2]
 
 ## Tensor fields [@chen_interactive_2008]
 
