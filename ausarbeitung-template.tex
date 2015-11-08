@@ -51,56 +51,13 @@ $endfor$
 \newcommand{\submissiontime}{DD. MM. 20XX}
 
 
-%% ---------------------------------
-%% | ToDo Marker - only for draft! |
-%% ---------------------------------
-% Remove this section for final version!
-\setlength{\marginparwidth}{20mm}
-
-\newcommand{\margtodo}
-{\marginpar{\textbf{\textcolor{red}{ToDo}}}{}}
-
-\newcommand{\todo}[1]
-{{\textbf{\textcolor{red}{(\margtodo{}#1)}}}{}}
-
-
-%% --------------------------------
-%% | Old Marker - only for draft! |
-%% --------------------------------
-% Remove this section for final version!
-\newenvironment{deprecated}
-{\begin{color}{gray}}
-{\end{color}}
-
-
-%% --------------------------------
-%% | Settings for word separation |
-%% --------------------------------
-% Help for separation:
-% In german package the following hints are additionally available:
-% "- = Additional separation
-% "| = Suppress ligation and possible separation (e.g. Schaf"|fell)
-% "~ = Hyphenation without separation (e.g. bergauf und "~ab)
-% "= = Hyphenation with separation before and after
-% "" = Separation without a hyphenation (e.g. und/""oder)
-
-% Describe separation hints here:
-\hyphenation{
-% Pro-to-koll-in-stan-zen
-% Ma-na-ge-ment  Netz-werk-ele-men-ten
-% Netz-werk Netz-werk-re-ser-vie-rung
-% Netz-werk-adap-ter Fein-ju-stier-ung
-% Da-ten-strom-spe-zi-fi-ka-tion Pa-ket-rumpf
-% Kon-troll-in-stanz
-}
-
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %% Here, main documents begins %%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \begin{document}
 
 % titlepage
-	% Remove the following line for German text
+
 	%\selectlanguage{ngerman}
 
 	\frontmatter
@@ -180,10 +137,8 @@ $endfor$
 	\end{titlepage}
 \blankpage
 
-
 \tableofcontents
 \blankpage
-
 
 \mainmatter
 \pagenumbering{arabic}

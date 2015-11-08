@@ -7,7 +7,7 @@ institute: |
 	Lehrstuhl für Computergrafik
 link-citations: true
 header-includes: |
-	\setkeys{Gin}{width=0.8\linewidth}
+	\setkeys{Gin}{width=0.8\linewidth,height=5cm,keepaspectratio}
 csl: ieee.csl
 ---
 <style>img {width:400px}</style>
