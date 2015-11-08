@@ -91,7 +91,7 @@ Most of the city modeling systems expect multiple input maps. These are either c
 ### Geographical maps (Elevation maps, Land/water/vegetation maps)
 
 Water map
-~ Water is seen as an obstacle. The modeling system works around this, or in some cases builds bridges.
+~ Water is seen as an obstacle, no buildings are allowed here. Streets are build around water in most cases, sometimes a bridge crossing the water is built.
 
 Elevation map
 ~ Terrain. Real streets are often aligned to the terrain map to minimize slope. Too high slopes mean no In some cases this is taken from real world data, in some it is procedurally generated using noise [@sec:noise;@_terragen] or other methods
@@ -152,10 +152,13 @@ If the maximum angle is reached, the road segment is truncated and simply stops 
 
 In this approach, the obstacle problem is solved before creating the city structure because the tensor fields are adjusted according to map boundaries.
 
-The tensor field is converted into a road network by tracing hyperstreamlines.
+The tensor field is converted into a road network by tracing hyperstreamlines. These hyperstreamlines are aligned to the eigenvector field of the tensors.
+
+Intersections between real roads tend to have near right angles, because that creates the most efficient street navigation. In tensor fields, the major and minor eigenvectors are perpendicular to each other, so the resulting street layout created from them using the methods described in [@chen_interactive_2008] is similar to that of real road networks.
 
 ## Splitting areas into building blocks
 
+When the network graph is complete, thet resulting areas need to be devided into blocks. First, the 
 - recursively divide area until target size is reached
 - fill target block with buildings
 
