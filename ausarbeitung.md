@@ -13,40 +13,74 @@ csl: ieee.csl
 <style>img {width:400px}</style>
 
 
+# Overview
+
+The first paper about procedural city modeling is [@cities2001] (2001), which contains a general approach to modeling of the street network and building architecture and is citied in basically every subsequent document. It is also the basis for CityEngine [@cityengine] which is a professional software application for semi-automated city modeling. [@instantArch] (2003) contains more specific and complex algorithms for modeling architecture.
+
+!!todo others
+
 # General concepts and methods
 
 ## Procedural modeling
 
 
-## Parametric Lindenmayer Systems (L-systems) [@beauty]
+Procedural modeling is a general term for creating graphics or models from automatically or semi-automatically from an algorithm or a set of rules and a random seed.
+
+## Lindenmayer Systems (L-systems) [@beauty]
+
+L-systems are a popular tool for all kinds of procedural modeling, because they allow the description of the generation algorithm as a set of rules.
 
 ### L-Systems
 
 As defined by Lindenmayer in [@beauty, ch. 1], an L-System is a formal grammer defined as $G=(V, \omega, P)$, where
 
-* V is the alphabet
-* $\omega \in V^+$ is the initial word called the *axiom*
-* $P \subset V \times V^*$ is a set of production rules that map from one letter to a sequence of letters.
+* $V$ is the alphabet
+* $\omega \in V^+$ is the initial word, called the *axiom*
+* $P \subset V \times V^*$ is a set of production rules that each map from one letter to a sequence of letters.
 
-Letters that do not have production rules are assigned an implicit identity rule $a\to a$.
+Letters that do not have production rules are assigned an implicit identity rule $a\to a$. Those are called terminal symbols, because once they are reached the letter will stop changing.
 
 In general, an L-system can be deterministic or non-deterministic. It is deterministic when there is exactly one rule for each letter in $V$.
 
-In contrast to normal formal grammars, the rule application in L-systems is simultaneous.
+In contrast to normal formal grammars, the rule application in L-systems is simultaneous. L-systems can be finite, meaning they that after some number of iterations the only matching rules are $a\to a$. When using non-finite L-systems, rule application is stopped when some condition is reached, for example when a specific number of iterations is reached or when the resulting changes become insignificant.
 
-L-systems can be context-sensitive or context-free ^[definition of $(m,n)$L-Systems with context of m letters to the left and n letters to the right in [@hanan_parametric_1992, ch. 2.2]],
+L-systems can be context-sensitive or context-free. In [@hanan_parametric_1992, ch. 2.2],$(m)L-systems$ are defined as l-systems where each rule can access $m$ symbols to the left. The definition of $(m,n)$L-Systems then has the context of m letters to the left and n letters to the right. The classical Lindenmayer system is thus a 0L-system.
 
 ### Parametric L-Systems [@hanan_parametric_1992]
 
-Parametric L-Systems are an extensions to L-Systems allowing the incorporation of arbitrary functions into L-Systems. Each letter can have assigned *parameters* which are real numbers, and can be combined with unknowns and regular arithmetic operators like $+, *, \geq, \dots$. Rules can then also be conditional on the parameter. As an example, the rule
+Parametric L-Systems are an extensions to L-Systems allowing the incorporation of arbitrary functions into L-Systems. Each letter can have assigned *parameters* which are real numbers, and can be combined with variables and regular arithmetic operators like $+, *, \geq, \dots$. Rules can then also be conditional on the parameter. As an example, the rule
 
 $$A(t): t>5 \to B(t+1)CD(t \wedge 0.5)$$
 
-replaces $A(t)$ with $B(t+1)CD(t\wedge 0.5)$ only when $t > 5$.
+replaces $A(t)$ with $B(t+1)CD(t\wedge 0.5)$ if and only if $t > 5$.
+
+Additionally, external functions can be called from these rules.
 
 ### Applications in procedural city modeling
 
 Originally used for plant modeling, L-systems can be applied to more complex problems with the above extensions. In [@cities2001], they are used extensively for creation of the road network and modeling of building architecture.
+
+The newer relevant documents avoid L-systems, replacing them with custom algorithms or regular grammars in both modeling of architecture and of the street network for various reasons:
+
+> With regard to the application of L-
+systems to buildings, we have to consider that the structure of a
+building is fundamentally different from the structure of plants (or
+streets)–most importantly, a building is not designed with a growth-
+like process, but a sequence of partitioning steps.
+> -- [@wonka_instant_2003]
+
+
+> An L-system seemed inapt because of
+the parameter bloat that would result from all the specific
+exceptions and particularities that may come with a given
+culture -- [@lechner_procedural_2003]
+
+> Our generation algorithm is
+distinct in that it is computationally efficient and contains a
+number of optimisation to enable it to run in real-time. -- [@kelly_citygen_2007, sec. 3.2]
+
+> While [the approach by Parish and Mueller] creates a high quality solution, there remains a significant challenge: the method does not allow extensive user-control of
+the outcome to be easily integrated into a production environment. [@chen_interactive_2008, sec. 1]
 
 ## Tensor fields [@chen_interactive_2008]
 
@@ -158,15 +192,19 @@ Intersections between real roads tend to have near right angles, because that cr
 
 ## Splitting areas into building blocks
 
-When the network graph is complete, thet resulting areas need to be devided into blocks. First, the 
-- recursively divide area until target size is reached
-- fill target block with buildings
+When the network graph is complete, thet resulting areas need to be devided into blocks.
+
+First, the streets are expanded to have a width. The resulting blocks are converted into a polygon. For simplification this polygon must be convex in [@cities2001]. Then the block is recursively divided along the longest approximately parallel edges until a specified maximum target size is reached. Every resulting area that is too small, or does not have direct access to a street, is discarded. The remaining blocks are interpreted as the base area for the building generation.
+
+![The lot division process [@cities2001, fig. 10]](img/20151108215824.png)
 
 ## Computation time
 
-* @cities2001: few seconds - 10 minutes (!!reread)
-* @kelly_citygen_2007: realtime
-* [@chen_interactive_2008]: 5 minutes
+Here are some data points for execution time of the algorithms presented in some papers.
+
+* [@cities2001]\: 10 seconds for the street graph, 10 minutes for building blocks and architecture
+* [@chen_interactive_2008]\: 5 minutes
+* [@kelly_citygen_2007]\: realtime
 
 # Generating architecture [@wonka_instant_2003]
 
@@ -183,7 +221,7 @@ a) photographic textures
 b) procedural textures
 
 
----
+# todo
 
 Andere Projekte / muss ich mir noch ankucken:
 
@@ -191,6 +229,6 @@ Andere Projekte / muss ich mir noch ankucken:
 * [@harmful] (zeigt lsystems ansatz zur straßenmodellierung aus [@cities2001] ist unnötig kompliziert)
 * [@pixelcity; @stadtmorph; @chen_interactive_2008; @kelly_citygen_2007; @kelly_survey_2006]
 * Summary see [@vanegas_modelling_2010]
----
+
 
 # References
