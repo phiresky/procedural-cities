@@ -15,19 +15,118 @@ csl: ieee.csl
 
 # Overview
 
-The first paper about procedural city modeling is [@cities2001] (2001), which contains a general approach to modeling of the street network and building architecture and is citied in basically every subsequent document. It is also the basis for CityEngine [@cityengine] which is a professional software application for semi-automated city modeling. [@instantArch] (2003) contains more specific and complex algorithms for modeling architecture.
+The first popular paper about procedural city modeling is [@cities2001] (2001), which contains a general approach to modeling of the street network and building architecture and is citied in nearly every subsequent document. It is also the basis for CityEngine [@cityengine] which is a professional software application for semi-automated city modeling. [@wonka_instant_2003] (2003) contains more specific and complex algorithms for modeling architecture.
 
-[@weber_interactive_2009] uses a time baed approach.
+[@lechner_procedural_2003] ...
+
+[@weber_interactive_2009] uses a time based approach.
 
 [@vanegas_modelling_2010] and [@vanegas_procedural_2012] give an extensive overview over a lot of other papers.
 
 !!todo others
 
+## Approaches to city / street network generation
+
+### L-system based approach by Parish and Mueller [-@cities2001]
+
+##### Input
+
+* Elevation map and Land/water map -- used as obstacles
+* Population density map -- used for highways and street density
+* Street patterns map -- specifies local type of street patterns
+* Zone map (residential, commercial or mixed) -- used for architecture choices
+* maximum house height map -- used for architecture
+
+##### Algorithm
+
+Uses an extended parametric L-system with constraint functions.
+
+![Left: Input maps (water, elevation, population density). Right: Sample output from [@cities2001, fig. 2]](img/20151109203325.png)
+
+
+### Approach using agents by Lechner et al. [-@lechner_procedural_2003]
+
+##### Input
+
+* Elevation map
+* Initial seed position
+* Optionally local modifications to the rules
+
+##### Algorithm
+
+Begins from a single seed.
+Uses multiple simultaneous agents interacting with their local environment according to a set of rules. The environment consists of rectangular patches. Only generates tertiary roads, no highways.
+
+There are two types of agents. Extender agents search the land for areas that are not reachable from existing streets and create streets according to the elevation maps. Connector agents walk along the road network, choose random near destinations and comparing the current path finding distance to the optimal distance. If there is significant improvement, a new road segment is added.
+
+![Sample output from [@lechner_procedural_2003, fig. 4]](img/20151109201926.png)
+
+### Approach from Citygen by Kelly and McCabe [-@kelly_citygen_2007]
+
+##### Input
+
+* Corner points of the primary road network
+
+##### Algorithm
+
+First the primary road network is created according to the general layouts described in [@sec:road-patterns]. For every resulting enclosed region the secondary road network is created independently and in parallel.
+
+Primary Roads are created with a set start and target point. The road is built using an algorithm that walks in the direction of the destination, with a maximum angle of deviation, sampling the possible next points (see [@fig:roadSampling]). The next point is chosen so the elevation difference along the completed road is as evenly distributed as possible.
+
+![Road interval sampling [@kelly_citygen_2007, fig. 3]](img/20151109203028.png){#fig:roadSampling}
+
+Secondary roads are generated starting from the middle of the longest sides of the primary road network. The roads grow in parallel, splitting off randomly with some specified angle plus deviation. When encountering existing roads with some maximum distance, the roads are connected, whereas existing intersections are preferred.
+
+### Approach using tensor fields by Chen et al. [-@chen_interactive_2008]
+
+##### Input
+
+* Binary Water map -- interpreted as obstacles
+* Binary Park and forest map -- interpreted as obstacles
+* Elevation map
+* Population density map
+
+##### Algorithm
+
+From the set of input maps, the initial tensor field (see [@sec:tensor-fields]) is generated. The obstacle maps are converted to boundaries, the tensors are aligned so the major eigenvectors are in parallel to the boundaries. The elevation map is used to set the major direction to minimize the height difference of the roads. Then the user interactively adds preset tensor fields that correspond to the road patterns from [@sec:road-patterns]. All of the overlayed basis tensor fields are then blended together.
+
+The tensor field is then converted to a road map by tracing hyperstreamlines (see [@fig:radial-tensor]).
+
+![Left: radial input tensor field (Green: major, magenta: minor hyperstreamlines), Right: resulting road map [@chen_interactive_2008, fig. 5]](img/20151109205310.png){#fig:radial-tensor}
+
+
+
+![Left: Semi-automatically generated tensor field visualized using hyperstreamlines. Right: tensor field used for creating
+ a street network [@chen_interactive_2008, fig. 1]](img/tensor.png){#fig:tensor}
+
+#### Time-based approach by Weber et al. [-@weber_interactive_2009]
+
+##### Input
+
+* Elevation map
+* list of city centers and growth centers
+* percentage of street growth per year
+* average land price per year
+* list of street patterns
+* land use type definitions and corresponding use percentages, construction setback values and building generation rules
+
+##### Algorithm
+
+Streets are build on demand according to a traffic simulation. The traffic simulation is created by simulating residents that make trips to random targets in the city.
+
+todo?: read http://www.train-fever.com/data/xian_slides_train_fever.pdf
+
+![Sample output (green: residential areas, blue: industrial zones)[@weber_interactive_2009, fig. 4]](img/20151109213837.png)
+
+
+## Approaches to architecture generation
+
+
 # General concepts and methods
 
 ## Procedural modeling
 
-Procedural modeling is a general term for creating graphics or models from automatically or semi-automatically from an algorithm or a set of rules and a random seed.
+Procedural modeling is a general term for creating graphics or models from automatically or semi-automatically from an algorithm or a set of rules and a pseudorandom number generator.
 
 ## Lindenmayer Systems (L-systems) [@beauty]
 
@@ -63,7 +162,7 @@ Additionally, external functions can be called from these rules.
 
 Originally used for plant modeling, L-systems can be applied to more complex problems with the above extensions. In [@cities2001], they are used extensively for creation of the road network and modeling of building architecture.
 
-The newer relevant documents avoid L-systems, replacing them with custom algorithms or regular grammars in both modeling of architecture and of the street network for various reasons:
+The newer relevant documents avoid L-systems (except [@coelho_expeditious_2007]), replacing them with custom algorithms or regular grammars in both modeling of architecture and of the street network for various reasons:
 
 > With regard to the application of L-
 systems to buildings, we have to consider that the structure of a
@@ -97,7 +196,7 @@ nents [Prusinkiewicz et al. 2001]. Therefore, CGA Shape is a se-
 quential grammar (similar to Chomsky grammars)
 > -- [@muller_procedural_2006, sec. 2]
 
-## Tensor fields [@chen_interactive_2008]
+## Tensor fields [@chen_interactive_2008] {#sec:tensor-fields}
 
 As defined in [@chen_interactive_2008], an tensor field is a continuous function from every 2-dimensional point $\mathbf p$ to a tensor $T(\mathbf p)$. A tensor is defined as
 
@@ -107,9 +206,6 @@ $$R\begin{pmatrix}
 \end{pmatrix}$$
 
 with $R \geq 0$ and $\theta \in [0,2\pi)$. There are various basis fields, such as the radial pattern (seen below the river in [@fig:tensor]) and the constant directional pattern (above the river in [@fig:tensor]). These are combined into a single pattern by adding them together while scaling them using exponential fall-off from a given center point [@chen_interactive_2008, ch. 5.2].
-
-![Semi-automatically generated tensor field visualized using hyperstreamlines, used for creating
- a street network [@chen_interactive_2008]](img/tensor.png){#fig:tensor}
 
 Tensor fields can be used to create a street network, based on the observation that most street network have two dominant directions [@vanegas_modelling_2010, pp. 30-31]. This also allows easy visualization of the flow direction beforehand. In [@chen_interactive_2008] they are used in a graphical user interface, to allow interactive modification of the input parameters.
 
@@ -152,7 +248,7 @@ Vegetation map
 
 [@cities2001] expects a population density input map, which is not found in other programs.
 
-Most programs have the local road pattern (see [@sec:road-pattern]) as inputs, which in real life is determined by the way the city was built.
+Most programs have the local road pattern (see [@sec:road-patterns]) as inputs, which in real life is determined by the way the city was built.
 
 ## Generating a street network
 
@@ -172,7 +268,7 @@ In [@cities2001] a complex L-system is used to produce the road network. The L-s
 
 LocalConstraints contains more local rules relevant for specific points on the map. In these specific points (described in [@sec:constraints]) the localConstraints function can adjust the parameters of the next iteration, or return FAILED if no there is no solution.
 
-### Road patterns, [see @cities2001, sec. 3.2.2] {#sec:road-pattern}
+### Road patterns, [see @cities2001, sec. 3.2.2] {#sec:road-patterns}
 
 [@cities2001] mentions the following three general street patterns (see [@fig:roadp])
 
@@ -220,6 +316,7 @@ Here are some data points for execution time of the algorithms presented in some
 * [@cities2001]\: 10 seconds for the street graph, 10 minutes for building blocks and architecture
 * [@chen_interactive_2008]\: 5 minutes
 * [@kelly_citygen_2007]\: realtime
+* [@lechner_procedural_2003]\: ?
 
 # Generating architecture [@wonka_instant_2003]
 
@@ -242,7 +339,7 @@ Andere Projekte / muss ich mir noch ankucken:
 
 * [@subvimpl] implementiert nach [@subversion]
 * [@harmful] (zeigt lsystems ansatz zur straßenmodellierung aus [@cities2001] ist unnötig kompliziert)
-* [@pixelcity; @stadtmorph; @chen_interactive_2008; @kelly_citygen_2007; @kelly_survey_2006]
+* [@pixelcity; @stadtmorph; @chen_interactive_2008; @kelly_survey_2006]
 * Summary see [@vanegas_modelling_2010]
 
 
