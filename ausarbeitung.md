@@ -99,7 +99,7 @@ The tensor field is then converted to a road map by tracing hyperstreamlines (se
 ![Left: Semi-automatically generated tensor field visualized using hyperstreamlines. Right: tensor field used for creating
  a street network [@chen_interactive_2008, fig. 1]](img/tensor.png){#fig:tensor}
 
-#### Time-based approach by Weber et al. [-@weber_interactive_2009]
+### Time-based approach by Weber et al. [-@weber_interactive_2009]
 
 ##### Input
 
@@ -118,8 +118,47 @@ todo?: read http://www.train-fever.com/data/xian_slides_train_fever.pdf
 
 ![Sample output (green: residential areas, blue: industrial zones)[@weber_interactive_2009, fig. 4]](img/20151109213837.png)
 
+### Approach by Lipp et al. [@lipp_interactive_2011]
+
+...
+
+### Approach by Venegas et al. [@vanegas_procedural_2012]
+
+...
 
 ## Approaches to architecture generation
+
+###  Approach by [@cities2001]
+
+...
+
+###  Approach by [@wonka_instant_2003]
+
+...
+
+###  Approach by [@muller_procedural_2006]
+
+...
+
+###  Approach by [@coelho_expeditious_2007]
+
+...
+
+###  Approach by [@kelly_citygen_2007]
+
+...
+
+###  Approach by [@weber_interactive_2009]
+
+...
+
+###  Approach by [@subversion]
+
+...
+
+###  Approach by [@lipp_interactive_2011]
+
+...
 
 
 # General concepts and methods
