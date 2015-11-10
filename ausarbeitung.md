@@ -1,4 +1,5 @@
 ---
+# this document is pandoc-1.15.1 flavored markdown
 title: Procedural Modeling of Cities
 author: Robin
 bibliography: prosem.bib
@@ -15,17 +16,15 @@ csl: ieee.csl
 
 # Overview
 
-The first popular paper about procedural city modeling is [@cities2001] (2001), which contains a general approach to modeling of the street network and building architecture and is citied in nearly every subsequent document. It is also the basis for CityEngine [@cityengine] which is a professional software application for semi-automated city modeling. [@wonka_instant_2003] (2003) contains more specific and complex algorithms for modeling architecture.
+## Notable documents
 
-[@lechner_procedural_2003] ...
+The first popular paper about procedural city modeling is [@cities2001] (2001), which contains a general approach to modeling of the street network and building architecture and is citied in nearly every subsequent document. It is also the basis for CityEngine [@cityengine], a professional software application for semi-automated city modeling. [@wonka_instant_2003] (2003) is the first to describe architecture modeling more precicely.
+[@weber_interactive_2009] is the only paper using a complicated time based simulation, the others use recursive algorithms or grammars.
+[@vanegas_modelling_2010] and [@kelly_survey_2006] give an extensive overview over a lot of the other papers. [@pixelcity] is a detailed article describing an implementation in OpenGL.
 
-[@weber_interactive_2009] uses a time based approach.
+The following describes the various approaches used.
 
-[@vanegas_modelling_2010] and [@vanegas_procedural_2012] give an extensive overview over a lot of other papers.
-
-!!todo others
-
-## Approaches to city / street network generation
+## Approaches to city / street network generation {#sec:street-approaches}
 
 ### L-system based approach by Parish and Mueller [-@cities2001]
 
@@ -112,20 +111,20 @@ The tensor field is then converted to a road map by tracing hyperstreamlines (se
 
 ##### Algorithm
 
-Streets are build on demand according to a traffic simulation. The traffic simulation is created by simulating residents that make trips to random targets in the city.
+The system uses three steps that are iterated for every time step: First the street network is extended and analyzed, then the land use is planned, and finally the new construction plan is generated. The algorithms takes a lot of details into account which are not further described here.^[these slides contain further information: http://www.train-fever.com/data/xian_slides_train_fever.pdf]
 
-todo?: read http://www.train-fever.com/data/xian_slides_train_fever.pdf
+Streets are build on demand according to a traffic simulation. The traffic simulation is created by simulating residents that make trips to random targets in the city. Every building and land space have a calculated value. Buildings are built on empty lots randomly and replaced when it significantly increases the value of the area.
 
-![Sample output (green: residential areas, blue: industrial zones)[@weber_interactive_2009, fig. 4]](img/20151109213837.png)
+![Sample output (green: residential areas, blue: industrial zones, red: commercial)[@weber_interactive_2009, fig. 4]](img/20151109213837.png)
 
-### Approach by Lipp et al. [@lipp_interactive_2011]
+### Approach by Lipp et al. [-@lipp_interactive_2011]
+
+This document only describes methods for interactive modification of street layouts and is not further explained here.
+
+<!-- !!todo?
+### Approach by Venegas et al. [-@vanegas_procedural_2012]
 
 ...
-
-### Approach by Venegas et al. [@vanegas_procedural_2012]
-
-...
-
 ## Approaches to architecture generation
 
 ###  Approach by [@cities2001]
@@ -154,12 +153,13 @@ todo?: read http://www.train-fever.com/data/xian_slides_train_fever.pdf
 
 ###  Approach by [@subversion]
 
+see [@subvimpl]
 ...
 
 ###  Approach by [@lipp_interactive_2011]
 
 ...
-
+-->
 
 # General concepts and methods
 
@@ -199,9 +199,9 @@ Additionally, external functions can be called from these rules.
 
 ### Applications in procedural city modeling
 
-Originally used for plant modeling, L-systems can be applied to more complex problems with the above extensions. In [@cities2001], they are used extensively for creation of the road network and modeling of building architecture.
+Originally used for plant modeling, L-systems can be applied to more complex problems with the above extensions. In [@cities2001], they are used extensively for creation of the road network and modeling of building architecture, though [@harmful] shows the road network L-system can easily be replaced by a simpler algorithm using a priority-queue.
 
-The newer relevant documents avoid L-systems (except [@coelho_expeditious_2007]), replacing them with custom algorithms or regular grammars in both modeling of architecture and of the street network for various reasons:
+Apart from [@coelho_expeditious_2007], the newer relevant documents avoid L-systems, replacing them with custom algorithms or regular grammars in both modeling of architecture and of the street network for various reasons:
 
 > With regard to the application of L-
 systems to buildings, we have to consider that the structure of a
@@ -210,18 +210,14 @@ streets)–most importantly, a building is not designed with a growth-
 like process, but a sequence of partitioning steps.
 > -- [@wonka_instant_2003]
 
-
 > An L-system seemed inapt because of
 the parameter bloat that would result from all the specific
 exceptions and particularities that may come with a given
 culture -- [@lechner_procedural_2003]
 
-> Our generation algorithm is
-distinct in that it is computationally efficient and contains a
-number of optimisation to enable it to run in real-time. -- [@kelly_citygen_2007, sec. 3.2]
-
 > While [the approach by Parish and Mueller] creates a high quality solution, there remains a significant challenge: the method does not allow extensive user-control of
-the outcome to be easily integrated into a production environment. [@chen_interactive_2008, sec. 1]
+the outcome to be easily integrated into a production environment.
+> -- [@chen_interactive_2008, sec. 1]
 
 > We chose not to embed the
 expansion in an L-system framework to make the implemen-
@@ -262,7 +258,7 @@ In the context of procedural cities, noise is mostly used to automate the input 
 
 # Generating a city structure
 
-
+The following description is mostly based on [@cities2001], also mentioning differences from other papers.
 ## Input parameters [@cities2001, p. 2]
 
 Most city generation methods have some form of user input. In [@cities2001], the input is a set of image maps containing elevation, water and population density plus some numbers like city block size or maximum bridge length. All further steps are completely automatic. In [@chen_interactive_2008], the input maps are similar, but the initial street flow is created based on the map boundaries. The user can then modify the tensor field to change the resulting street graph [@chen_interactive_2008_youtube].
@@ -278,22 +274,16 @@ Water map
 ~ Water is seen as an obstacle, no buildings are allowed here. Streets are build around water in most cases, sometimes a bridge crossing the water is built.
 
 Elevation map
-~ Terrain. Real streets are often aligned to the terrain map to minimize slope. Too high slopes mean no In some cases this is taken from real world data, in some it is procedurally generated using noise [@sec:noise;@_terragen] or other methods
+~ Terrain. Real streets are often aligned to the terrain map to minimize slope. There is also a limit of the maximum slope a street can have. In some cases this map is taken from real world data, in some it is procedurally generated based on noise [@sec:noise;@olsen_realtime_2004;@_terragen].
 
 Vegetation map
-~ forests and shit
+~ Contains vegetation such as forests or parks, used e.g. as obstacles in [@chen_interactive_2008]
 
 ### Sociostatistical maps (Population density, Zones, Street patterns)
 
-[@cities2001] expects a population density input map, which is not found in other programs.
-
-Most programs have the local road pattern (see [@sec:road-patterns]) as inputs, which in real life is determined by the way the city was built.
+[@cities2001] expects a population density input map, which is not found in other programs. Most documents have the local road pattern (see [@sec:road-patterns]) as inputs, which in real life is determined by the way the city was built.
 
 ## Generating a street network
-
-In [@cities2001, p. 3], the street generation is modeled as follows.
-
-[@kelly_citygen_2007]s approach is very similar to Parish and Mueller [@cities2001].
 
 ### Separate street types
 
@@ -303,17 +293,21 @@ Most systems employ at least two street types. [@cities2001] introduces highways
 
 ### L-system with global goals and local constraints
 
-In [@cities2001] a complex L-system is used to produce the road network. The L-system has two external functions: `localConstraints` and `globalGoals`. GlobalGoals is used for the general structure of the roads. For the highways this is done by searching for the nearest population centers and navigating in that direction. Secondarily, highways and also streets are directed according to road patterns, described in the next section.
+In [@cities2001] a complex L-system is used to produce the road network. The L-system has two external functions: `localConstraints` and `globalGoals`. GlobalGoals is used for the general structure of the roads. For the highways this is done by searching for the nearest population centers and navigating in that direction. Secondarily, highways and also streets are directed according to road patterns, described in [@sec:road-patterns].
 
 LocalConstraints contains more local rules relevant for specific points on the map. In these specific points (described in [@sec:constraints]) the localConstraints function can adjust the parameters of the next iteration, or return FAILED if no there is no solution.
 
+The approaches used in the other documents are described in more detail in [@sec:street-approaches].
+
 ### Road patterns, [see @cities2001, sec. 3.2.2] {#sec:road-patterns}
 
-[@cities2001] mentions the following three general street patterns (see [@fig:roadp])
+[@cities2001] mentions the following three general street patterns, citing [@focas_four_1998] (see [@fig:roadp]):
 
 * Rectangular raster -- aligned to one angle and perpendicular to that. This is common in planned cities that are built in modern times
 * Radial / concentric -- streets go around a center point and perpendicular streets go straight to the center
 * Branching / random -- smaller streets branch from larger ones. Common in old cities that have naturally grown. In [@cities2001] this is the interpreted as no restrictions / random layout
+
+Most other documents use either the same, or very similar types of road patterns.
 
 ![An overview of the street pattern used in the
 CityEngine system with a short description and an example [@cities2001]](img/road-patterns.pdf){#fig:roadp}
@@ -334,9 +328,9 @@ If the maximum angle is reached, the road segment is truncated and simply stops 
 
 ### Approach using tensor fields from [@chen_interactive_2008]
 
-In this approach, the obstacle problem is solved before creating the city structure because the tensor fields are adjusted according to map boundaries.
+This approach is very different from the usual methods. The conflict problem from [@sec:constraints] does not happen here, because the whole road network is created instantly.
 
-The tensor field is converted into a road network by tracing hyperstreamlines. These hyperstreamlines are aligned to the eigenvector field of the tensors.
+The input tensor field [@sec:tensor-fields] is converted into a road network by tracing hyperstreamlines. These hyperstreamlines are aligned to the eigenvector field of the tensors.
 
 Intersections between real roads tend to have near right angles, because that creates the most efficient street navigation. In tensor fields, the major and minor eigenvectors are perpendicular to each other, so the resulting street layout created from them using the methods described in [@chen_interactive_2008] is similar to that of real road networks.
 
@@ -344,7 +338,7 @@ Intersections between real roads tend to have near right angles, because that cr
 
 When the network graph is complete, thet resulting areas need to be devided into blocks.
 
-First, the streets are expanded to have a width. The resulting blocks are converted into a polygon. For simplification this polygon must be convex in [@cities2001]. Then the block is recursively divided along the longest approximately parallel edges until a specified maximum target size is reached. Every resulting area that is too small, or does not have direct access to a street, is discarded. The remaining blocks are interpreted as the base area for the building generation.
+First, the streets are expanded to have a width. The resulting blocks between neighboring streets are converted into a polygon. For simplification this polygon must be convex in [@cities2001]. Then the block is recursively divided along the longest approximately parallel edges until a specified maximum target size is reached. Every resulting area that is too small, or does not have direct access to a street, is discarded. The remaining blocks are interpreted as the base area for the building generation.
 
 ![The lot division process [@cities2001, fig. 10]](img/20151108215824.png)
 
@@ -353,11 +347,12 @@ First, the streets are expanded to have a width. The resulting blocks are conver
 Here are some data points for execution time of the algorithms presented in some papers.
 
 * [@cities2001]\: 10 seconds for the street graph, 10 minutes for building blocks and architecture
-* [@chen_interactive_2008]\: 5 minutes
-* [@kelly_citygen_2007]\: realtime
-* [@lechner_procedural_2003]\: ?
+* [@chen_interactive_2008]\: 5 minutes for complete generation
+* [@kelly_citygen_2007]\: real time
+* [@lechner_procedural_2003]\: real time
+* [@weber_interactive_2009]\: 60 seconds for
 
-# Generating architecture [@wonka_instant_2003]
+<!--# Generating architecture [@wonka_instant_2003]
 
 toread: [@muller_procedural_2006]
 
@@ -369,17 +364,6 @@ toread: [@muller_procedural_2006]
 ## Texturing
 
 a) photographic textures
-b) procedural textures
-
-
-# todo
-
-Andere Projekte / muss ich mir noch ankucken:
-
-* [@subvimpl] implementiert nach [@subversion]
-* [@harmful] (zeigt lsystems ansatz zur straßenmodellierung aus [@cities2001] ist unnötig kompliziert)
-* [@pixelcity; @stadtmorph; @chen_interactive_2008; @kelly_survey_2006]
-* Summary see [@vanegas_modelling_2010]
-
+b) procedural textures-->
 
 # References

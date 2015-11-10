@@ -15,10 +15,6 @@
 \ProvidesClass{thesisclass}
 \LoadClass[a4paper,11pt,titlepage]{scrbook}	% Class based on scrbook
 
-% following line removed by M. Retzlaff, 20121114, conflict with Babel and outdated:
-%\RequirePackage{ngerman}										% New german orthography
-
-
 %% -------------------------------
 %% |          Packages           |
 %% -------------------------------
@@ -53,10 +49,10 @@
 						plainpages=false,
 						pdfpagelabels=true,
 						pdfborder={0 0 0.5},
-						colorlinks=false,						
-						linkbordercolor={0 0.61 0.50},   
+						colorlinks=false,
+						linkbordercolor={0 0.61 0.50},
 						citebordercolor={0 0.61 0.50}]{hyperref}  %{0.57 0.74 0.57}
-						
+
 \usepackage[fixlanguage]{babelbib}	% sets german style for literature entries
 \selectbiblanguage{ngerman}			% for \bibliographystyle{babalpha}
 %% --- End of Packages ---
@@ -228,12 +224,12 @@
 %% ----------------------------------
 %% |  Style of appendix numbering   |
 %% ----------------------------------
- \renewcommand\appendix{\par 
-   \setcounter{section}{0}% 
-   \setcounter{subsection}{0}% 
+ \renewcommand\appendix{\par
+   \setcounter{section}{0}%
+   \setcounter{subsection}{0}%
    \setcounter{figure}{0}%
-   \renewcommand\thesection{\Alph{section}}% 
-   \renewcommand\thefigure{\Alph{section}.\arabic{figure}} 
+   \renewcommand\thesection{\Alph{section}}%
+   \renewcommand\thefigure{\Alph{section}.\arabic{figure}}
    \renewcommand\thetable{\Alph{section}.\arabic{table}}}
 %% --- End of appenix numbering style ---
 
