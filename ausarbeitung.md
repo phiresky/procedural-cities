@@ -18,7 +18,7 @@ csl: ieee.csl
 
 ## Notable documents
 
-The first popular paper about procedural city modeling is [@cities2001] (2001), which contains a general approach to modeling of the street network and building architecture and is citied in nearly every subsequent document. It is also the basis for CityEngine [@cityengine], a professional software application for semi-automated city modeling. [@wonka_instant_2003] (2003) is the first to describe architecture modeling more precicely.
+The first popular paper about procedural city modeling is [@cities2001] (2001), which contains a general approach to modeling of the street network and building architecture and is cited in nearly every subsequent document. It is also the basis for CityEngine [@cityengine], a professional software application for semi-automated city modeling. [@wonka_instant_2003] (2003) is the first to describe architecture modeling more precicely.
 [@weber_interactive_2009] is the only paper using a complicated time based simulation, the others use recursive algorithms or grammars.
 [@vanegas_modelling_2010] and [@kelly_survey_2006] give an extensive overview over a lot of the other papers. [@pixelcity] is a detailed article describing an implementation in OpenGL.
 
@@ -185,7 +185,7 @@ In general, an L-system can be deterministic or non-deterministic. It is determi
 
 In contrast to normal formal grammars, the rule application in L-systems is simultaneous. L-systems can be finite, meaning they that after some number of iterations the only matching rules are $a\to a$. When using non-finite L-systems, rule application is stopped when some condition is reached, for example when a specific number of iterations is reached or when the resulting changes become insignificant.
 
-L-systems can be context-sensitive or context-free. In [@hanan_parametric_1992, ch. 2.2],$(m)L-systems$ are defined as l-systems where each rule can access $m$ symbols to the left. The definition of $(m,n)$L-Systems then has the context of m letters to the left and n letters to the right. The classical Lindenmayer system is thus a 0L-system.
+L-systems can be context-sensitive or context-free. In [@hanan_parametric_1992, ch. 2.2], $(m)L$-systems are defined as L-systems where each rule can access $m$ symbols to the left. The definition of $(m,n)$L-Systems then has the context of m letters to the left and n letters to the right. The classical Lindenmayer system is thus a 0L-system.
 
 ### Parametric L-Systems [@hanan_parametric_1992]
 
@@ -220,8 +220,7 @@ the outcome to be easily integrated into a production environment.
 > -- [@chen_interactive_2008, sec. 1]
 
 > We chose not to embed the
-expansion in an L-system framework to make the implemen-
-tation more efficient. -- [@weber_interactive_2009]
+expansion in an L-system framework to make the implementation more efficient. -- [@weber_interactive_2009]
 
 > While parallel
 grammars like L-systems are suited to capture growth over time,
@@ -256,9 +255,10 @@ A commonly used type of gradient noise is Perlin noise [@perlin_improving_2002],
 In the context of procedural cities, noise is mostly used to automate the input parameters like the terrain height map.
 
 
-# Generating a city structure
+# Detailed look at the general method of modeling the city structure
 
-The following description is mostly based on [@cities2001], also mentioning differences from other papers.
+The following description is mostly based on [@cities2001]. Differences from other papers are also mentioned.
+
 ## Input parameters [@cities2001, p. 2]
 
 Most city generation methods have some form of user input. In [@cities2001], the input is a set of image maps containing elevation, water and population density plus some numbers like city block size or maximum bridge length. All further steps are completely automatic. In [@chen_interactive_2008], the input maps are similar, but the initial street flow is created based on the map boundaries. The user can then modify the tensor field to change the resulting street graph [@chen_interactive_2008_youtube].
@@ -330,7 +330,7 @@ If the maximum angle is reached, the road segment is truncated and simply stops 
 
 This approach is very different from the usual methods. The conflict problem from [@sec:constraints] does not happen here, because the whole road network is created instantly.
 
-The input tensor field [@sec:tensor-fields] is converted into a road network by tracing hyperstreamlines. These hyperstreamlines are aligned to the eigenvector field of the tensors.
+The input tensor field (see [@sec:tensor-fields]) is converted into a road network by tracing hyperstreamlines. These hyperstreamlines are aligned to the eigenvector field of the tensors.
 
 Intersections between real roads tend to have near right angles, because that creates the most efficient street navigation. In tensor fields, the major and minor eigenvectors are perpendicular to each other, so the resulting street layout created from them using the methods described in [@chen_interactive_2008] is similar to that of real road networks.
 
