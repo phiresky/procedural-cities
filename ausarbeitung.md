@@ -350,7 +350,7 @@ Here are some data points for execution time of the algorithms presented in some
 * [@chen_interactive_2008]\: 5 minutes for complete generation
 * [@kelly_citygen_2007]\: real time
 * [@lechner_procedural_2003]\: real time
-* [@weber_interactive_2009]\: 60 seconds for
+* [@weber_interactive_2009]\: 5 minutes for 25 years of simulation
 
 <!--# Generating architecture [@wonka_instant_2003]
 
