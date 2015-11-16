@@ -19,14 +19,14 @@ csl: chicago-author-date.csl
 ## Notable documents
 
 The first popular paper about procedural city modeling is from @cities2001, which contains a general approach to modeling of the street network and building architecture and is cited in nearly every subsequent document. It is also the basis for @cityengine, a professional software application for semi-automated city modeling. @wonka_instant_2003 are the first to describe architecture modeling more precisely.
-@weber_interactive_2009 is the only paper using a complicated time based simulation, the others use recursive algorithms or grammars.
-@vanegas_modelling_2010 and @kelly_survey_2006 give an extensive overview over a lot of the other papers. @pixelcity is a detailed article describing an implementation in OpenGL.
+@weber_interactive_2009 is the only group using a complicated time based simulation, the others use recursive algorithms or grammars.
+@vanegas_modelling_2010 and @kelly_survey_2006 give an extensive overview over most of the other papers. @pixelcity is a detailed article describing an implementation in OpenGL.
 
 ## General concepts and methods
 
 ### Procedural modeling
 
-Procedural modeling is a general term for creating graphics or models from automatically or semi-automatically from an algorithm or a set of rules and a pseudorandom number generator.
+Procedural modeling is a general term for creating graphics or models automatically or semi-automatically from an algorithm or a set of rules and a pseudorandom number generator.
 
 ### Lindenmayer Systems [@beauty]
 
@@ -60,9 +60,9 @@ Additionally, external functions can be called from these rules.
 
 #### Applications in procedural city modeling
 
-Originally used for plant modeling, L-systems can be applied to more complex problems with the above extensions. In [@cities2001], they are used extensively for creation of the road network and modeling of building architecture, though @harmful shows the road network L-system can easily be replaced by a simpler algorithm using a priority-queue.
+Originally used for plant modeling, L-systems can be applied to more complex problems with the above extensions. They are used extensively by @cities2001 for creation of the road network and modeling of building architecture, though @harmful shows the road network L-system can easily be replaced by a simpler algorithm using a priority-queue.
 
-Apart from @coelho_expeditious_2007, the newer relevant documents avoid L-systems, replacing them with custom algorithms or regular grammars in both modeling of architecture and of the street network for various reasons:
+Apart from @coelho_expeditious_2007, the newer relevant documents avoid L-systems, replacing them with custom algorithms or regular grammars in both modeling of the architecture and of the street network for various reasons:
 
 > With regard to the application of L-
 systems to buildings, we have to consider that the structure of a
@@ -132,7 +132,7 @@ Most of the city modeling systems expect multiple input maps. These are either c
 ### Geographical maps (Elevation maps, Land/water/vegetation maps)
 
 Water map
-~ Water is seen as an obstacle, no buildings are allowed here. Streets are build around water in most cases, sometimes a bridge crossing the water is built.
+~ Water is seen as an obstacle, no buildings are allowed here. Streets are built around water in most cases, sometimes a bridge crossing the water is built.
 
 Elevation map
 ~ Terrain. Real streets are often aligned to the terrain map to minimize slope. There is also a limit of the maximum slope a street can have. In some cases this map is taken from real world data, in some it is procedurally generated based on noise (see @sec:noise) [@olsen_realtime_2004;@_terragen].
@@ -154,9 +154,9 @@ Most systems employ at least two street types. @cities2001 introduce highways an
 
 ### Global goals and local constraints
 
-@cities2001 use a complex L-system to produce the road network. The L-system has two external functions: `localConstraints` and `globalGoals`. GlobalGoals is used for the general structure of the roads. For the highways this is done by searching for the nearest population centers and navigating in that direction. Secondarily, highways and also streets are directed according to road patterns, described in [@sec:road-patterns].
+@cities2001 use a complex L-system to produce the road network. The L-system has two external functions: `localConstraints` and `globalGoals`. GlobalGoals is used for the general structure of the roads. For the highways this is done by searching for the nearest population centers and navigating in that direction. Normal streets and highways are also directed according to road patterns, described in [@sec:road-patterns].
 
-LocalConstraints contains more local rules relevant for specific points on the map. In these specific points (described in [@sec:constraints]) the localConstraints function can adjust the parameters of the next iteration, or return FAILED if no there is no solution.
+LocalConstraints contains more local rules relevant for specific points on the map. In these specific points (described in [@sec:constraints]) the localConstraints function can adjust the parameters of the next iteration, or return FAILED if no there is no fitting solution.
 
 The approaches used in the other documents are described in more detail in [@sec:street-approaches].
 
@@ -164,9 +164,9 @@ The approaches used in the other documents are described in more detail in [@sec
 
 @cities2001 mention the following three general street patterns, citing [@focas_four_1998] (see [@fig:roadp]):
 
-* Rectangular raster -- aligned to one angle and perpendicular to that. This is common in planned cities that are built in modern times
-* Radial / concentric -- streets go around a center point and perpendicular streets go straight to the center
-* Branching / random -- smaller streets branch from larger ones. Common in old cities that have naturally grown. @cities2001 interpret this as no restrictions / random layout
+* Rectangular raster -- aligned to one angle and perpendicular to that. This is common in planned cities that are built from the ground up in modern times.
+* Radial / concentric -- streets go around a center point and perpendicular streets go straight to the center.
+* Branching / random -- smaller streets branch from larger ones. Common in old cities that have naturally grown. @cities2001 interpret this as no restrictions / random layout.
 
 Most other documents use either the same, or very similar types of road patterns.
 
@@ -197,11 +197,11 @@ Intersections between real roads tend to have near right angles, because that cr
 
 ## Splitting areas into building blocks
 
-When the network graph is complete, thet resulting areas need to be devided into blocks.
+When the network graph is complete, the resulting areas need to be devided into blocks.
 
-First, the streets are expanded to have a width. The resulting blocks between neighboring streets are converted into a polygon. For simplification this polygon must be convex in [@cities2001]. Then the block is recursively divided along the longest approximately parallel edges until a specified maximum target size is reached. Every resulting area that is too small, or does not have direct access to a street, is discarded. The remaining blocks are interpreted as the base area for the building generation.
+First, the streets are expanded to have a width. The resulting blocks between neighboring streets are converted into a polygon. For simplification this polygon must be convex in the approach by @cities2001. Then the block is recursively divided along the longest approximately parallel edges until a specified maximum target size is reached. Every resulting area that is too small, or does not have direct access to a street, is discarded. The remaining blocks are interpreted as the base area for the building generation. See @fig:lots for an example.
 
-![The lot division process [@cities2001, fig. 10]](img/20151108215824.png)
+![The lot division process [@cities2001, fig. 10]](img/20151108215824.png){#fig:lots}
 
 ## Computation time
 
@@ -263,7 +263,7 @@ Primary Roads are created with a set start and target point. The road is built u
 
 ![Road interval sampling [@kelly_citygen_2007, fig. 3]](img/20151109203028.png){#fig:roadSampling}
 
-Secondary roads are generated starting from the middle of the longest sides of the primary road network. The roads grow in parallel, splitting off randomly with some specified angle plus deviation. When encountering existing roads with some maximum distance, the roads are connected, whereas existing intersections are preferred.
+Secondary roads are generated starting from the middle of the longest sides of the primary road network. The roads grow in parallel, splitting off randomly with some specified angle plus deviation. When encountering existing roads at a maximum distance, the roads are connected, whereby existing intersections are preferred.
 
 ### Approach using tensor fields by @chen_interactive_2008
 
@@ -292,17 +292,17 @@ The tensor field is then converted to a road map by tracing hyperstreamlines (se
 ##### Input
 
 * Elevation map
-* list of city centers and growth centers
-* percentage of street growth per year
-* average land price per year
-* list of street patterns
-* land use type definitions and corresponding use percentages, construction setback values and building generation rules
+* List of city centers and growth centers
+* Percentage of street growth per year
+* Average land price per year
+* List of street patterns
+* Land use type definitions and corresponding use percentages, construction setback values and building generation rules
 
 ##### Algorithm
 
-The system uses three steps that are iterated for every time step: First the street network is extended and analyzed, then the land use is planned, and finally the new construction plan is generated. The algorithms takes a lot of details into account which are not further described here.^[these slides contain further information: http://www.train-fever.com/data/xian_slides_train_fever.pdf]
+The system uses three substeps that are iteratively executed for every time step: First the street network is extended and analyzed, then the land use is planned, and finally the new construction plan is generated. The algorithms takes a lot of details into account which are not further described here.^[These slides contain further information: http://www.train-fever.com/data/xian_slides_train_fever.pdf]
 
-Streets are build on demand according to a traffic simulation. The traffic simulation is created by simulating residents that make trips to random targets in the city. Every building and land space have a calculated value. Buildings are built on empty lots randomly and replaced when it significantly increases the value of the area.
+Streets are built on demand according to a traffic simulation. The traffic simulation is created by simulating residents that make trips to random targets in the city. Every building and land space has a calculated value. Buildings are built on empty lots randomly and replaced when renovating significantly increases the value of the area / property.
 
 ![Sample output (green: residential areas, blue: industrial zones, red: commercial)[@weber_interactive_2009, fig. 4]](img/20151109213837.png)
 
@@ -320,7 +320,7 @@ This document only describes methods for interactive modification of street layo
 
 A parametric, stochastic L-system is used to model the architecture. The buildings are seperated into residential buildings, commercial buildings and skyscrapers, determined by the input zone map. The input also contains a building height map that is used to limit the vertical growth of buildings.
 
-The rules for the L-system can be either transformation rules (scale or move), branching rules and termination rules. Generation starts with the ground plan and continues until every node passes a termination rule.
+The rules for the L-system can be either transformation rules (scale or move), branching rules or termination rules. Generation starts with the ground plan and continues until every node only matches a termination rule.
 
 Then, the output of the L-system is transformed into three dimensional geometry using a set of geometric models and textured. The textures are procedurally generated from layered grids describing windows, door positions, and wall materials.
 
@@ -328,17 +328,17 @@ Then, the output of the L-system is transformed into three dimensional geometry 
 
 This paper uses a special type of design grammer called split grammar. In addition to the shape grammer this uses a second grammar, called the control grammar, to ensure symmetry.
 
-Whenever a rule is applied, the resulting elements get a set of common attributes, some copied from the parent and some added by the control grammar, which decides the attributes using the spacial information. This results in the expected symmetry of building facades.
+Whenever a rule is applied, the resulting elements get a set of common attributes, some copied from the parent and some added by the control grammar, which decides the attributes using the spatial information, like the floor in the building that contains the element. This results in the expected symmetry of building facades.
 
 ###  Approach by @muller_procedural_2006
 
-This paper uses an extension of the split grammar in [@wonka_instant_2003], adding rules for transformation (rotations and scaling) and volumetric mass models. It also describes concret grammars for specific applications (office buildings and single family homes).
+This paper uses an extension of the split grammar by @wonka_instant_2003, adding rules for transformation (rotations and scaling) and volumetric mass models. It also describes concrete grammars for specific applications (office buildings and single family homes).
 
 ###  Other Approaches
 
-- @coelho_expeditious_2007 use geospatial L-systems
-- @weber_interactive_2009 use preconfigured buildings for specific land uses created from parametric shape grammars described by @muller_procedural_2006, replacing buildings as time progresses in the simulation
-- @subversion use an evolutionary approach that iteratively creates buildings, combining them from breeding pools of the last generation, mutating the structure randomly
+- @coelho_expeditious_2007 use geospatial L-systems.
+- @weber_interactive_2009 use preconfigured buildings for specific land uses created from parametric shape grammars described by @muller_procedural_2006, replacing buildings as time progresses in the simulation.
+- @subversion use an evolutionary approach that iteratively creates buildings, combining them from breeding pools of the last generation, mutating the structure randomly.
 
 <!--
 more specific? [@muller_procedural_2006]
