@@ -162,24 +162,24 @@ The approaches used in the other documents are described in more detail in [@sec
 
 ### Road patterns, [see @cities2001, sec. 3.2.2] {#sec:road-patterns}
 
-[@cities2001] mentions the following three general street patterns, citing [@focas_four_1998] (see [@fig:roadp]):
+@cities2001 mention the following three general street patterns, citing [@focas_four_1998] (see [@fig:roadp]):
 
 * Rectangular raster -- aligned to one angle and perpendicular to that. This is common in planned cities that are built in modern times
 * Radial / concentric -- streets go around a center point and perpendicular streets go straight to the center
-* Branching / random -- smaller streets branch from larger ones. Common in old cities that have naturally grown. In [@cities2001] this is the interpreted as no restrictions / random layout
+* Branching / random -- smaller streets branch from larger ones. Common in old cities that have naturally grown. @cities2001 interpret this as no restrictions / random layout
 
 Most other documents use either the same, or very similar types of road patterns.
 
 ![An overview of the street pattern used in the
-CityEngine system with a short description and an example [@cities2001]](img/road-patterns.pdf){#fig:roadp}
+CityEngine system with a short description and an example [@cities2001, table 1]](img/road-patterns.pdf){#fig:roadp}
 
 ### Constraints and solving conflicts {#sec:constraints}
 
 Streets are grown in parallel and greedily from starting points, branching off randomly.
 
-When a new street collides with an existing street, they are connected, preferably at an already existing intersection if one is near enough. The approach in [@kelly_citygen_2007] instead has a set area ("snap radius") around the growing street that is searched for available connections.
+When a new street collides with an existing street, they are connected, preferably at an already existing intersection if one is near enough. The approach by @kelly_citygen_2007 instead has a set area ("snap radius") around the growing street that is searched for available connections.
 
-For other obstacles such as water or mountains, [@cities2001] proposes the following solution:
+For other obstacles such as water or mountains, @cities2001 propose the following solution:
 
 If the obstacle is shorter than a preset length, it is ignored. The resulting street is marked as special according to the obstacle, e.g. as a bridge or as a tunnel.
 
@@ -193,7 +193,7 @@ This approach is very different from the usual methods. The conflict problem fro
 
 The input tensor field (see [@sec:tensor-fields]) is converted into a road network by tracing hyperstreamlines. These hyperstreamlines are aligned to the eigenvector field of the tensors.
 
-Intersections between real roads tend to have near right angles, because that creates the most efficient street navigation. In tensor fields, the major and minor eigenvectors are perpendicular to each other, so the resulting street layout created from them using the methods described in [@chen_interactive_2008] is similar to that of real road networks.
+Intersections between real roads tend to have near right angles, because that creates the most efficient street navigation. In tensor fields, the major and minor eigenvectors are perpendicular to each other, so the resulting street layout created from them using the methods described by @chen_interactive_2008 is similar to that of real road networks.
 
 ## Splitting areas into building blocks
 
@@ -215,7 +215,7 @@ Here are some data points for execution time of the algorithms presented in some
 
 ## Street network generation approach overview {#sec:street-approaches}
 
-### L-system based approach by Parish and Mueller [-@cities2001]
+### L-system based approach by @cities2001
 
 ##### Input
 
@@ -232,7 +232,7 @@ Uses an extended parametric L-system with constraint functions.
 ![Left: Input maps (water, elevation, population density). Right: Sample output from [@cities2001, fig. 2]](img/20151109203325.png)
 
 
-### Approach using agents by Lechner et al. [-@lechner_procedural_2003]
+### Approach using agents by @lechner_procedural_2003
 
 ##### Input
 
@@ -249,7 +249,7 @@ There are two types of agents. Extender agents search the land for areas that ar
 
 ![Sample output from [@lechner_procedural_2003, fig. 4]](img/20151109201926.png)
 
-### Approach from Citygen by Kelly and McCabe [-@kelly_citygen_2007]
+### Approach from Citygen by @kelly_citygen_2007
 
 ##### Input
 
@@ -265,7 +265,7 @@ Primary Roads are created with a set start and target point. The road is built u
 
 Secondary roads are generated starting from the middle of the longest sides of the primary road network. The roads grow in parallel, splitting off randomly with some specified angle plus deviation. When encountering existing roads with some maximum distance, the roads are connected, whereas existing intersections are preferred.
 
-### Approach using tensor fields by Chen et al. [-@chen_interactive_2008]
+### Approach using tensor fields by @chen_interactive_2008
 
 ##### Input
 
@@ -287,7 +287,7 @@ The tensor field is then converted to a road map by tracing hyperstreamlines (se
 ![Left: Semi-automatically generated tensor field visualized using hyperstreamlines. Right: tensor field used for creating
  a street network [@chen_interactive_2008, fig. 1]](img/tensor.png){#fig:tensor}
 
-### Time-based approach by Weber et al. [-@weber_interactive_2009]
+### Time-based approach by @weber_interactive_2009
 
 ##### Input
 
@@ -306,7 +306,7 @@ Streets are build on demand according to a traffic simulation. The traffic simul
 
 ![Sample output (green: residential areas, blue: industrial zones, red: commercial)[@weber_interactive_2009, fig. 4]](img/20151109213837.png)
 
-### Approach by Lipp et al. [-@lipp_interactive_2011]
+### Approach by  @lipp_interactive_2011
 
 This document only describes methods for interactive modification of street layouts and is not further explained here.
 
@@ -316,7 +316,7 @@ This document only describes methods for interactive modification of street layo
 ... --->
 ## Architecture generation approach overview
 
-###  Approach by [@cities2001]
+###  Approach by @cities2001
 
 A parametric, stochastic L-system is used to model the architecture. The buildings are seperated into residential buildings, commercial buildings and skyscrapers, determined by the input zone map. The input also contains a building height map that is used to limit the vertical growth of buildings.
 
@@ -324,21 +324,21 @@ The rules for the L-system can be either transformation rules (scale or move), b
 
 Then, the output of the L-system is transformed into three dimensional geometry using a set of geometric models and textured. The textures are procedurally generated from layered grids describing windows, door positions, and wall materials.
 
-###  Approach by [@wonka_instant_2003]
+###  Approach by @wonka_instant_2003
 
 This paper uses a special type of design grammer called split grammar. In addition to the shape grammer this uses a second grammar, called the control grammar, to ensure symmetry.
 
 Whenever a rule is applied, the resulting elements get a set of common attributes, some copied from the parent and some added by the control grammar, which decides the attributes using the spacial information. This results in the expected symmetry of building facades.
 
-###  Approach by [@muller_procedural_2006]
+###  Approach by @muller_procedural_2006
 
 This paper uses an extension of the split grammar in [@wonka_instant_2003], adding rules for transformation (rotations and scaling) and volumetric mass models. It also describes concret grammars for specific applications (office buildings and single family homes).
 
 ###  Other Approaches
 
-- [@coelho_expeditious_2007] uses geospatial L-systems
-- [@weber_interactive_2009] uses preconfigured buildings for specific land uses created from parametric shape grammars described in [@muller_procedural_2006], replacing buildings as time progresses in the simulation
-- [@subversion] uses an evolutionary approach that iteratively creates buildings, combining them from breeding pools of the last generation, mutating the structure randomly
+- @coelho_expeditious_2007 use geospatial L-systems
+- @weber_interactive_2009 use preconfigured buildings for specific land uses created from parametric shape grammars described by @muller_procedural_2006, replacing buildings as time progresses in the simulation
+- @subversion use an evolutionary approach that iteratively creates buildings, combining them from breeding pools of the last generation, mutating the structure randomly
 
 <!--
 more specific? [@muller_procedural_2006]
