@@ -34,7 +34,7 @@
 \usepackage{url}
 \usepackage[absolute,overlay]{textpos}
 \usepackage{tikz}
-\usepackage[english,ngerman]{babel}
+\usepackage[english]{babel}
 \usepackage{algorithm}		  % Code-Listings
 \usepackage{algorithmic}	  % Code-Listings
 % see http://www.ctan.org/tex-archive/macros/latex/contrib/algorithm2e/algorithm2e.pdf
@@ -54,7 +54,7 @@
 						citebordercolor={0 0.61 0.50}]{hyperref}  %{0.57 0.74 0.57}
 
 \usepackage[fixlanguage]{babelbib}	% sets german style for literature entries
-\selectbiblanguage{ngerman}			% for \bibliographystyle{babalpha}
+%\selectbiblanguage{ngerman}			% for \bibliographystyle{babalpha}
 %% --- End of Packages ---
 
 
