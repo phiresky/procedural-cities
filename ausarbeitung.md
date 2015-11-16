@@ -9,7 +9,7 @@ institute: |
 link-citations: true
 header-includes: |
 	\setkeys{Gin}{width=0.8\linewidth,height=5cm,keepaspectratio}
-csl: ieee.csl
+csl: chicago-author-date.csl
 ---
 <style>img {width:400px}</style>
 
@@ -18,9 +18,9 @@ csl: ieee.csl
 
 ## Notable documents
 
-The first popular paper about procedural city modeling is [@cities2001] (2001), which contains a general approach to modeling of the street network and building architecture and is cited in nearly every subsequent document. It is also the basis for CityEngine [@cityengine], a professional software application for semi-automated city modeling. [@wonka_instant_2003] (2003) is the first to describe architecture modeling more precicely.
-[@weber_interactive_2009] is the only paper using a complicated time based simulation, the others use recursive algorithms or grammars.
-[@vanegas_modelling_2010] and [@kelly_survey_2006] give an extensive overview over a lot of the other papers. [@pixelcity] is a detailed article describing an implementation in OpenGL.
+The first popular paper about procedural city modeling is from @cities2001, which contains a general approach to modeling of the street network and building architecture and is cited in nearly every subsequent document. It is also the basis for @cityengine, a professional software application for semi-automated city modeling. @wonka_instant_2003 are the first to describe architecture modeling more precisely.
+@weber_interactive_2009 is the only paper using a complicated time based simulation, the others use recursive algorithms or grammars.
+@vanegas_modelling_2010 and @kelly_survey_2006 give an extensive overview over a lot of the other papers. @pixelcity is a detailed article describing an implementation in OpenGL.
 
 ## General concepts and methods
 
@@ -28,13 +28,13 @@ The first popular paper about procedural city modeling is [@cities2001] (2001), 
 
 Procedural modeling is a general term for creating graphics or models from automatically or semi-automatically from an algorithm or a set of rules and a pseudorandom number generator.
 
-### Lindenmayer Systems (L-systems) [@beauty]
+### Lindenmayer Systems [@beauty]
 
 L-systems are a popular tool for all kinds of procedural modeling, because they allow the description of the generation algorithm as a set of rules.
 
-#### L-Systems
+#### Simple L-Systems
 
-As defined by Lindenmayer in [@beauty, ch. 1], an L-System is a formal grammer defined as $G=(V, \omega, P)$, where
+As defined by @beauty [ch. 1], an L-System is a formal grammer defined as $G=(V, \omega, P)$, where
 
 * $V$ is the alphabet
 * $\omega \in V^+$ is the initial word, called the *axiom*
@@ -46,7 +46,7 @@ In general, an L-system can be deterministic or non-deterministic. It is determi
 
 In contrast to normal formal grammars, the rule application in L-systems is simultaneous. L-systems can be finite, meaning they that after some number of iterations the only matching rules are $a\to a$. When using non-finite L-systems, rule application is stopped when some condition is reached, for example when a specific number of iterations is reached or when the resulting changes become insignificant.
 
-L-systems can be context-sensitive or context-free. In [@hanan_parametric_1992, ch. 2.2], $(m)L$-systems are defined as L-systems where each rule can access $m$ symbols to the left. The definition of $(m,n)$L-Systems then has the context of m letters to the left and n letters to the right. The classical Lindenmayer system is thus a 0L-system.
+L-systems can be context-sensitive or context-free. @hanan_parametric_1992 [ch. 2.2] defines $(m)L$-systems as L-systems where each rule can access $m$ symbols to the left. The definition of $(m,n)$L-Systems then has the context of m letters to the left and n letters to the right. The classical Lindenmayer system is thus a 0L-system.
 
 #### Parametric L-Systems [@hanan_parametric_1992]
 
@@ -60,9 +60,9 @@ Additionally, external functions can be called from these rules.
 
 #### Applications in procedural city modeling
 
-Originally used for plant modeling, L-systems can be applied to more complex problems with the above extensions. In [@cities2001], they are used extensively for creation of the road network and modeling of building architecture, though [@harmful] shows the road network L-system can easily be replaced by a simpler algorithm using a priority-queue.
+Originally used for plant modeling, L-systems can be applied to more complex problems with the above extensions. In [@cities2001], they are used extensively for creation of the road network and modeling of building architecture, though @harmful shows the road network L-system can easily be replaced by a simpler algorithm using a priority-queue.
 
-Apart from [@coelho_expeditious_2007], the newer relevant documents avoid L-systems, replacing them with custom algorithms or regular grammars in both modeling of architecture and of the street network for various reasons:
+Apart from @coelho_expeditious_2007, the newer relevant documents avoid L-systems, replacing them with custom algorithms or regular grammars in both modeling of architecture and of the street network for various reasons:
 
 > With regard to the application of L-
 systems to buildings, we have to consider that the structure of a
@@ -89,9 +89,9 @@ a sequential application of rules allows for the characterization
 of structure i.e. the spatial distribution of features and components [Prusinkiewicz et al. 2001]. Therefore, CGA Shape is a sequential grammar (similar to Chomsky grammars)
 > -- [@muller_procedural_2006, sec. 2]
 
-## Tensor fields [@chen_interactive_2008] {#sec:tensor-fields}
+### Tensor fields [@chen_interactive_2008] {#sec:tensor-fields}
 
-As defined in [@chen_interactive_2008], a tensor field is a continuous function from every 2-dimensional point $\mathbf p$ to a tensor $T(\mathbf p)$. A tensor is defined as
+As defined by @chen_interactive_2008, a tensor field is a continuous function from every 2-dimensional point $\mathbf p$ to a tensor $T(\mathbf p)$. A tensor is defined as
 
 $$T(p) = R\begin{pmatrix}
 \cos{2 \theta(p)} & \sin{2 \theta(p)} \\
@@ -102,12 +102,12 @@ with $R \geq 0$ and $\theta \in [0,2\pi)$.
 
 There are various basis fields, such as the radial pattern (seen below the river in [@fig:tensor]) and the constant directional pattern (above the river in [@fig:tensor]). These are combined into a single pattern by adding them together while scaling them using exponential fall-off from a given center point [@chen_interactive_2008, ch. 5.2].
 
-Tensor fields can be used to create a street network, based on the observation that most street network have two dominant directions [@vanegas_modelling_2010, pp. 30-31]. This also allows easy visualization of the flow direction beforehand. In [@chen_interactive_2008] they are used in a graphical user interface, to allow interactive modification of the input parameters.
+Tensor fields can be used to create a street network, based on the observation that most street network have two dominant directions [@vanegas_modelling_2010, pp. 30-31]. This also allows easy visualization of the flow direction beforehand. @chen_interactive_2008 use them in a graphical user interface to allow interactive modification of the input parameters.
 
 
-## Gradient Noise [@_terragen;@kelly_survey_2006] {#sec:noise}
+### Gradient Noise [@kelly_survey_2006] {#sec:noise}
 
-Gradient noise created from a map of interpolated random gradients, creating a smooth-looking bumpy surface. It is used in many aspects of content generation in computer graphics to create nature-like effects. It can be used to create or enhance textures and generate terrain [@_terragen]. The simple noise is smooth, but can be summed in multiple scales to create fractal noise as seen in [@fig:perlin].
+Gradient noise is created from a map of interpolated random gradients, creating a smooth-looking bumpy surface. It is used in many aspects of content generation in computer graphics to create nature-like effects. It can be used to create or enhance textures and generate terrain [@_terragen]. The simple noise is smooth, but can be summed in multiple scales to create fractal noise as seen in [@fig:perlin].
 
 A commonly used type of gradient noise is Perlin noise [@perlin_improving_2002], which is easy to calculate and gives good results.
 
@@ -118,14 +118,14 @@ In the context of procedural cities, noise is mostly used to automate the input 
 
 # Procedural City Modeling
 
-The following description is mostly based on [@cities2001]. Differences to other papers are also mentioned, with more detailed descriptions in [@sec:street-approaches].
+The following description is mostly based on @cities2001. Differences to other papers are also mentioned, with more detailed descriptions in [@sec:street-approaches].
 
-## Input parameters [@cities2001, p. 2]
+## Input parameters [@cities2001, ch. 2]
 
-Most city generation methods have some form of user input. In [@cities2001], the input is a set of image maps containing elevation, water and population density plus some numbers like city block size or maximum bridge length. All further steps are completely automatic. In [@chen_interactive_2008], the input maps are similar, but the initial street flow is created based on the map boundaries. The user can then modify the tensor field to change the resulting street graph [@chen_interactive_2008_youtube].
+Most city generation methods have some form of user input. In [@cities2001], the input is a set of image maps containing elevation, water and population density plus some numbers like city block size or maximum bridge length. All further steps are completely automatic. @chen_interactive_2008 use similar input maps, but the initial street flow is created based on the map boundaries. The user can then modify the tensor field to change the resulting street graph as seen in [@chen_interactive_2008_youtube].
 
 
-In [@kelly_citygen_2007], the user draws the primary streets, which is used as the basis for the secondary street network.
+@kelly_citygen_2007 let the user draw the primary streets, which is used as the basis for the secondary street network.
 
 Most of the city modeling systems expect multiple input maps. These are either created from user input, based on real data or also procedurally generated. The commonly used ones are described below.
 
@@ -135,26 +135,26 @@ Water map
 ~ Water is seen as an obstacle, no buildings are allowed here. Streets are build around water in most cases, sometimes a bridge crossing the water is built.
 
 Elevation map
-~ Terrain. Real streets are often aligned to the terrain map to minimize slope. There is also a limit of the maximum slope a street can have. In some cases this map is taken from real world data, in some it is procedurally generated based on noise [@sec:noise;@olsen_realtime_2004;@_terragen].
+~ Terrain. Real streets are often aligned to the terrain map to minimize slope. There is also a limit of the maximum slope a street can have. In some cases this map is taken from real world data, in some it is procedurally generated based on noise (see @sec:noise) [@olsen_realtime_2004;@_terragen].
 
 Vegetation map
-~ Contains vegetation such as forests or parks, used e.g. as obstacles in [@chen_interactive_2008]
+~ Contains vegetation such as forests or parks, used e.g. as obstacles [@chen_interactive_2008]
 
 ### Sociostatistical maps (Population density, Zones, Street patterns)
 
-[@cities2001] expects a population density input map, which is not found in other programs. Most documents have the local road pattern (see [@sec:road-patterns]) as inputs, which in real life is determined by the way the city was built.
+@cities2001 expect a population density input map, which is not found in other programs. Most documents have the local road pattern (see [@sec:road-patterns]) as inputs, which in real life is determined by the way the city was built.
 
 ## Generating a street network
 
 ### Separate street types
 
-Most systems employ at least two street types. [@cities2001] introduces highways and streets, where highways connect population centers and streets fill the areas according to given patterns. [@kelly_citygen_2007] follows the exact same method.
+Most systems employ at least two street types. @cities2001 introduce highways and streets, where highways connect population centers and streets fill the areas according to given patterns. @kelly_citygen_2007 follow the exact same method.
 
-[@chen_interactive_2008] first generates a sparse network of "major roads" and fills the spaces with minor roads. Both major and minor roads follow the same alignment rules. Highways are hand-drawn by the user in this system.
+@chen_interactive_2008 first generate a sparse network of "major roads" and fills the spaces with minor roads. Both major and minor roads follow the same alignment rules. Highways are hand-drawn by the user in this system.
 
 ### Global goals and local constraints
 
-In [@cities2001] a complex L-system is used to produce the road network. The L-system has two external functions: `localConstraints` and `globalGoals`. GlobalGoals is used for the general structure of the roads. For the highways this is done by searching for the nearest population centers and navigating in that direction. Secondarily, highways and also streets are directed according to road patterns, described in [@sec:road-patterns].
+@cities2001 use a complex L-system to produce the road network. The L-system has two external functions: `localConstraints` and `globalGoals`. GlobalGoals is used for the general structure of the roads. For the highways this is done by searching for the nearest population centers and navigating in that direction. Secondarily, highways and also streets are directed according to road patterns, described in [@sec:road-patterns].
 
 LocalConstraints contains more local rules relevant for specific points on the map. In these specific points (described in [@sec:constraints]) the localConstraints function can adjust the parameters of the next iteration, or return FAILED if no there is no solution.
 
