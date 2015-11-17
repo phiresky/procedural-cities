@@ -310,10 +310,6 @@ Streets are built on demand according to a traffic simulation. The traffic simul
 
 This document only describes methods for interactive modification of street layouts and is not further explained here.
 
-<!-- !!todo?
-### Approach by Venegas et al. [-@vanegas_procedural_2012]
-
-... --->
 ## Architecture generation approach overview
 
 ###  Approach by @cities2001
@@ -339,17 +335,5 @@ This paper uses an extension of the split grammar by @wonka_instant_2003, adding
 - @coelho_expeditious_2007 use geospatial L-systems.
 - @weber_interactive_2009 use preconfigured buildings for specific land uses created from parametric shape grammars described by @muller_procedural_2006, replacing buildings as time progresses in the simulation.
 - @subversion use an evolutionary approach that iteratively creates buildings, combining them from breeding pools of the last generation, mutating the structure randomly.
-
-<!--
-more specific? [@muller_procedural_2006]
-
-## Procedural architecture
-## "split grammar" for symmetrical modeling
-
-- extension of shape grammars [@stiny_introduction_1980]
-
-## Texturing
-a) photographic textures
-b) procedural textures-->
 
 # References
