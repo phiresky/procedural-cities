@@ -1,3 +1,6 @@
+
+// code adapted from http://www.tmwhere.com/city_generation.html
+
 import PIXI = require('pixi.js');
 
 import perlin = require('perlin');
@@ -8,11 +11,6 @@ import Quadtree from "./Quadtree";
 interface Bounds {
     x: number, y: number, width: number, height: number, o?: Segment
 }
-/*declare class Quadtree {
-    constructor(bounds: Bounds, max_objects?: number, max_levels?: number);
-    retrieve: (b: Bounds) => Bounds[]
-    insert: (b: Bounds) => void
-}*/
 
 import seedrandom = require('seedrandom');
 seedrandom;
@@ -65,7 +63,6 @@ const math = {
         return a.x * a.x + a.y * a.y;
     },
     angleBetween: function(a: Point, b: Point) {
-        /** @type {number} */
         const angleRad = Math.acos((a.x * b.x + a.y * b.y) / (math.lengthV(a) * math.lengthV(b)));
         return 180 * angleRad / Math.PI;
     },
@@ -129,14 +126,13 @@ const randomWat = function(b: number) {
 };
 const config = {
     mapGeneration: {
-        BUILDING_PLACEMENT_LOOP_LIMIT: 3,
         DEFAULT_SEGMENT_LENGTH: 300, HIGHWAY_SEGMENT_LENGTH: 400, DEFAULT_SEGMENT_WIDTH: 6, HIGHWAY_SEGMENT_WIDTH: 16,
         RANDOM_BRANCH_ANGLE: function() { return randomWat(3) },
         RANDOM_STRAIGHT_ANGLE: function() { return randomWat(15) },
         DEFAULT_BRANCH_PROBABILITY: .4, HIGHWAY_BRANCH_PROBABILITY: .05,
         HIGHWAY_BRANCH_POPULATION_THRESHOLD: .1, NORMAL_BRANCH_POPULATION_THRESHOLD: .1,
         NORMAL_BRANCH_TIME_DELAY_FROM_HIGHWAY: 5, MINIMUM_INTERSECTION_DEVIATION: 30,
-        SEGMENT_COUNT_LIMIT: 4E3, DEBUG_DELAY: 0, ROAD_SNAP_DISTANCE: 50, HEAT_MAP_PIXEL_DIM: 50, DRAW_HEATMAP: !1,
+        SEGMENT_COUNT_LIMIT: 10000, DEBUG_DELAY: 0, ROAD_SNAP_DISTANCE: 50, HEAT_MAP_PIXEL_DIM: 50, DRAW_HEATMAP: !1,
         QUADTREE_PARAMS: { x: -2E4, y: -2E4, width: 4E4, height: 4E4 }, QUADTREE_MAX_OBJECTS: 10, QUADTREE_MAX_LEVELS: 10, DEBUG: !1
     },
     gameLogic: {
@@ -162,10 +158,6 @@ export class Segment {
     cachedDir: number = void 0;
     cachedLength: number = void 0;
     cachedLimits: Bounds;
-
-    static Type = {
-        LINE: 1
-    }
     limits(): Bounds {
         return {
             x: Math.min(this.start.x, this.end.x),
@@ -346,8 +338,6 @@ const segmentFactory = {
         return new Segment(start, end, t, q);
     }
 };
-
-
 const heatmap = {
     popOnRoad: function(r: Road) {
         return (this.populationAt(r.start.x, r.start.y) + this.populationAt(r.end.x, r.end.y)) / 2;
@@ -359,17 +349,13 @@ const heatmap = {
         return Math.pow((value1 * value2 + value3) / 2, 2);
     }
 };
-
-
 function doRoadSegmentsIntersect(r1: Road, r2: Road) {
     return math.doLineSegmentsIntersect(r1.start, r1.end, r2.start, r2.end, true);
 };
-
-
 interface DebugData {
-    snaps?: Point[],
-    intersectionsRadius: Point[],
-    intersections: Intersection[]
+    snaps?: Point[];
+    intersectionsRadius: Point[];
+    intersections: Intersection[];
 }
 const localConstraints = function(segment: Segment, segments: Segment[], qTree: Quadtree, debugData: DebugData) {
     const action = {
@@ -566,9 +552,11 @@ export const generate = function(seed: string) {
     return { segments, qTree, heatmap, debugData };
 };
 
+console.time("generating");
 const stuff = generate("" + Math.random());
+console.timeEnd("generating");
 
-const renderer = PIXI.autoDetectRenderer(1500, 900, { backgroundColor: 0xaaaaaa });
+const renderer = PIXI.autoDetectRenderer(1500, 900, { backgroundColor: 0xaaaaaa, antialias: true });
 document.body.appendChild(renderer.view);
 const graphics = new PIXI.Graphics();
 const stage = new PIXI.Container();
