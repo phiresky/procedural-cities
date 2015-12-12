@@ -38,9 +38,8 @@ export default class Quadtree {
      * @param Integer max_levels		(optional) total max levels inside root Quadtree (default: 4)
      * @param Integer level		(optional) deepth level, required for subnodes
      */
-    constructor(public bounds: Bounds, public max_objects = 10, public max_levels = 4, public level = 0) {
-
-
+    constructor(public bounds: Bounds, public max_objects: number, public max_levels: number, public level?: number) {
+        if(this.level === undefined) this.level = 0;
     };
 
 
@@ -94,7 +93,7 @@ export default class Quadtree {
 	 * @param Object pRect		bounds of the area to be checked, with x, y, width, height
 	 * @return Integer		index of the subnode (0-3), or -1 if pRect cannot completely fit within a subnode and is part of the parent node
 	 */
-    getIndex(pRect:Bounds) {
+    getIndex(pRect: Bounds) {
 
         var index = -1,
             verticalMidpoint = this.bounds.x + (this.bounds.width / 2),
@@ -133,7 +132,7 @@ export default class Quadtree {
 	 * objects to their corresponding subnodes.
 	 * @param Object pRect		bounds of the object to be added, with x, y, width, height
 	 */
-    insert(pRect:Bounds) {
+    insert(pRect: Bounds) {
 
         var i = 0,
             index: number;
@@ -177,7 +176,7 @@ export default class Quadtree {
 	 * @param Object pRect		bounds of the object to be checked, with x, y, width, height
 	 * @Return Array		array with all detected objects
 	 */
-    retrieve(pRect:Bounds) {
+    retrieve(pRect: Bounds) {
 
         var index = this.getIndex(pRect),
             returnObjects = this.objects;

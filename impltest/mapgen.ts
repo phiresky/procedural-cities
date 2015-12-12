@@ -1,18 +1,17 @@
 
 // code adapted from http://www.tmwhere.com/city_generation.html
 
-import PIXI = require('pixi.js');
-
+import * as PIXI from 'pixi.js';
 import perlin = require('perlin');
 const noise = perlin.noise;
-//const Quadtree = quadtree.Quadtree;
-
 import Quadtree from "./Quadtree";
+
+
 interface Bounds {
     x: number, y: number, width: number, height: number, o?: Segment
 }
 
-import seedrandom = require('seedrandom');
+import seedrandom from 'seedrandom';
 seedrandom;
 
 interface Point {
@@ -132,7 +131,7 @@ const config = {
         DEFAULT_BRANCH_PROBABILITY: .4, HIGHWAY_BRANCH_PROBABILITY: .05,
         HIGHWAY_BRANCH_POPULATION_THRESHOLD: .1, NORMAL_BRANCH_POPULATION_THRESHOLD: .1,
         NORMAL_BRANCH_TIME_DELAY_FROM_HIGHWAY: 5, MINIMUM_INTERSECTION_DEVIATION: 30,
-        SEGMENT_COUNT_LIMIT: 10000, DEBUG_DELAY: 0, ROAD_SNAP_DISTANCE: 50, HEAT_MAP_PIXEL_DIM: 50, DRAW_HEATMAP: !1,
+        SEGMENT_COUNT_LIMIT: 3000, DEBUG_DELAY: 0, ROAD_SNAP_DISTANCE: 50, HEAT_MAP_PIXEL_DIM: 50, DRAW_HEATMAP: !1,
         QUADTREE_PARAMS: { x: -2E4, y: -2E4, width: 4E4, height: 4E4 }, QUADTREE_MAX_OBJECTS: 10, QUADTREE_MAX_LEVELS: 10, DEBUG: !1
     },
     gameLogic: {
@@ -551,23 +550,34 @@ export const generate = function(seed: string) {
     console.log(segments.length + " segments generated.");
     return { segments, qTree, heatmap, debugData };
 };
-
 console.time("generating");
-const stuff = generate("" + Math.random());
+const stuff = generate(Math.random()+"bla");
 console.timeEnd("generating");
-
-const renderer = PIXI.autoDetectRenderer(1500, 900, { backgroundColor: 0xaaaaaa, antialias: true });
+const W = 1500, H = 900;
+const bounds = function() {
+    const lim = stuff.segments.map(s => s.limits());
+    return {
+        minx: Math.min(...lim.map(s => s.x)),
+        miny: Math.min(...lim.map(s => s.y)),
+        maxx: Math.max(...lim.map(s => s.x)),
+        maxy: Math.max(...lim.map(s => s.y)),
+    }
+}();
+const renderer = PIXI.autoDetectRenderer(W, H, { backgroundColor: 0xaaaaaa, antialias: true });
 document.body.appendChild(renderer.view);
 const graphics = new PIXI.Graphics();
 const stage = new PIXI.Container();
 stage.addChild(graphics);
 stage.interactive = true;
-stage.position.x = -2000; stage.position.y = -2000;
+const scale = Math.min(W / (bounds.maxx-bounds.minx), H / (bounds.maxy-bounds.miny));
+stage.position.x = - bounds.minx * scale; stage.position.y = - bounds.miny * scale;
+stage.scale.x = scale;
+stage.scale.y = scale;
 stage.hitArea = new PIXI.Rectangle(0, 0, 10000, 10000);
-for (const seg of stuff.segments) {
-    graphics.lineStyle(seg.width, 0x000000, 1);
-    graphics.moveTo(seg.r.start.x / 10 + 2000, seg.r.start.y / 10 + 2000);
-    graphics.lineTo(seg.r.end.x / 10 + 2000, seg.r.end.y / 10 + 2000);
+function renderSegment(seg: Segment) {
+    graphics.lineStyle(seg.width * 10, 0x000000, 1);
+    graphics.moveTo(seg.r.start.x, seg.r.start.y);
+    graphics.lineTo(seg.r.end.x, seg.r.end.y);
 }
 stage.on('mousedown', onDragStart)
     .on('touchstart', onDragStart)
@@ -599,6 +609,8 @@ function onDragMove(event: PIXI.interaction.InteractionEvent) {
 }
 requestAnimationFrame(animate);
 function animate() {
+    for(const seg of stuff.segments.splice(0, 10))
+        renderSegment(seg);
     requestAnimationFrame(animate);
     // render the stage
     renderer.render(stage);
@@ -607,3 +619,4 @@ const glbl = window as any;
 glbl.renderer = renderer;
 glbl.graphics = graphics;
 glbl.stage = stage;
+glbl.bounds = bounds;
