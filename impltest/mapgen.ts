@@ -28,14 +28,17 @@ const randomWat = function(b: number) {
 };
 const config = {
     mapGeneration: {
-        DEFAULT_SEGMENT_LENGTH: 300, HIGHWAY_SEGMENT_LENGTH: 400, DEFAULT_SEGMENT_WIDTH: 6, HIGHWAY_SEGMENT_WIDTH: 16,
+        DEFAULT_SEGMENT_LENGTH: 300, HIGHWAY_SEGMENT_LENGTH: 400,
+        DEFAULT_SEGMENT_WIDTH: 6, HIGHWAY_SEGMENT_WIDTH: 16,
         RANDOM_BRANCH_ANGLE: function() { return randomWat(3) },
         RANDOM_STRAIGHT_ANGLE: function() { return randomWat(15) },
         DEFAULT_BRANCH_PROBABILITY: .4, HIGHWAY_BRANCH_PROBABILITY: .05,
         HIGHWAY_BRANCH_POPULATION_THRESHOLD: .1, NORMAL_BRANCH_POPULATION_THRESHOLD: .1,
         NORMAL_BRANCH_TIME_DELAY_FROM_HIGHWAY: 5, MINIMUM_INTERSECTION_DEVIATION: 30,
-        SEGMENT_COUNT_LIMIT: 10000, DEBUG_DELAY: 0, ROAD_SNAP_DISTANCE: 50, HEAT_MAP_PIXEL_DIM: 50, DRAW_HEATMAP: !1,
-        QUADTREE_PARAMS: { x: -2E4, y: -2E4, width: 4E4, height: 4E4 }, QUADTREE_MAX_OBJECTS: 10, QUADTREE_MAX_LEVELS: 10, DEBUG: !1
+        SEGMENT_COUNT_LIMIT: 5000, DEBUG_DELAY: 0, ROAD_SNAP_DISTANCE: 50,
+        HEAT_MAP_PIXEL_DIM: 50, DRAW_HEATMAP: !1,
+        QUADTREE_PARAMS: { x: -2E4, y: -2E4, width: 4E4, height: 4E4 },
+        QUADTREE_MAX_OBJECTS: 10, QUADTREE_MAX_LEVELS: 10, DEBUG: !1
     },
     gameLogic: {
         SELECT_PAN_THRESHOLD: 50, SELECTION_RANGE: 50, DEFAULT_PICKUP_RANGE: 150,
@@ -509,16 +512,13 @@ function onDragMove(event: PIXI.interaction.InteractionEvent) {
     }
 }
 function zoom(x: number, y: number, direction: number) {
-    const beforeTransform = graphics.toLocal(new PIXI.Point(x, y));
+    const beforeTransform = stage.toLocal(new PIXI.Point(x, y));
     var factor = (1 + direction * 0.1);
-    graphics.scale.x *= factor;
-    graphics.scale.y *= factor;
-    graphics.updateTransform();
-    const afterTransform = graphics.toLocal(new PIXI.Point(x, y));
-
-    graphics.position.x += (afterTransform.x - beforeTransform.x) * graphics.scale.x;
-    graphics.position.y += (afterTransform.y - beforeTransform.y) * graphics.scale.y;
-    graphics.updateTransform();
+    stage.scale.x *= factor;
+    stage.scale.y *= factor;
+    const afterTransform = stage.toLocal(new PIXI.Point(x, y));
+    stage.position.x += (afterTransform.x - beforeTransform.x) * stage.scale.x;
+    stage.position.y += (afterTransform.y - beforeTransform.y) * stage.scale.y;
 }
 window.addEventListener('wheel', e => zoom(e.clientX, e.clientY, -math.sign(e.deltaY)));
 let stuff: GeneratorResult;
@@ -535,13 +535,19 @@ function animate() {
     }
     if (!done) dobounds(stuff.segments, iteration < 100 ? (1 - iteration / 200) : 0.02);
     graphics.clear();
-    /*for(let x = 0; x < W; x += 10) for(let y = 0; y < H; y+=10) {
-        const p1 = stage.worldTransform.apply(new PIXI.Point(x,y));
-        const p2 = stage.worldTransform.apply(new PIXI.Point(x+5,y+5));
-        graphics.beginFill(0xFF0000);
-        graphics.drawRect(p1.x,p1.y, p2.x,p2.y);
+    for(let x = 0; x < W; x += 20) for(let y = 0; y < H; y+=20) {
+        // (x-stage.position.x)/stage.scale.x, (y-stage.position.y)/stage.scale.y
+        const p = stage.toLocal(new PIXI.Point(x,y));
+        const v = 255 - (heatmap.populationAt(p.x, p.y)*127)|0;
+        //const v = heatmap.populationAt(p.x, p.y) > config.mapGeneration.NORMAL_BRANCH_POPULATION_THRESHOLD ? 255 : config.mapGeneration.HIGHWAY_BRANCH_POPULATION_THRESHOLD ?
+        // 180:90;
+        graphics.beginFill(v<<16|v<<8|v);
+        graphics.drawRect(p.x,
+                p.y,
+                20/stage.scale.x,
+                20/stage.scale.y);
         graphics.endFill();
-    }*/
+    }
     for (const seg of stuff.segments) renderSegment(seg);
     if (!done) for (const seg of stuff.priorityQ) renderSegment(seg, 0xFF0000);
 
