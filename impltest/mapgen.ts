@@ -53,7 +53,7 @@ interface Road {
     setEnd: (p: Point) => void;
 }
 interface MetaInfo {
-    highway: boolean, color?: number, severed?: boolean
+    highway?: boolean, color?: number, severed?: boolean
 }
 interface Intersection {
     x: number, t: number, y: number
@@ -78,7 +78,7 @@ export class Segment {
     /** time-step delay before this road is evaluated */
     t: number;
     /** meta-information relevant to global goals */
-    q: MetaInfo
+    q: MetaInfo = {};
     /** links backwards and forwards */
     links = { b: [] as Segment[], f: [] as Segment[] };
     users: number[] = [];
@@ -90,12 +90,12 @@ export class Segment {
     start: Point;
     end: Point;
     static End = { START: "start", END: "end" };
-    constructor(start: Point, end: Point, t = 0, q: MetaInfo = { highway: false }) {
+    constructor(start: Point, end: Point, t = 0, q: MetaInfo) {
         const obj = this;
         this.start = { x: start.x, y: start.y };
         this.end = { x: end.x, y: end.y };
-        if (!q) q = { highway: false };
-        this.width = q.highway ? config.mapGeneration.HIGHWAY_SEGMENT_WIDTH : config.mapGeneration.DEFAULT_SEGMENT_WIDTH;
+        for(const t in q) this.q[t] = q[t];
+        this.width = this.q.highway ? config.mapGeneration.HIGHWAY_SEGMENT_WIDTH : config.mapGeneration.DEFAULT_SEGMENT_WIDTH;
         // representation of road
         this.r = {
             start: start,
@@ -112,8 +112,7 @@ export class Segment {
             }
         };
         this.t = t;
-        this.q = q;
-        [this.maxSpeed, this.capacity] = q.highway ? [1200, 12] : [800, 6];
+        [this.maxSpeed, this.capacity] = this.q.highway ? [1200, 12] : [800, 6];
     }
 
     currentSpeed() {
@@ -533,7 +532,7 @@ function animate() {
             iteration++;
         } else done = true;
     }
-    if (!done) dobounds(stuff.segments, iteration < 100 ? (1 - iteration / 200) : 0.02);
+    if (!done) dobounds(stuff.segments, iteration < 20 ? 1 : 0.02);
     graphics.clear();
     for(let x = 0; x < W; x += 20) for(let y = 0; y < H; y+=20) {
         // (x-stage.position.x)/stage.scale.x, (y-stage.position.y)/stage.scale.y
