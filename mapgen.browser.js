@@ -1,48 +1,78 @@
 (function e(t,n,r){function s(o,u){if(!n[o]){if(!t[o]){var a=typeof require=="function"&&require;if(!u&&a)return a(o,!0);if(i)return i(o,!0);var f=new Error("Cannot find module '"+o+"'");throw f.code="MODULE_NOT_FOUND",f}var l=n[o]={exports:{}};t[o][0].call(l.exports,function(e){var n=t[o][1][e];return s(n?n:e)},l,l.exports,e,t,n,r)}return n[o].exports}var i=typeof require=="function"&&require;for(var o=0;o<r.length;o++)s(r[o]);return s})({1:[function(require,module,exports){
+/*
+ * Javascript Quadtree
+ * @version 1.1.1
+ * @licence MIT
+ * @author Timo Hausmann
+ * https://github.com/timohausmann/quadtree-js/
+ */
 "use strict";
-var Quadtree = (function () {
-    function Quadtree(bounds, max_objects, max_levels, level) {
-        if (max_objects === void 0) { max_objects = 10; }
-        if (max_levels === void 0) { max_levels = 4; }
-        if (level === void 0) { level = 0; }
+class Quadtree {
+    /*
+     * Quadtree Constructor
+     * @param Object bounds		bounds of the node, object with x, y, width, height
+     * @param Integer max_objects		(optional) max objects a node can hold before splitting into 4 subnodes (default: 10)
+     * @param Integer max_levels		(optional) total max levels inside root Quadtree (default: 4)
+     * @param Integer level		(optional) deepth level, required for subnodes
+     */
+    constructor(bounds, max_objects, max_levels, level) {
         this.bounds = bounds;
         this.max_objects = max_objects;
         this.max_levels = max_levels;
         this.level = level;
         this.objects = [];
         this.nodes = [];
+        if (this.level === undefined)
+            this.level = 0;
     }
     ;
-    Quadtree.prototype.split = function () {
+    /*
+     * Split the node into 4 subnodes
+     */
+    split() {
         var nextLevel = this.level + 1, subWidth = Math.round(this.bounds.width / 2), subHeight = Math.round(this.bounds.height / 2), x = Math.round(this.bounds.x), y = Math.round(this.bounds.y);
+        //top right node
         this.nodes[0] = new Quadtree({
             x: x + subWidth,
             y: y,
             width: subWidth,
             height: subHeight
         }, this.max_objects, this.max_levels, nextLevel);
+        //top left node
         this.nodes[1] = new Quadtree({
             x: x,
             y: y,
             width: subWidth,
             height: subHeight
         }, this.max_objects, this.max_levels, nextLevel);
+        //bottom left node
         this.nodes[2] = new Quadtree({
             x: x,
             y: y + subHeight,
             width: subWidth,
             height: subHeight
         }, this.max_objects, this.max_levels, nextLevel);
+        //bottom right node
         this.nodes[3] = new Quadtree({
             x: x + subWidth,
             y: y + subHeight,
             width: subWidth,
             height: subHeight
         }, this.max_objects, this.max_levels, nextLevel);
-    };
+    }
     ;
-    Quadtree.prototype.getIndex = function (pRect) {
-        var index = -1, verticalMidpoint = this.bounds.x + (this.bounds.width / 2), horizontalMidpoint = this.bounds.y + (this.bounds.height / 2), topQuadrant = (pRect.y < horizontalMidpoint && pRect.y + pRect.height < horizontalMidpoint), bottomQuadrant = (pRect.y > horizontalMidpoint);
+    /*
+     * Determine which node the object belongs to
+     * @param Object pRect		bounds of the area to be checked, with x, y, width, height
+     * @return Integer		index of the subnode (0-3), or -1 if pRect cannot completely fit within a subnode and is part of the parent node
+     */
+    getIndex(pRect) {
+        var index = -1, verticalMidpoint = this.bounds.x + (this.bounds.width / 2), horizontalMidpoint = this.bounds.y + (this.bounds.height / 2), 
+        //pRect can completely fit within the top quadrants
+        topQuadrant = (pRect.y < horizontalMidpoint && pRect.y + pRect.height < horizontalMidpoint), 
+        //pRect can completely fit within the bottom quadrants
+        bottomQuadrant = (pRect.y > horizontalMidpoint);
+        //pRect can completely fit within the left quadrants
         if (pRect.x < verticalMidpoint && pRect.x + pRect.width < verticalMidpoint) {
             if (topQuadrant) {
                 index = 1;
@@ -60,10 +90,17 @@ var Quadtree = (function () {
             }
         }
         return index;
-    };
+    }
     ;
-    Quadtree.prototype.insert = function (pRect) {
+    /*
+     * Insert the object into the node. If the node
+     * exceeds the capacity, it will split and add all
+     * objects to their corresponding subnodes.
+     * @param Object pRect		bounds of the object to be added, with x, y, width, height
+     */
+    insert(pRect) {
         var i = 0, index;
+        //if we have subnodes ...
         if (typeof this.nodes[0] !== 'undefined') {
             index = this.getIndex(pRect);
             if (index !== -1) {
@@ -73,9 +110,11 @@ var Quadtree = (function () {
         }
         this.objects.push(pRect);
         if (this.objects.length > this.max_objects && this.level < this.max_levels) {
+            //split if we don't already have subnodes
             if (typeof this.nodes[0] === 'undefined') {
                 this.split();
             }
+            //add all objects to there corresponding subnodes
             while (i < this.objects.length) {
                 index = this.getIndex(this.objects[i]);
                 if (index !== -1) {
@@ -86,11 +125,18 @@ var Quadtree = (function () {
                 }
             }
         }
-    };
+    }
     ;
-    Quadtree.prototype.retrieve = function (pRect) {
+    /*
+     * Return all objects that could collide with the given object
+     * @param Object pRect		bounds of the object to be checked, with x, y, width, height
+     * @Return Array		array with all detected objects
+     */
+    retrieve(pRect) {
         var index = this.getIndex(pRect), returnObjects = this.objects;
+        //if we have subnodes ...
         if (typeof this.nodes[0] !== 'undefined') {
+            //if pRect fits into a subnode ..
             if (index !== -1) {
                 returnObjects = returnObjects.concat(this.nodes[index].retrieve(pRect));
             }
@@ -101,9 +147,12 @@ var Quadtree = (function () {
             }
         }
         return returnObjects;
-    };
+    }
     ;
-    Quadtree.prototype.clear = function () {
+    /*
+     * Clear the quadtree
+     */
+    clear() {
         this.objects = [];
         for (var i = 0; i < this.nodes.length; i = i + 1) {
             if (typeof this.nodes[i] !== 'undefined') {
@@ -111,38 +160,41 @@ var Quadtree = (function () {
             }
         }
         this.nodes = [];
-    };
+    }
     ;
-    return Quadtree;
-}());
+}
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.default = Quadtree;
 
 },{}],2:[function(require,module,exports){
+// code adapted from http://www.tmwhere.com/city_generation.html
 "use strict";
+
+var _slicedToArray = (function () { function sliceIterator(arr, i) { var _arr = []; var _n = true; var _d = false; var _e = undefined; try { for (var _i = arr[Symbol.iterator](), _s; !(_n = (_s = _i.next()).done); _n = true) { _arr.push(_s.value); if (i && _arr.length === i) break; } } catch (err) { _d = true; _e = err; } finally { try { if (!_n && _i["return"]) _i["return"](); } finally { if (_d) throw _e; } } return _arr; } return function (arr, i) { if (Array.isArray(arr)) { return arr; } else if (Symbol.iterator in Object(arr)) { return sliceIterator(arr, i); } else { throw new TypeError("Invalid attempt to destructure non-iterable instance"); } }; })();
+
 var PIXI = require('pixi.js');
 var perlin = require('perlin');
-var noise = perlin.noise;
+const noise = perlin.noise;
 var Quadtree_1 = require("./Quadtree");
-var seedrandom = require('seedrandom');
-seedrandom;
-var math = {
-    subtractPoints: function (p1, p2) { return ({ x: p1.x - p2.x, y: p1.y - p2.y }); },
-    crossProduct: function (a, b) { return a.x * b.y - a.y * b.x; },
-    doLineSegmentsIntersect: function (a, b, p, d, c) {
+var seedrandom_1 = require('seedrandom');
+seedrandom_1.default;
+const math = {
+    subtractPoints: (p1, p2) => ({ x: p1.x - p2.x, y: p1.y - p2.y }),
+    crossProduct: (a, b) => a.x * b.y - a.y * b.x,
+    /** c = approximate match */
+    doLineSegmentsIntersect: (a, b, p, d, c) => {
         b = math.subtractPoints(b, a);
         d = math.subtractPoints(d, p);
         var f = math.crossProduct(math.subtractPoints(p, a), b);
         var k = math.crossProduct(b, d);
-        if (0 == f && 0 == k || 0 == k)
-            return null;
+        if (0 == f && 0 == k || 0 == k) return null;
         f /= k;
-        var e = math.crossProduct(math.subtractPoints(p, a), d) / k;
-        var intersect = c ? 0.001 < e && (0.999 > e && (0.001 < f && 0.999 > f)) : 0 <= e && (1 >= e && (0 <= f && 1 >= f));
+        let e = math.crossProduct(math.subtractPoints(p, a), d) / k;
+        const intersect = c ? 0.001 < e && 0.999 > e && 0.001 < f && 0.999 > f : 0 <= e && 1 >= e && 0 <= f && 1 >= f;
         return intersect ? { x: a.x + e * b.x, y: a.y + e * b.y, t: e } : null;
     },
-    minDegreeDifference: function (val1, val2) {
-        var bottom = Math.abs(val1 - val2) % 180;
+    minDegreeDifference: (val1, val2) => {
+        const bottom = Math.abs(val1 - val2) % 180;
         return Math.min(bottom, Math.abs(bottom - 180));
     },
     equalV: function (a, b) {
@@ -165,7 +217,7 @@ var math = {
         return a.x * a.x + a.y * a.y;
     },
     angleBetween: function (a, b) {
-        var angleRad = Math.acos((a.x * b.x + a.y * b.y) / (math.lengthV(a) * math.lengthV(b)));
+        const angleRad = Math.acos((a.x * b.x + a.y * b.y) / (math.lengthV(a) * math.lengthV(b)));
         return 180 * angleRad / Math.PI;
     },
     sign: function (a) {
@@ -187,7 +239,7 @@ var math = {
     distanceToLine: function (a, b, e) {
         var d = math.subtractPoints(a, b);
         e = math.subtractPoints(e, b);
-        var proj = math.project(d, e);
+        const proj = math.project(d, e);
         var c = proj.projected;
         b = math.addPoints(b, c);
         return {
@@ -215,9 +267,9 @@ var math = {
             x: a.x / b,
             y: a.y / b
         };
-    },
+    }
 };
-var randomWat = function (b) {
+const randomWat = function (b) {
     var d = Math.pow(Math.abs(b), 3);
     var c = 0;
     while (0 === c || Math.random() < Math.pow(Math.abs(c), 3) / d) {
@@ -225,11 +277,15 @@ var randomWat = function (b) {
     }
     return c;
 };
-var config = {
+const config = {
     mapGeneration: {
         DEFAULT_SEGMENT_LENGTH: 300, HIGHWAY_SEGMENT_LENGTH: 400, DEFAULT_SEGMENT_WIDTH: 6, HIGHWAY_SEGMENT_WIDTH: 16,
-        RANDOM_BRANCH_ANGLE: function () { return randomWat(3); },
-        RANDOM_STRAIGHT_ANGLE: function () { return randomWat(15); },
+        RANDOM_BRANCH_ANGLE: function () {
+            return randomWat(3);
+        },
+        RANDOM_STRAIGHT_ANGLE: function () {
+            return randomWat(15);
+        },
         DEFAULT_BRANCH_PROBABILITY: .4, HIGHWAY_BRANCH_PROBABILITY: .05,
         HIGHWAY_BRANCH_POPULATION_THRESHOLD: .1, NORMAL_BRANCH_POPULATION_THRESHOLD: .1,
         NORMAL_BRANCH_TIME_DELAY_FROM_HIGHWAY: 5, MINIMUM_INTERSECTION_DEVIATION: 30,
@@ -242,26 +298,28 @@ var config = {
         MIN_LENGTH_FOR_VEHICLE_ARRIVAL: .1, DEFAULT_CARGO_CAPACITY: 1, MIN_SPEED_PROPORTION: .1
     }
 };
-var Segment = (function () {
-    function Segment(start, end, t, q) {
-        if (t === void 0) { t = 0; }
-        if (q === void 0) { q = { highway: false }; }
+class Segment {
+    constructor(start, end) {
+        let t = arguments.length <= 2 || arguments[2] === undefined ? 0 : arguments[2];
+        let q = arguments.length <= 3 || arguments[3] === undefined ? { highway: false } : arguments[3];
+
         this.limitsRevision = undefined;
         this.cachedDir = void 0;
         this.cachedLength = void 0;
         this.roadRevision = 0;
         this.dirRevision = undefined;
         this.lengthRevision = void 0;
+        /** links backwards and forwards */
         this.links = { b: [], f: [] };
         this.users = [];
         this.id = undefined;
         this.setupBranchLinks = undefined;
-        var obj = this;
+        const obj = this;
         this.start = { x: start.x, y: start.y };
         this.end = { x: end.x, y: end.y };
-        if (!q)
-            q = { highway: false };
+        if (!q) q = { highway: false };
         this.width = q.highway ? config.mapGeneration.HIGHWAY_SEGMENT_WIDTH : config.mapGeneration.DEFAULT_SEGMENT_WIDTH;
+        // representation of road
         this.r = {
             start: start,
             end: end,
@@ -278,10 +336,15 @@ var Segment = (function () {
         };
         this.t = t;
         this.q = q;
-        _a = q.highway ? [1200, 12] : [800, 6], this.maxSpeed = _a[0], this.capacity = _a[1];
-        var _a;
+
+        var _ref = q.highway ? [1200, 12] : [800, 6];
+
+        var _ref2 = _slicedToArray(_ref, 2);
+
+        this.maxSpeed = _ref2[0];
+        this.capacity = _ref2[1];
     }
-    Segment.prototype.limits = function () {
+    limits() {
         return {
             x: Math.min(this.start.x, this.end.x),
             y: Math.min(this.start.y, this.end.y),
@@ -289,116 +352,110 @@ var Segment = (function () {
             height: Math.abs(this.start.y - this.end.y),
             o: this
         };
-    };
-    Segment.prototype.currentSpeed = function () {
+    }
+    currentSpeed() {
+        // subtract 1 from user's length so that a single user can go full speed
         return Math.min(config.gameLogic.MIN_SPEED_PROPORTION, 1 - Math.max(0, this.users.length - 1) / this.capacity) * this.maxSpeed;
-    };
-    ;
-    Segment.prototype.dir = function () {
+    }
+
+    // clockwise direction
+    dir() {
         if (this.dirRevision !== this.roadRevision) {
             this.dirRevision = this.roadRevision;
-            var vector = math.subtractPoints(this.r.end, this.r.start);
+            const vector = math.subtractPoints(this.r.end, this.r.start);
             this.cachedDir = -1 * math.sign(math.crossProduct({ x: 0, y: 1 }, vector)) * math.angleBetween({ x: 0, y: 1 }, vector);
         }
         return this.cachedDir;
-    };
-    ;
-    Segment.prototype.length = function () {
+    }
+
+    length() {
         if (this.lengthRevision !== this.roadRevision) {
             this.lengthRevision = this.roadRevision;
             this.cachedLength = math.length(this.r.start, this.r.end);
         }
         return this.cachedLength;
-    };
-    ;
-    Segment.prototype.debugLinks = function () {
+    }
+
+    debugLinks() {
         this.q.color = 0x00FF00;
-        this.links.b.forEach(function (backwards) { return backwards.q.color = 0xFF0000; });
-        this.links.f.forEach(function (forwards) { return forwards.q.color = 0x0000FF; });
-    };
-    ;
-    Segment.prototype.startIsBackwards = function () {
+        this.links.b.forEach(backwards => backwards.q.color = 0xFF0000);
+        this.links.f.forEach(forwards => forwards.q.color = 0x0000FF);
+    }
+
+    startIsBackwards() {
         if (this.links.b.length > 0) {
             return math.equalV(this.links.b[0].r.start, this.r.start) || math.equalV(this.links.b[0].r.end, this.r.start);
-        }
-        else {
+        } else {
             return math.equalV(this.links.f[0].r.start, this.r.end) || math.equalV(this.links.f[0].r.end, this.r.end);
         }
-    };
-    ;
-    Segment.prototype.cost = function () {
+    }
+
+    cost() {
         return this.length() / this.currentSpeed();
-    };
-    ;
-    Segment.prototype.costTo = function (other, fromFraction) {
-        var segmentEnd = this.endContaining(other);
-        var res = 0.5;
+    }
+
+    costTo(other, fromFraction) {
+        const segmentEnd = this.endContaining(other);
+        let res = 0.5;
         if (fromFraction != null) {
-            if (segmentEnd === Segment.End.START)
-                res = fromFraction;
-            else
-                res = 1 - fromFraction;
+            if (segmentEnd === Segment.End.START) res = fromFraction;else res = 1 - fromFraction;
         }
         return this.cost() * res;
-    };
-    ;
-    Segment.prototype.neighbours = function () {
+    }
+
+    neighbours() {
         return this.links.f.concat(this.links.b);
-    };
-    ;
-    Segment.prototype.endContaining = function (segment) {
+    }
+
+    endContaining(segment) {
         var startBackwards = this.startIsBackwards();
         if (this.links.b.indexOf(segment) !== -1) {
             return startBackwards ? Segment.End.START : Segment.End.END;
-        }
-        else if (this.links.f.indexOf(segment) !== -1) {
+        } else if (this.links.f.indexOf(segment) !== -1) {
             return startBackwards ? Segment.End.END : Segment.End.START;
-        }
-        else {
+        } else {
             return undefined;
         }
-    };
-    ;
-    Segment.prototype.linksForEndContaining = function (segment) {
+    }
+
+    linksForEndContaining(segment) {
         if (this.links.b.indexOf(segment) !== -1) {
             return this.links.b;
-        }
-        else if (this.links.f.indexOf(segment) !== -1) {
+        } else if (this.links.f.indexOf(segment) !== -1) {
             return this.links.f;
-        }
-        else {
+        } else {
             return void 0;
         }
-    };
-    ;
-    Segment.prototype.split = function (point, segment, segmentList, qTree) {
-        var _this = this;
-        var splitPart = segmentFactory.fromExisting(this);
-        var startIsBackwards = this.startIsBackwards();
+    }
+
+    split(point, segment, segmentList, qTree) {
+        const splitPart = segmentFactory.fromExisting(this);
+        const startIsBackwards = this.startIsBackwards();
         segmentList.push(splitPart);
         qTree.insert(splitPart.limits());
         splitPart.r.setEnd(point);
         this.r.setStart(point);
+        //# links are not copied using the preceding factory method.
+        //# copy link array for the split part, keeping references the same
         splitPart.links.b = this.links.b.slice(0);
         splitPart.links.f = this.links.f.slice(0);
-        var firstSplit, fixLinks, secondSplit;
+        let firstSplit, fixLinks, secondSplit;
+        // # determine which links correspond to which end of the split segment
         if (startIsBackwards) {
             firstSplit = splitPart;
             secondSplit = this;
             fixLinks = splitPart.links.b;
-        }
-        else {
+        } else {
             firstSplit = this;
             secondSplit = splitPart;
             fixLinks = splitPart.links.f;
         }
-        fixLinks.forEach(function (link) {
-            var index = link.links.b.indexOf(_this);
+        fixLinks.forEach(link => {
+            var index = link.links.b.indexOf(this);
             if (index !== -1) {
                 link.links.b[index] = splitPart;
-            }
-            else {
-                index = link.links.f.indexOf(_this);
+            } else {
+                index = link.links.f.indexOf(this);
                 link.links.f[index] = splitPart;
             }
         });
@@ -406,22 +463,24 @@ var Segment = (function () {
         secondSplit.links.b = [segment, firstSplit];
         segment.links.f.push(firstSplit);
         segment.links.f.push(secondSplit);
-    };
-    ;
-    Segment.End = { START: "start", END: "end" };
-    return Segment;
-}());
+    }
+}
+Segment.End = { START: "start", END: "end" };
 exports.Segment = Segment;
-var segmentFactory = {
-    fromExisting: function (segment, t, r, q) {
-        if (t === void 0) { t = segment.t; }
-        if (r === void 0) { r = segment.r; }
-        if (q === void 0) { q = segment.q; }
+const segmentFactory = {
+    fromExisting: function (segment) {
+        let t = arguments.length <= 1 || arguments[1] === undefined ? segment.t : arguments[1];
+        let r = arguments.length <= 2 || arguments[2] === undefined ? segment.r : arguments[2];
+        let q = arguments.length <= 3 || arguments[3] === undefined ? segment.q : arguments[3];
+
         return new Segment(r.start, r.end, t, q);
     },
-    usingDirection: function (start, dir, length, t, q) {
-        if (dir === void 0) { dir = 90; }
-        if (length === void 0) { length = config.mapGeneration.DEFAULT_SEGMENT_LENGTH; }
+    usingDirection: function (start) {
+        let dir = arguments.length <= 1 || arguments[1] === undefined ? 90 : arguments[1];
+        let length = arguments.length <= 2 || arguments[2] === undefined ? config.mapGeneration.DEFAULT_SEGMENT_LENGTH : arguments[2];
+        let t = arguments[3];
+        let q = arguments[4];
+
         var end = {
             x: start.x + length * Math.sin(dir * Math.PI / 180),
             y: start.y + length * Math.cos(dir * Math.PI / 180)
@@ -429,14 +488,14 @@ var segmentFactory = {
         return new Segment(start, end, t, q);
     }
 };
-var heatmap = {
+const heatmap = {
     popOnRoad: function (r) {
         return (this.populationAt(r.start.x, r.start.y) + this.populationAt(r.end.x, r.end.y)) / 2;
     },
     populationAt: function (x, y) {
-        var value1 = (noise.simplex2(x / 10000, y / 10000) + 1) / 2;
-        var value2 = (noise.simplex2(x / 20000 + 500, y / 20000 + 500) + 1) / 2;
-        var value3 = (noise.simplex2(x / 20000 + 1000, y / 20000 + 1000) + 1) / 2;
+        const value1 = (noise.simplex2(x / 10000, y / 10000) + 1) / 2;
+        const value2 = (noise.simplex2(x / 20000 + 500, y / 20000 + 500) + 1) / 2;
+        const value3 = (noise.simplex2(x / 20000 + 1000, y / 20000 + 1000) + 1) / 2;
         return Math.pow((value1 * value2 + value3) / 2, 2);
     }
 };
@@ -444,160 +503,167 @@ function doRoadSegmentsIntersect(r1, r2) {
     return math.doLineSegmentsIntersect(r1.start, r1.end, r2.start, r2.end, true);
 }
 ;
-var localConstraints = function (segment, segments, qTree, debugData) {
-    var action = {
+const localConstraints = function (segment, segments, qTree, debugData) {
+    const action = {
         priority: 0,
         func: undefined,
         t: undefined
     };
-    var _loop_1 = function(match) {
-        var other = match.o;
+    for (const match of qTree.retrieve(segment.limits())) {
+        let other = match.o;
+        // intersection check
         if (action.priority <= 4) {
-            var intersection = doRoadSegmentsIntersect(segment.r, other.r);
+            const intersection = doRoadSegmentsIntersect(segment.r, other.r);
             if (intersection) {
                 if (action.t == null || intersection.t < action.t) {
                     action.t = intersection.t;
                     action.priority = 4;
                     action.func = function () {
+                        // if intersecting lines are too similar don't continue
                         if (math.minDegreeDifference(other.dir(), segment.dir()) < config.mapGeneration.MINIMUM_INTERSECTION_DEVIATION) {
                             return false;
                         }
                         other.split(intersection, segment, segments, qTree);
                         segment.r.end = intersection;
                         segment.q.severed = true;
-                        if (debugData.intersections == null)
-                            debugData.intersections = [];
+                        if (debugData.intersections == null) debugData.intersections = [];
                         debugData.intersections.push(intersection);
                         return true;
                     };
                 }
             }
         }
+        //     # snap to crossing within radius check
         if (action.priority <= 3) {
+            //# current segment's start must have been checked to have been created.
+            //# other segment's start must have a corresponding end.
             if (math.length(segment.r.end, other.r.end) <= config.mapGeneration.ROAD_SNAP_DISTANCE) {
-                var point = other.r.end;
+                const point = other.r.end;
                 action.priority = 3;
                 action.func = function () {
                     segment.r.end = point;
                     segment.q.severed = true;
-                    var links = other.startIsBackwards() ? other.links.f : other.links.b;
-                    if (links.some(function (link) { return (math.equalV(link.r.start, segment.r.end) && math.equalV(link.r.end, segment.r.start)) || (math.equalV(link.r.start, segment.r.start) && math.equalV(link.r.end, segment.r.end)); })) {
+                    //  # update links of otherSegment corresponding to other.r.end
+                    const links = other.startIsBackwards() ? other.links.f : other.links.b;
+                    // # check for duplicate lines, don't add if it exists
+                    // # this should be done before links are setup, to avoid having to undo that step
+                    if (links.some(link => math.equalV(link.r.start, segment.r.end) && math.equalV(link.r.end, segment.r.start) || math.equalV(link.r.start, segment.r.start) && math.equalV(link.r.end, segment.r.end))) {
                         return false;
                     }
-                    links.forEach(function (link) {
+                    links.forEach(link => {
+                        //# pick links of remaining segments at junction corresponding to other.r.end
                         link.linksForEndContaining(other).push(segment);
+                        // # add junction segments to snapped segment
                         segment.links.f.push(link);
                     });
                     links.push(segment);
                     segment.links.f.push(other);
-                    if (debugData.snaps == null)
-                        debugData.snaps = [];
+                    if (debugData.snaps == null) debugData.snaps = [];
                     debugData.snaps.push({ x: point.x, y: point.y });
                     return true;
                 };
             }
         }
+        //  intersection within radius check
         if (action.priority <= 2) {
-            var _a = math.distanceToLine(segment.r.end, other.r.start, other.r.end), distance2 = _a.distance2, pointOnLine = _a.pointOnLine, lineProj2 = _a.lineProj2, length2 = _a.length2;
+            var _math$distanceToLine = math.distanceToLine(segment.r.end, other.r.start, other.r.end);
+
+            const distance2 = _math$distanceToLine.distance2;
+            const pointOnLine = _math$distanceToLine.pointOnLine;
+            const lineProj2 = _math$distanceToLine.lineProj2;
+            const length2 = _math$distanceToLine.length2;
+
             if (distance2 < config.mapGeneration.ROAD_SNAP_DISTANCE * config.mapGeneration.ROAD_SNAP_DISTANCE && lineProj2 >= 0 && lineProj2 <= length2) {
-                var point = pointOnLine;
+                const point = pointOnLine;
                 action.priority = 2;
                 action.func = function () {
                     segment.r.end = point;
                     segment.q.severed = true;
+                    // # if intersecting lines are too closely aligned don't continue
                     if (math.minDegreeDifference(other.dir(), segment.dir()) < config.mapGeneration.MINIMUM_INTERSECTION_DEVIATION) {
                         return false;
                     }
                     other.split(point, segment, segments, qTree);
-                    if (debugData.intersectionsRadius == null)
-                        debugData.intersectionsRadius = [];
+                    if (debugData.intersectionsRadius == null) debugData.intersectionsRadius = [];
                     debugData.intersectionsRadius.push({ x: point.x, y: point.y });
                     return true;
                 };
             }
         }
-    };
-    for (var _i = 0, _b = qTree.retrieve(segment.limits()); _i < _b.length; _i++) {
-        var match = _b[_i];
-        _loop_1(match);
     }
-    if (action.func)
-        return action.func();
+    if (action.func) return action.func();
     return true;
 };
-var globalGoals = {
+const globalGoals = {
     generate: function (previousSegment) {
-        var newBranches = [];
+        const newBranches = [];
         if (!previousSegment.q.severed) {
-            var template = function (direction, length, t, q) {
+            const template = function (direction, length, t, q) {
                 return segmentFactory.usingDirection(previousSegment.r.end, direction, length, t, q);
             };
-            var templateContinue = function (direction) { return template(direction, previousSegment.length(), 0, previousSegment.q); };
-            var templateBranch = function (direction) { return template(direction, config.mapGeneration.DEFAULT_SEGMENT_LENGTH, previousSegment.q.highway ? config.mapGeneration.NORMAL_BRANCH_TIME_DELAY_FROM_HIGHWAY : 0, null); };
-            var continueStraight = templateContinue(previousSegment.dir());
-            var straightPop = heatmap.popOnRoad(continueStraight.r);
+            // # used for highways or going straight on a normal branch
+            const templateContinue = direction => template(direction, previousSegment.length(), 0, previousSegment.q);
+            // # not using q, i.e. not highways
+            const templateBranch = direction => template(direction, config.mapGeneration.DEFAULT_SEGMENT_LENGTH, previousSegment.q.highway ? config.mapGeneration.NORMAL_BRANCH_TIME_DELAY_FROM_HIGHWAY : 0, null);
+            const continueStraight = templateContinue(previousSegment.dir());
+            const straightPop = heatmap.popOnRoad(continueStraight.r);
             if (previousSegment.q.highway) {
-                var randomStraight = templateContinue(previousSegment.dir() + config.mapGeneration.RANDOM_STRAIGHT_ANGLE());
-                var randomPop = heatmap.popOnRoad(randomStraight.r);
-                var roadPop;
+                const randomStraight = templateContinue(previousSegment.dir() + config.mapGeneration.RANDOM_STRAIGHT_ANGLE());
+                const randomPop = heatmap.popOnRoad(randomStraight.r);
+                let roadPop;
                 if (randomPop > straightPop) {
                     newBranches.push(randomStraight);
                     roadPop = randomPop;
-                }
-                else {
+                } else {
                     newBranches.push(continueStraight);
                     roadPop = straightPop;
                 }
                 if (roadPop > config.mapGeneration.HIGHWAY_BRANCH_POPULATION_THRESHOLD) {
                     if (Math.random() < config.mapGeneration.HIGHWAY_BRANCH_PROBABILITY) {
-                        var leftHighwayBranch = templateContinue(previousSegment.dir() - 90 + config.mapGeneration.RANDOM_BRANCH_ANGLE());
+                        const leftHighwayBranch = templateContinue(previousSegment.dir() - 90 + config.mapGeneration.RANDOM_BRANCH_ANGLE());
                         newBranches.push(leftHighwayBranch);
-                    }
-                    else if (Math.random() < config.mapGeneration.HIGHWAY_BRANCH_PROBABILITY) {
-                        var rightHighwayBranch = templateContinue(previousSegment.dir() + 90 + config.mapGeneration.RANDOM_BRANCH_ANGLE());
+                    } else if (Math.random() < config.mapGeneration.HIGHWAY_BRANCH_PROBABILITY) {
+                        const rightHighwayBranch = templateContinue(previousSegment.dir() + 90 + config.mapGeneration.RANDOM_BRANCH_ANGLE());
                         newBranches.push(rightHighwayBranch);
                     }
                 }
-            }
-            else if (straightPop > config.mapGeneration.NORMAL_BRANCH_POPULATION_THRESHOLD) {
+            } else if (straightPop > config.mapGeneration.NORMAL_BRANCH_POPULATION_THRESHOLD) {
                 newBranches.push(continueStraight);
             }
             if (straightPop > config.mapGeneration.NORMAL_BRANCH_POPULATION_THRESHOLD) {
                 if (Math.random() < config.mapGeneration.DEFAULT_BRANCH_PROBABILITY) {
-                    var leftBranch = templateBranch(previousSegment.dir() - 90 + config.mapGeneration.RANDOM_BRANCH_ANGLE());
+                    const leftBranch = templateBranch(previousSegment.dir() - 90 + config.mapGeneration.RANDOM_BRANCH_ANGLE());
                     newBranches.push(leftBranch);
-                }
-                else if (Math.random() < config.mapGeneration.DEFAULT_BRANCH_PROBABILITY) {
-                    var rightBranch = templateBranch(previousSegment.dir() + 90 + config.mapGeneration.RANDOM_BRANCH_ANGLE());
+                } else if (Math.random() < config.mapGeneration.DEFAULT_BRANCH_PROBABILITY) {
+                    const rightBranch = templateBranch(previousSegment.dir() + 90 + config.mapGeneration.RANDOM_BRANCH_ANGLE());
                     newBranches.push(rightBranch);
                 }
             }
         }
-        var _loop_2 = function(branch) {
+        for (const branch of newBranches) {
+            // # setup links between each current branch and each existing branch stemming from the previous segment
             branch.setupBranchLinks = function () {
-                previousSegment.links.f.forEach(function (link) {
+                previousSegment.links.f.forEach(link => {
                     branch.links.b.push(link);
                     link.linksForEndContaining(previousSegment).push(branch);
                 });
                 previousSegment.links.f.push(branch);
                 return branch.links.b.push(previousSegment);
             };
-        };
-        for (var _i = 0, newBranches_1 = newBranches; _i < newBranches_1.length; _i++) {
-            var branch = newBranches_1[_i];
-            _loop_2(branch);
         }
         return newBranches;
     }
 };
 exports.generate = function (seed) {
-    var debugData = {};
+    const debugData = {};
     Math.seedrandom(seed);
+    // # NB: this perlin noise library only supports 65536 different seeds
     noise.seed(Math.random());
-    var priorityQ = [];
-    var rootSegment = new Segment({ x: 0, y: 0 }, { x: config.mapGeneration.HIGHWAY_SEGMENT_LENGTH, y: 0 }, 0, { highway: true });
-    var oppositeDirection = segmentFactory.fromExisting(rootSegment);
-    var newEnd = {
+    const priorityQ = [];
+    // # setup first segments in queue
+    const rootSegment = new Segment({ x: 0, y: 0 }, { x: config.mapGeneration.HIGHWAY_SEGMENT_LENGTH, y: 0 }, 0, { highway: true });
+    const oppositeDirection = segmentFactory.fromExisting(rootSegment);
+    const newEnd = {
         x: rootSegment.r.start.x - config.mapGeneration.HIGHWAY_SEGMENT_LENGTH,
         y: oppositeDirection.r.end.y
     };
@@ -606,89 +672,79 @@ exports.generate = function (seed) {
     rootSegment.links.b.push(oppositeDirection);
     priorityQ.push(rootSegment);
     priorityQ.push(oppositeDirection);
-    var segments = [];
-    var qTree = new Quadtree_1.default(config.mapGeneration.QUADTREE_PARAMS, config.mapGeneration.QUADTREE_MAX_OBJECTS, config.mapGeneration.QUADTREE_MAX_LEVELS);
-    var _loop_3 = function() {
-        var minT = Infinity;
-        var minT_i = 0;
-        priorityQ.forEach(function (segment, i) {
+    const segments = [];
+    const qTree = new Quadtree_1.default(config.mapGeneration.QUADTREE_PARAMS, config.mapGeneration.QUADTREE_MAX_OBJECTS, config.mapGeneration.QUADTREE_MAX_LEVELS);
+    while (priorityQ.length > 0 && segments.length < config.mapGeneration.SEGMENT_COUNT_LIMIT) {
+        //     # pop smallest r(ti, ri, qi) from Q (i.e., smallest 't')
+        let minT = Infinity;
+        let minT_i = 0;
+        priorityQ.forEach((segment, i) => {
             if (segment.t < minT) {
                 minT = segment.t;
                 minT_i = i;
             }
         });
-        var minSegment = priorityQ.splice(minT_i, 1)[0];
-        var accepted = localConstraints(minSegment, segments, qTree, debugData);
+        const minSegment = priorityQ.splice(minT_i, 1)[0];
+        const accepted = localConstraints(minSegment, segments, qTree, debugData);
         if (accepted) {
-            if (minSegment.setupBranchLinks != null)
-                minSegment.setupBranchLinks();
+            if (minSegment.setupBranchLinks != null) minSegment.setupBranchLinks();
             segments.push(minSegment);
             qTree.insert(minSegment.limits());
-            globalGoals.generate(minSegment).forEach(function (newSegment) {
+            globalGoals.generate(minSegment).forEach(newSegment => {
                 newSegment.t = minSegment.t + 1 + newSegment.t;
                 priorityQ.push(newSegment);
             });
         }
-    };
-    while (priorityQ.length > 0 && segments.length < config.mapGeneration.SEGMENT_COUNT_LIMIT) {
-        _loop_3();
     }
-    var id = 0;
-    for (var _i = 0, segments_1 = segments; _i < segments_1.length; _i++) {
-        var segment = segments_1[_i];
-        segment.id = id++;
-    }
+    let id = 0;
+    for (const segment of segments) segment.id = id++;
     console.log(segments.length + " segments generated.");
     return { segments: segments, qTree: qTree, heatmap: heatmap, debugData: debugData };
 };
 console.time("generating");
-var stuff = exports.generate(Math.random() + "bla");
+const stuff = exports.generate(Math.random() + "bla");
 console.timeEnd("generating");
-var W = 1500, H = 900;
-var bounds = function () {
-    var lim = stuff.segments.map(function (s) { return s.limits(); });
+const W = 1500,
+      H = 900;
+const bounds = (function () {
+    const lim = stuff.segments.map(s => s.limits());
     return {
-        minx: Math.min.apply(Math, lim.map(function (s) { return s.x; })),
-        miny: Math.min.apply(Math, lim.map(function (s) { return s.y; })),
-        maxx: Math.max.apply(Math, lim.map(function (s) { return s.x; })),
-        maxy: Math.max.apply(Math, lim.map(function (s) { return s.y; })),
+        minx: Math.min(...lim.map(s => s.x)),
+        miny: Math.min(...lim.map(s => s.y)),
+        maxx: Math.max(...lim.map(s => s.x)),
+        maxy: Math.max(...lim.map(s => s.y))
     };
-}();
-var renderer = PIXI.autoDetectRenderer(W, H, { backgroundColor: 0xaaaaaa, antialias: true });
+})();
+const renderer = PIXI.autoDetectRenderer(W, H, { backgroundColor: 0xaaaaaa, antialias: true });
 document.body.appendChild(renderer.view);
-var graphics = new PIXI.Graphics();
-var stage = new PIXI.Container();
+const graphics = new PIXI.Graphics();
+const stage = new PIXI.Container();
 stage.addChild(graphics);
 stage.interactive = true;
-var scale = Math.min(W / (bounds.maxx - bounds.minx), H / (bounds.maxy - bounds.miny));
+const scale = Math.min(W / (bounds.maxx - bounds.minx), H / (bounds.maxy - bounds.miny));
 stage.position.x = -bounds.minx * scale;
 stage.position.y = -bounds.miny * scale;
 stage.scale.x = scale;
 stage.scale.y = scale;
-stage.hitArea = new PIXI.Rectangle(0, 0, 10000, 10000);
+stage.hitArea = new PIXI.Rectangle(-10000, -10000, 20000, 20000);
 function renderSegment(seg) {
     graphics.lineStyle(seg.width * 10, 0x000000, 1);
     graphics.moveTo(seg.r.start.x, seg.r.start.y);
     graphics.lineTo(seg.r.end.x, seg.r.end.y);
 }
-stage.on('mousedown', onDragStart)
-    .on('touchstart', onDragStart)
-    .on('mouseup', onDragEnd)
-    .on('mouseupoutside', onDragEnd)
-    .on('touchend', onDragEnd)
-    .on('touchendoutside', onDragEnd)
-    .on('mousemove', onDragMove)
-    .on('touchmove', onDragMove);
+stage.on('mousedown', onDragStart).on('touchstart', onDragStart).on('mouseup', onDragEnd).on('mouseupoutside', onDragEnd).on('touchend', onDragEnd).on('touchendoutside', onDragEnd).on('mousemove', onDragMove).on('touchmove', onDragMove);
 function onDragStart(event) {
     this.start = { x: event.data.global.x, y: event.data.global.y };
     this.dragging = true;
 }
 function onDragEnd() {
     this.dragging = false;
+    // set the interaction data to null
     this.data = null;
 }
 function onDragMove(event) {
     if (this.dragging) {
+        //var newPosition = this.data.getLocalPosition(this.parent);
         this.position.x += event.data.global.x - this.start.x;
         this.position.y += event.data.global.y - this.start.y;
         this.start = { x: event.data.global.x, y: event.data.global.y };
@@ -696,18 +752,17 @@ function onDragMove(event) {
 }
 requestAnimationFrame(animate);
 function animate() {
-    for (var _i = 0, _a = stuff.segments.splice(0, 10); _i < _a.length; _i++) {
-        var seg = _a[_i];
-        renderSegment(seg);
-    }
+    for (const seg of stuff.segments.splice(0, 10)) renderSegment(seg);
     requestAnimationFrame(animate);
+    // render the stage
     renderer.render(stage);
 }
-var glbl = window;
+const glbl = window;
 glbl.renderer = renderer;
 glbl.graphics = graphics;
 glbl.stage = stage;
 glbl.bounds = bounds;
+
 
 },{"./Quadtree":1,"perlin":7,"pixi.js":101,"seedrandom":127}],3:[function(require,module,exports){
 (function (process,global){

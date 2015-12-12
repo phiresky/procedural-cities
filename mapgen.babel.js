@@ -1,5 +1,8 @@
 // code adapted from http://www.tmwhere.com/city_generation.html
 "use strict";
+
+var _slicedToArray = (function () { function sliceIterator(arr, i) { var _arr = []; var _n = true; var _d = false; var _e = undefined; try { for (var _i = arr[Symbol.iterator](), _s; !(_n = (_s = _i.next()).done); _n = true) { _arr.push(_s.value); if (i && _arr.length === i) break; } } catch (err) { _d = true; _e = err; } finally { try { if (!_n && _i["return"]) _i["return"](); } finally { if (_d) throw _e; } } return _arr; } return function (arr, i) { if (Array.isArray(arr)) { return arr; } else if (Symbol.iterator in Object(arr)) { return sliceIterator(arr, i); } else { throw new TypeError("Invalid attempt to destructure non-iterable instance"); } }; })();
+
 var PIXI = require('pixi.js');
 var perlin = require('perlin');
 const noise = perlin.noise;
@@ -15,11 +18,10 @@ const math = {
         d = math.subtractPoints(d, p);
         var f = math.crossProduct(math.subtractPoints(p, a), b);
         var k = math.crossProduct(b, d);
-        if (0 == f && 0 == k || 0 == k)
-            return null;
+        if (0 == f && 0 == k || 0 == k) return null;
         f /= k;
         let e = math.crossProduct(math.subtractPoints(p, a), d) / k;
-        const intersect = c ? 0.001 < e && (0.999 > e && (0.001 < f && 0.999 > f)) : 0 <= e && (1 >= e && (0 <= f && 1 >= f));
+        const intersect = c ? 0.001 < e && 0.999 > e && 0.001 < f && 0.999 > f : 0 <= e && 1 >= e && 0 <= f && 1 >= f;
         return intersect ? { x: a.x + e * b.x, y: a.y + e * b.y, t: e } : null;
     },
     minDegreeDifference: (val1, val2) => {
@@ -96,7 +98,7 @@ const math = {
             x: a.x / b,
             y: a.y / b
         };
-    },
+    }
 };
 const randomWat = function (b) {
     var d = Math.pow(Math.abs(b), 3);
@@ -109,8 +111,12 @@ const randomWat = function (b) {
 const config = {
     mapGeneration: {
         DEFAULT_SEGMENT_LENGTH: 300, HIGHWAY_SEGMENT_LENGTH: 400, DEFAULT_SEGMENT_WIDTH: 6, HIGHWAY_SEGMENT_WIDTH: 16,
-        RANDOM_BRANCH_ANGLE: function () { return randomWat(3); },
-        RANDOM_STRAIGHT_ANGLE: function () { return randomWat(15); },
+        RANDOM_BRANCH_ANGLE: function () {
+            return randomWat(3);
+        },
+        RANDOM_STRAIGHT_ANGLE: function () {
+            return randomWat(15);
+        },
         DEFAULT_BRANCH_PROBABILITY: .4, HIGHWAY_BRANCH_PROBABILITY: .05,
         HIGHWAY_BRANCH_POPULATION_THRESHOLD: .1, NORMAL_BRANCH_POPULATION_THRESHOLD: .1,
         NORMAL_BRANCH_TIME_DELAY_FROM_HIGHWAY: 5, MINIMUM_INTERSECTION_DEVIATION: 30,
@@ -124,7 +130,10 @@ const config = {
     }
 };
 class Segment {
-    constructor(start, end, t = 0, q = { highway: false }) {
+    constructor(start, end) {
+        let t = arguments.length <= 2 || arguments[2] === undefined ? 0 : arguments[2];
+        let q = arguments.length <= 3 || arguments[3] === undefined ? { highway: false } : arguments[3];
+
         this.limitsRevision = undefined;
         this.cachedDir = void 0;
         this.cachedLength = void 0;
@@ -139,8 +148,7 @@ class Segment {
         const obj = this;
         this.start = { x: start.x, y: start.y };
         this.end = { x: end.x, y: end.y };
-        if (!q)
-            q = { highway: false };
+        if (!q) q = { highway: false };
         this.width = q.highway ? config.mapGeneration.HIGHWAY_SEGMENT_WIDTH : config.mapGeneration.DEFAULT_SEGMENT_WIDTH;
         // representation of road
         this.r = {
@@ -159,7 +167,13 @@ class Segment {
         };
         this.t = t;
         this.q = q;
-        [this.maxSpeed, this.capacity] = q.highway ? [1200, 12] : [800, 6];
+
+        var _ref = q.highway ? [1200, 12] : [800, 6];
+
+        var _ref2 = _slicedToArray(_ref, 2);
+
+        this.maxSpeed = _ref2[0];
+        this.capacity = _ref2[1];
     }
     limits() {
         return {
@@ -174,7 +188,7 @@ class Segment {
         // subtract 1 from user's length so that a single user can go full speed
         return Math.min(config.gameLogic.MIN_SPEED_PROPORTION, 1 - Math.max(0, this.users.length - 1) / this.capacity) * this.maxSpeed;
     }
-    ;
+
     // clockwise direction
     dir() {
         if (this.dirRevision !== this.roadRevision) {
@@ -184,7 +198,7 @@ class Segment {
         }
         return this.cachedDir;
     }
-    ;
+
     length() {
         if (this.lengthRevision !== this.roadRevision) {
             this.lengthRevision = this.roadRevision;
@@ -192,67 +206,59 @@ class Segment {
         }
         return this.cachedLength;
     }
-    ;
+
     debugLinks() {
         this.q.color = 0x00FF00;
         this.links.b.forEach(backwards => backwards.q.color = 0xFF0000);
         this.links.f.forEach(forwards => forwards.q.color = 0x0000FF);
     }
-    ;
+
     startIsBackwards() {
         if (this.links.b.length > 0) {
             return math.equalV(this.links.b[0].r.start, this.r.start) || math.equalV(this.links.b[0].r.end, this.r.start);
-        }
-        else {
+        } else {
             return math.equalV(this.links.f[0].r.start, this.r.end) || math.equalV(this.links.f[0].r.end, this.r.end);
         }
     }
-    ;
+
     cost() {
         return this.length() / this.currentSpeed();
     }
-    ;
+
     costTo(other, fromFraction) {
         const segmentEnd = this.endContaining(other);
         let res = 0.5;
         if (fromFraction != null) {
-            if (segmentEnd === Segment.End.START)
-                res = fromFraction;
-            else
-                res = 1 - fromFraction;
+            if (segmentEnd === Segment.End.START) res = fromFraction;else res = 1 - fromFraction;
         }
         return this.cost() * res;
     }
-    ;
+
     neighbours() {
         return this.links.f.concat(this.links.b);
     }
-    ;
+
     endContaining(segment) {
         var startBackwards = this.startIsBackwards();
         if (this.links.b.indexOf(segment) !== -1) {
             return startBackwards ? Segment.End.START : Segment.End.END;
-        }
-        else if (this.links.f.indexOf(segment) !== -1) {
+        } else if (this.links.f.indexOf(segment) !== -1) {
             return startBackwards ? Segment.End.END : Segment.End.START;
-        }
-        else {
+        } else {
             return undefined;
         }
     }
-    ;
+
     linksForEndContaining(segment) {
         if (this.links.b.indexOf(segment) !== -1) {
             return this.links.b;
-        }
-        else if (this.links.f.indexOf(segment) !== -1) {
+        } else if (this.links.f.indexOf(segment) !== -1) {
             return this.links.f;
-        }
-        else {
+        } else {
             return void 0;
         }
     }
-    ;
+
     split(point, segment, segmentList, qTree) {
         const splitPart = segmentFactory.fromExisting(this);
         const startIsBackwards = this.startIsBackwards();
@@ -270,8 +276,7 @@ class Segment {
             firstSplit = splitPart;
             secondSplit = this;
             fixLinks = splitPart.links.b;
-        }
-        else {
+        } else {
             firstSplit = this;
             secondSplit = splitPart;
             fixLinks = splitPart.links.f;
@@ -280,8 +285,7 @@ class Segment {
             var index = link.links.b.indexOf(this);
             if (index !== -1) {
                 link.links.b[index] = splitPart;
-            }
-            else {
+            } else {
                 index = link.links.f.indexOf(this);
                 link.links.f[index] = splitPart;
             }
@@ -291,15 +295,23 @@ class Segment {
         segment.links.f.push(firstSplit);
         segment.links.f.push(secondSplit);
     }
-    ;
 }
 Segment.End = { START: "start", END: "end" };
 exports.Segment = Segment;
 const segmentFactory = {
-    fromExisting: function (segment, t = segment.t, r = segment.r, q = segment.q) {
+    fromExisting: function (segment) {
+        let t = arguments.length <= 1 || arguments[1] === undefined ? segment.t : arguments[1];
+        let r = arguments.length <= 2 || arguments[2] === undefined ? segment.r : arguments[2];
+        let q = arguments.length <= 3 || arguments[3] === undefined ? segment.q : arguments[3];
+
         return new Segment(r.start, r.end, t, q);
     },
-    usingDirection: function (start, dir = 90, length = config.mapGeneration.DEFAULT_SEGMENT_LENGTH, t, q) {
+    usingDirection: function (start) {
+        let dir = arguments.length <= 1 || arguments[1] === undefined ? 90 : arguments[1];
+        let length = arguments.length <= 2 || arguments[2] === undefined ? config.mapGeneration.DEFAULT_SEGMENT_LENGTH : arguments[2];
+        let t = arguments[3];
+        let q = arguments[4];
+
         var end = {
             x: start.x + length * Math.sin(dir * Math.PI / 180),
             y: start.y + length * Math.cos(dir * Math.PI / 180)
@@ -345,8 +357,7 @@ const localConstraints = function (segment, segments, qTree, debugData) {
                         other.split(intersection, segment, segments, qTree);
                         segment.r.end = intersection;
                         segment.q.severed = true;
-                        if (debugData.intersections == null)
-                            debugData.intersections = [];
+                        if (debugData.intersections == null) debugData.intersections = [];
                         debugData.intersections.push(intersection);
                         return true;
                     };
@@ -367,7 +378,7 @@ const localConstraints = function (segment, segments, qTree, debugData) {
                     const links = other.startIsBackwards() ? other.links.f : other.links.b;
                     // # check for duplicate lines, don't add if it exists
                     // # this should be done before links are setup, to avoid having to undo that step
-                    if (links.some(link => (math.equalV(link.r.start, segment.r.end) && math.equalV(link.r.end, segment.r.start)) || (math.equalV(link.r.start, segment.r.start) && math.equalV(link.r.end, segment.r.end)))) {
+                    if (links.some(link => math.equalV(link.r.start, segment.r.end) && math.equalV(link.r.end, segment.r.start) || math.equalV(link.r.start, segment.r.start) && math.equalV(link.r.end, segment.r.end))) {
                         return false;
                     }
                     links.forEach(link => {
@@ -378,8 +389,7 @@ const localConstraints = function (segment, segments, qTree, debugData) {
                     });
                     links.push(segment);
                     segment.links.f.push(other);
-                    if (debugData.snaps == null)
-                        debugData.snaps = [];
+                    if (debugData.snaps == null) debugData.snaps = [];
                     debugData.snaps.push({ x: point.x, y: point.y });
                     return true;
                 };
@@ -387,7 +397,13 @@ const localConstraints = function (segment, segments, qTree, debugData) {
         }
         //  intersection within radius check
         if (action.priority <= 2) {
-            const { distance2, pointOnLine, lineProj2, length2 } = math.distanceToLine(segment.r.end, other.r.start, other.r.end);
+            var _math$distanceToLine = math.distanceToLine(segment.r.end, other.r.start, other.r.end);
+
+            const distance2 = _math$distanceToLine.distance2;
+            const pointOnLine = _math$distanceToLine.pointOnLine;
+            const lineProj2 = _math$distanceToLine.lineProj2;
+            const length2 = _math$distanceToLine.length2;
+
             if (distance2 < config.mapGeneration.ROAD_SNAP_DISTANCE * config.mapGeneration.ROAD_SNAP_DISTANCE && lineProj2 >= 0 && lineProj2 <= length2) {
                 const point = pointOnLine;
                 action.priority = 2;
@@ -399,16 +415,14 @@ const localConstraints = function (segment, segments, qTree, debugData) {
                         return false;
                     }
                     other.split(point, segment, segments, qTree);
-                    if (debugData.intersectionsRadius == null)
-                        debugData.intersectionsRadius = [];
+                    if (debugData.intersectionsRadius == null) debugData.intersectionsRadius = [];
                     debugData.intersectionsRadius.push({ x: point.x, y: point.y });
                     return true;
                 };
             }
         }
     }
-    if (action.func)
-        return action.func();
+    if (action.func) return action.func();
     return true;
 };
 const globalGoals = {
@@ -419,9 +433,9 @@ const globalGoals = {
                 return segmentFactory.usingDirection(previousSegment.r.end, direction, length, t, q);
             };
             // # used for highways or going straight on a normal branch
-            const templateContinue = (direction) => template(direction, previousSegment.length(), 0, previousSegment.q);
+            const templateContinue = direction => template(direction, previousSegment.length(), 0, previousSegment.q);
             // # not using q, i.e. not highways
-            const templateBranch = (direction) => template(direction, config.mapGeneration.DEFAULT_SEGMENT_LENGTH, previousSegment.q.highway ? config.mapGeneration.NORMAL_BRANCH_TIME_DELAY_FROM_HIGHWAY : 0, null);
+            const templateBranch = direction => template(direction, config.mapGeneration.DEFAULT_SEGMENT_LENGTH, previousSegment.q.highway ? config.mapGeneration.NORMAL_BRANCH_TIME_DELAY_FROM_HIGHWAY : 0, null);
             const continueStraight = templateContinue(previousSegment.dir());
             const straightPop = heatmap.popOnRoad(continueStraight.r);
             if (previousSegment.q.highway) {
@@ -431,8 +445,7 @@ const globalGoals = {
                 if (randomPop > straightPop) {
                     newBranches.push(randomStraight);
                     roadPop = randomPop;
-                }
-                else {
+                } else {
                     newBranches.push(continueStraight);
                     roadPop = straightPop;
                 }
@@ -440,22 +453,19 @@ const globalGoals = {
                     if (Math.random() < config.mapGeneration.HIGHWAY_BRANCH_PROBABILITY) {
                         const leftHighwayBranch = templateContinue(previousSegment.dir() - 90 + config.mapGeneration.RANDOM_BRANCH_ANGLE());
                         newBranches.push(leftHighwayBranch);
-                    }
-                    else if (Math.random() < config.mapGeneration.HIGHWAY_BRANCH_PROBABILITY) {
+                    } else if (Math.random() < config.mapGeneration.HIGHWAY_BRANCH_PROBABILITY) {
                         const rightHighwayBranch = templateContinue(previousSegment.dir() + 90 + config.mapGeneration.RANDOM_BRANCH_ANGLE());
                         newBranches.push(rightHighwayBranch);
                     }
                 }
-            }
-            else if (straightPop > config.mapGeneration.NORMAL_BRANCH_POPULATION_THRESHOLD) {
+            } else if (straightPop > config.mapGeneration.NORMAL_BRANCH_POPULATION_THRESHOLD) {
                 newBranches.push(continueStraight);
             }
             if (straightPop > config.mapGeneration.NORMAL_BRANCH_POPULATION_THRESHOLD) {
                 if (Math.random() < config.mapGeneration.DEFAULT_BRANCH_PROBABILITY) {
                     const leftBranch = templateBranch(previousSegment.dir() - 90 + config.mapGeneration.RANDOM_BRANCH_ANGLE());
                     newBranches.push(leftBranch);
-                }
-                else if (Math.random() < config.mapGeneration.DEFAULT_BRANCH_PROBABILITY) {
+                } else if (Math.random() < config.mapGeneration.DEFAULT_BRANCH_PROBABILITY) {
                     const rightBranch = templateBranch(previousSegment.dir() + 90 + config.mapGeneration.RANDOM_BRANCH_ANGLE());
                     newBranches.push(rightBranch);
                 }
@@ -508,8 +518,7 @@ exports.generate = function (seed) {
         const minSegment = priorityQ.splice(minT_i, 1)[0];
         const accepted = localConstraints(minSegment, segments, qTree, debugData);
         if (accepted) {
-            if (minSegment.setupBranchLinks != null)
-                minSegment.setupBranchLinks();
+            if (minSegment.setupBranchLinks != null) minSegment.setupBranchLinks();
             segments.push(minSegment);
             qTree.insert(minSegment.limits());
             globalGoals.generate(minSegment).forEach(newSegment => {
@@ -519,24 +528,24 @@ exports.generate = function (seed) {
         }
     }
     let id = 0;
-    for (const segment of segments)
-        segment.id = id++;
+    for (const segment of segments) segment.id = id++;
     console.log(segments.length + " segments generated.");
     return { segments: segments, qTree: qTree, heatmap: heatmap, debugData: debugData };
 };
 console.time("generating");
 const stuff = exports.generate(Math.random() + "bla");
 console.timeEnd("generating");
-const W = 1500, H = 900;
-const bounds = function () {
+const W = 1500,
+      H = 900;
+const bounds = (function () {
     const lim = stuff.segments.map(s => s.limits());
     return {
         minx: Math.min(...lim.map(s => s.x)),
         miny: Math.min(...lim.map(s => s.y)),
         maxx: Math.max(...lim.map(s => s.x)),
-        maxy: Math.max(...lim.map(s => s.y)),
+        maxy: Math.max(...lim.map(s => s.y))
     };
-}();
+})();
 const renderer = PIXI.autoDetectRenderer(W, H, { backgroundColor: 0xaaaaaa, antialias: true });
 document.body.appendChild(renderer.view);
 const graphics = new PIXI.Graphics();
@@ -554,14 +563,7 @@ function renderSegment(seg) {
     graphics.moveTo(seg.r.start.x, seg.r.start.y);
     graphics.lineTo(seg.r.end.x, seg.r.end.y);
 }
-stage.on('mousedown', onDragStart)
-    .on('touchstart', onDragStart)
-    .on('mouseup', onDragEnd)
-    .on('mouseupoutside', onDragEnd)
-    .on('touchend', onDragEnd)
-    .on('touchendoutside', onDragEnd)
-    .on('mousemove', onDragMove)
-    .on('touchmove', onDragMove);
+stage.on('mousedown', onDragStart).on('touchstart', onDragStart).on('mouseup', onDragEnd).on('mouseupoutside', onDragEnd).on('touchend', onDragEnd).on('touchendoutside', onDragEnd).on('mousemove', onDragMove).on('touchmove', onDragMove);
 function onDragStart(event) {
     this.start = { x: event.data.global.x, y: event.data.global.y };
     this.dragging = true;
@@ -581,8 +583,7 @@ function onDragMove(event) {
 }
 requestAnimationFrame(animate);
 function animate() {
-    for (const seg of stuff.segments.splice(0, 10))
-        renderSegment(seg);
+    for (const seg of stuff.segments.splice(0, 10)) renderSegment(seg);
     requestAnimationFrame(animate);
     // render the stage
     renderer.render(stage);
@@ -592,3 +593,4 @@ glbl.renderer = renderer;
 glbl.graphics = graphics;
 glbl.stage = stage;
 glbl.bounds = bounds;
+
