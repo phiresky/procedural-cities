@@ -113,6 +113,9 @@ const math = {
             y: a.y / b
         };
     },
+    lerp: function(a: number, b: number, x: number) {
+        return a * (1 - x) + b * x;
+    }
 };
 
 const randomWat = function(b: number) {
@@ -131,7 +134,7 @@ const config = {
         DEFAULT_BRANCH_PROBABILITY: .4, HIGHWAY_BRANCH_PROBABILITY: .05,
         HIGHWAY_BRANCH_POPULATION_THRESHOLD: .1, NORMAL_BRANCH_POPULATION_THRESHOLD: .1,
         NORMAL_BRANCH_TIME_DELAY_FROM_HIGHWAY: 5, MINIMUM_INTERSECTION_DEVIATION: 30,
-        SEGMENT_COUNT_LIMIT: 3000, DEBUG_DELAY: 0, ROAD_SNAP_DISTANCE: 50, HEAT_MAP_PIXEL_DIM: 50, DRAW_HEATMAP: !1,
+        SEGMENT_COUNT_LIMIT: 10000, DEBUG_DELAY: 0, ROAD_SNAP_DISTANCE: 50, HEAT_MAP_PIXEL_DIM: 50, DRAW_HEATMAP: !1,
         QUADTREE_PARAMS: { x: -2E4, y: -2E4, width: 4E4, height: 4E4 }, QUADTREE_MAX_OBJECTS: 10, QUADTREE_MAX_LEVELS: 10, DEBUG: !1
     },
     gameLogic: {
@@ -502,8 +505,10 @@ const globalGoals = {
         return newBranches;
     }
 };
-
-export const generate = function(seed: string) {
+interface GeneratorResult {
+    segments: Segment[]; priorityQ: Segment[];
+}
+export const generate = function* (seed: string): Iterator<GeneratorResult> {
     const debugData = {};
     Math.seedrandom(seed);
     // # NB: this perlin noise library only supports 65536 different seeds
@@ -543,6 +548,7 @@ export const generate = function(seed: string) {
                 newSegment.t = minSegment.t + 1 + newSegment.t;
                 priorityQ.push(newSegment);
             });
+            yield { segments, priorityQ };
         }
     }
     let id = 0;
@@ -550,32 +556,35 @@ export const generate = function(seed: string) {
     console.log(segments.length + " segments generated.");
     return { segments, qTree, heatmap, debugData };
 };
-console.time("generating");
-const stuff = generate(Math.random()+"bla");
-console.timeEnd("generating");
-const W = 1500, H = 900;
-const bounds = function() {
-    const lim = stuff.segments.map(s => s.limits());
-    return {
+const seed = Math.random() + "bla";
+console.log("generating with seed " + seed);
+const generator = generate(seed);
+let W = window.innerWidth, H = window.innerHeight;
+const dobounds = function(segs: Segment[], interpolate = 1) {
+    const lim = segs.map(s => s.limits());
+    const bounds = {
         minx: Math.min(...lim.map(s => s.x)),
         miny: Math.min(...lim.map(s => s.y)),
         maxx: Math.max(...lim.map(s => s.x)),
         maxy: Math.max(...lim.map(s => s.y)),
     }
-}();
-const renderer = PIXI.autoDetectRenderer(W, H, { backgroundColor: 0xaaaaaa, antialias: true });
+    const scale = Math.min(W / (bounds.maxx - bounds.minx), H / (bounds.maxy - bounds.miny)) * 0.9;
+    const npx = - (bounds.maxx + bounds.minx) / 2 * scale + W / 2;
+    const npy = - (bounds.maxy + bounds.miny) / 2 * scale + H / 2;
+    stage.position.x = math.lerp(stage.position.x, npx, interpolate);
+    stage.position.y = math.lerp(stage.position.y, npy, interpolate);
+    stage.scale.x = math.lerp(stage.scale.x, scale, interpolate);
+    stage.scale.y = math.lerp(stage.scale.y, scale, interpolate);
+};
+const renderer = PIXI.autoDetectRenderer(W, H, { backgroundColor: 0xeeeeee, antialias: true });
 document.body.appendChild(renderer.view);
 const graphics = new PIXI.Graphics();
 const stage = new PIXI.Container();
 stage.addChild(graphics);
 stage.interactive = true;
-const scale = Math.min(W / (bounds.maxx-bounds.minx), H / (bounds.maxy-bounds.miny));
-stage.position.x = - bounds.minx * scale; stage.position.y = - bounds.miny * scale;
-stage.scale.x = scale;
-stage.scale.y = scale;
-stage.hitArea = new PIXI.Rectangle(0, 0, 10000, 10000);
-function renderSegment(seg: Segment) {
-    graphics.lineStyle(seg.width * 10, 0x000000, 1);
+stage.hitArea = new PIXI.Rectangle(-1e5, -1e5, 2e5, 2e5);
+function renderSegment(seg: Segment, color = 0x000000) {
+    graphics.lineStyle(seg.width * 10, color, 1);
     graphics.moveTo(seg.r.start.x, seg.r.start.y);
     graphics.lineTo(seg.r.end.x, seg.r.end.y);
 }
@@ -591,32 +600,59 @@ stage.on('mousedown', onDragStart)
     .on('touchmove', onDragMove);
 
 function onDragStart(event: PIXI.interaction.InteractionEvent) {
-    this.start = { x: event.data.global.x, y: event.data.global.y };
-    this.dragging = true;
+    this.dragstart = { x: event.data.global.x, y: event.data.global.y };
 }
-function onDragEnd() {
-    this.dragging = false;
-    // set the interaction data to null
-    this.data = null;
-}
+function onDragEnd() { this.dragstart = null; }
 function onDragMove(event: PIXI.interaction.InteractionEvent) {
-    if (this.dragging) {
-        //var newPosition = this.data.getLocalPosition(this.parent);
-        this.position.x += event.data.global.x - this.start.x;
-        this.position.y += event.data.global.y - this.start.y;
-        this.start = { x: event.data.global.x, y: event.data.global.y };
+    if (this.dragstart) {
+        this.position.x += event.data.global.x - this.dragstart.x;
+        this.position.y += event.data.global.y - this.dragstart.y;
+        this.dragstart = { x: event.data.global.x, y: event.data.global.y };
     }
 }
+function zoom(x: number, y: number, direction: number) {
+    const beforeTransform = graphics.toLocal(new PIXI.Point(x, y));
+    var factor = (1 + direction * 0.1);
+    graphics.scale.x *= factor;
+    graphics.scale.y *= factor;
+    graphics.updateTransform();
+    const afterTransform = graphics.toLocal(new PIXI.Point(x, y));
+
+    graphics.position.x += (afterTransform.x - beforeTransform.x) * graphics.scale.x;
+    graphics.position.y += (afterTransform.y - beforeTransform.y) * graphics.scale.y;
+    graphics.updateTransform();
+}
+window.addEventListener('wheel', e => zoom(e.clientX, e.clientY, -math.sign(e.deltaY)));
+let stuff: GeneratorResult;
+let done = false;
 requestAnimationFrame(animate);
+let iteration = 0;
 function animate() {
-    for(const seg of stuff.segments.splice(0, 10))
-        renderSegment(seg);
+    for (let i = 0; i < (iteration / 100) + 1; i++) {
+        const iter = generator.next();
+        if (!iter.done) {
+            stuff = iter.value;
+            iteration++;
+        } else done = true;
+    }
+    if (!done) dobounds(stuff.segments, iteration < 100 ? (1 - iteration / 200) : 0.02);
+    graphics.clear();
+    for (const seg of stuff.segments) renderSegment(seg);
+    if (!done) for (const seg of stuff.priorityQ) renderSegment(seg, 0xFF0000);
     requestAnimationFrame(animate);
-    // render the stage
     renderer.render(stage);
+    iteration++;
 }
 const glbl = window as any;
 glbl.renderer = renderer;
 glbl.graphics = graphics;
 glbl.stage = stage;
-glbl.bounds = bounds;
+glbl.bounds = dobounds;
+
+function onResize() {
+    W = window.innerWidth;
+    H = window.innerHeight;
+    renderer.resize(W, H);
+}
+
+window.addEventListener("resize", onResize);
