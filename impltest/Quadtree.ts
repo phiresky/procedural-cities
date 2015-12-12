@@ -25,12 +25,13 @@ LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION
 OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION
 WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 */
-interface Bounds {
+export interface Bounds {
     x: number, y: number, width: number, height: number
 }
-export default class Quadtree {
+export class Quadtree<T> {
     objects = [] as Bounds[];
-    nodes = [] as Quadtree[];
+    objectsO = [] as T[];
+    nodes = [] as Quadtree<T>[];
     /*
      * Quadtree Constructor
      * @param Object bounds		bounds of the node, object with x, y, width, height
@@ -39,7 +40,7 @@ export default class Quadtree {
      * @param Integer level		(optional) deepth level, required for subnodes
      */
     constructor(public bounds: Bounds, public max_objects: number, public max_levels: number, public level?: number) {
-        if(this.level === undefined) this.level = 0;
+        if (this.level === undefined) this.level = 0;
     };
 
 
@@ -47,43 +48,29 @@ export default class Quadtree {
 	 * Split the node into 4 subnodes
 	 */
     split() {
-
-        var nextLevel = this.level + 1,
-            subWidth = Math.round(this.bounds.width / 2),
-            subHeight = Math.round(this.bounds.height / 2),
+        const nextLevel = this.level + 1,
+            width = Math.round(this.bounds.width / 2),
+            height = Math.round(this.bounds.height / 2),
             x = Math.round(this.bounds.x),
             y = Math.round(this.bounds.y);
-
         //top right node
-        this.nodes[0] = new Quadtree({
-            x: x + subWidth,
-            y: y,
-            width: subWidth,
-            height: subHeight
+        this.nodes[0] = new Quadtree<T>({
+            x: x + width, y, width, height
         }, this.max_objects, this.max_levels, nextLevel);
 
         //top left node
-        this.nodes[1] = new Quadtree({
-            x: x,
-            y: y,
-            width: subWidth,
-            height: subHeight
+        this.nodes[1] = new Quadtree<T>({
+            x, y, width, height
         }, this.max_objects, this.max_levels, nextLevel);
 
         //bottom left node
-        this.nodes[2] = new Quadtree({
-            x: x,
-            y: y + subHeight,
-            width: subWidth,
-            height: subHeight
+        this.nodes[2] = new Quadtree<T>({
+            x, y: y + height, width, height
         }, this.max_objects, this.max_levels, nextLevel);
 
         //bottom right node
-        this.nodes[3] = new Quadtree({
-            x: x + subWidth,
-            y: y + subHeight,
-            width: subWidth,
-            height: subHeight
+        this.nodes[3] = new Quadtree<T>({
+            x: x + width, y: y + height, width, height
         }, this.max_objects, this.max_levels, nextLevel);
     };
 
@@ -94,7 +81,6 @@ export default class Quadtree {
 	 * @return Integer		index of the subnode (0-3), or -1 if pRect cannot completely fit within a subnode and is part of the parent node
 	 */
     getIndex(pRect: Bounds) {
-
         var index = -1,
             verticalMidpoint = this.bounds.x + (this.bounds.width / 2),
             horizontalMidpoint = this.bounds.y + (this.bounds.height / 2),
@@ -132,22 +118,21 @@ export default class Quadtree {
 	 * objects to their corresponding subnodes.
 	 * @param Object pRect		bounds of the object to be added, with x, y, width, height
 	 */
-    insert(pRect: Bounds) {
-
-        var i = 0,
-            index: number;
+    insert(pRect: Bounds, obj: T) {
+        var i = 0, index: number;
 
         //if we have subnodes ...
         if (typeof this.nodes[0] !== 'undefined') {
             index = this.getIndex(pRect);
 
             if (index !== -1) {
-                this.nodes[index].insert(pRect);
+                this.nodes[index].insert(pRect, obj);
                 return;
             }
         }
 
         this.objects.push(pRect);
+        this.objectsO.push(obj);
 
         if (this.objects.length > this.max_objects && this.level < this.max_levels) {
 
@@ -162,7 +147,7 @@ export default class Quadtree {
                 index = this.getIndex(this.objects[i]);
 
                 if (index !== -1) {
-                    this.nodes[index].insert(this.objects.splice(i, 1)[0]);
+                    this.nodes[index].insert(this.objects.splice(i, 1)[0], this.objectsO.splice(i, 1)[0]);
                 } else {
                     i = i + 1;
                 }
@@ -177,13 +162,11 @@ export default class Quadtree {
 	 * @Return Array		array with all detected objects
 	 */
     retrieve(pRect: Bounds) {
-
         var index = this.getIndex(pRect),
-            returnObjects = this.objects;
+            returnObjects = this.objectsO;
 
         //if we have subnodes ...
         if (typeof this.nodes[0] !== 'undefined') {
-
             //if pRect fits into a subnode ..
             if (index !== -1) {
                 returnObjects = returnObjects.concat(this.nodes[index].retrieve(pRect));
@@ -205,6 +188,7 @@ export default class Quadtree {
 	 */
     clear() {
         this.objects = [];
+        this.objectsO = [];
 
         for (var i = 0; i < this.nodes.length; i = i + 1) {
             if (typeof this.nodes[i] !== 'undefined') {

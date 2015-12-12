@@ -4,119 +4,19 @@
 import * as PIXI from 'pixi.js';
 import perlin = require('perlin');
 const noise = perlin.noise;
-import Quadtree from "./Quadtree";
-
-
-interface Bounds {
-    x: number, y: number, width: number, height: number, o?: Segment
-}
+import {Bounds, Quadtree} from "./Quadtree";
 
 import seedrandom from 'seedrandom';
+import {Point, math} from './math';
+
 seedrandom;
 
-interface Point {
-    x: number; y: number;
-}
 interface DistanceInfo {
     distance2: number;
     pointOnLine: Point;
     lineProj2: number;
     length2: number;
 }
-const math = {
-    subtractPoints: (p1: Point, p2: Point) => ({ x: p1.x - p2.x, y: p1.y - p2.y }),
-    crossProduct: (a: Point, b: Point) => a.x * b.y - a.y * b.x,
-    /** c = approximate match */
-    doLineSegmentsIntersect: (a: Point, b: Point, p: Point, d: Point, c: boolean) => {
-        b = math.subtractPoints(b, a);
-        d = math.subtractPoints(d, p);
-        var f = math.crossProduct(math.subtractPoints(p, a), b);
-        var k = math.crossProduct(b, d);
-        if (0 == f && 0 == k || 0 == k) return null;
-        f /= k;
-        let e = math.crossProduct(math.subtractPoints(p, a), d) / k;
-        const intersect = c ? 0.001 < e && (0.999 > e && (0.001 < f && 0.999 > f)) : 0 <= e && (1 >= e && (0 <= f && 1 >= f));
-        return intersect ? { x: a.x + e * b.x, y: a.y + e * b.y, t: e } : null;
-    },
-    minDegreeDifference: (val1: number, val2: number) => {
-        const bottom = Math.abs(val1 - val2) % 180;
-        return Math.min(bottom, Math.abs(bottom - 180));
-    },
-    equalV: function(a: Point, b: Point) {
-        var e = math.subtractPoints(a, b);
-        return 1E-8 > math.lengthV2(e);
-    },
-    dotProduct: function(a: Point, b: Point) {
-        return a.x * b.x + a.y * b.y;
-    },
-    length: function(a: Point, b: Point) {
-        return math.lengthV(math.subtractPoints(b, a));
-    },
-    length2: function(a: Point, b: Point) {
-        return math.lengthV2(math.subtractPoints(b, a));
-    },
-    lengthV: function(a: Point) {
-        return Math.sqrt(math.lengthV2(a));
-    },
-    lengthV2: function(a: Point) {
-        return a.x * a.x + a.y * a.y;
-    },
-    angleBetween: function(a: Point, b: Point) {
-        const angleRad = Math.acos((a.x * b.x + a.y * b.y) / (math.lengthV(a) * math.lengthV(b)));
-        return 180 * angleRad / Math.PI;
-    },
-    sign: function(a: number) {
-        return 0 < a ? 1 : 0 > a ? -1 : 0;
-    },
-    fractionBetween: function(a: Point, b: Point, e: number) {
-        b = math.subtractPoints(b, a);
-        return {
-            x: a.x + b.x * e,
-            y: a.y + b.y * e
-        };
-    },
-    randomRange: function(a: number, b: number) {
-        return Math.random() * (b - a) + a;
-    },
-    addPoints: function(a: Point, b: Point) {
-        return { x: a.x + b.x, y: a.y + b.y }
-    },
-    distanceToLine: function(a: Point, b: Point, e: Point) {
-        var d = math.subtractPoints(a, b);
-        e = math.subtractPoints(e, b);
-        const proj = math.project(d, e);
-        var c = proj.projected;
-        b = math.addPoints(b, c);
-        return {
-            distance2: math.length2(b, a),
-            pointOnLine: b,
-            lineProj2: math.sign(proj.dotProduct) * math.lengthV2(c),
-            length2: math.lengthV2(e)
-        };
-    },
-    project: function(a: Point, b: Point) {
-        var e = math.dotProduct(a, b);
-        return {
-            dotProduct: e,
-            projected: math.multVScalar(b, e / math.lengthV2(b))
-        };
-    },
-    multVScalar: function(a: Point, b: number) {
-        return {
-            x: a.x * b,
-            y: a.y * b
-        };
-    },
-    divVScalar: function(a: Point, b: number) {
-        return {
-            x: a.x / b,
-            y: a.y / b
-        };
-    },
-    lerp: function(a: number, b: number, x: number) {
-        return a * (1 - x) + b * x;
-    }
-};
 
 const randomWat = function(b: number) {
     var d = Math.pow(Math.abs(b), 3);
@@ -165,8 +65,7 @@ export class Segment {
             x: Math.min(this.start.x, this.end.x),
             y: Math.min(this.start.y, this.end.y),
             width: Math.abs(this.start.x - this.end.x),
-            height: Math.abs(this.start.y - this.end.y),
-            o: this
+            height: Math.abs(this.start.y - this.end.y)
         };
     }
     roadRevision = 0;
@@ -290,11 +189,11 @@ export class Segment {
         }
     };
 
-    split(point: Point, segment: Segment, segmentList: Segment[], qTree: Quadtree) {
+    split(point: Point, segment: Segment, segmentList: Segment[], qTree: Quadtree<Segment>) {
         const splitPart = segmentFactory.fromExisting(this);
         const startIsBackwards = this.startIsBackwards();
         segmentList.push(splitPart);
-        qTree.insert(splitPart.limits());
+        qTree.insert(splitPart.limits(), splitPart);
         splitPart.r.setEnd(point);
         this.r.setStart(point);
         //# links are not copied using the preceding factory method.
@@ -359,14 +258,13 @@ interface DebugData {
     intersectionsRadius: Point[];
     intersections: Intersection[];
 }
-const localConstraints = function(segment: Segment, segments: Segment[], qTree: Quadtree, debugData: DebugData) {
+const localConstraints = function(segment: Segment, segments: Segment[], qTree: Quadtree<Segment>, debugData: DebugData) {
     const action = {
         priority: 0,
         func: undefined as () => boolean,
         t: undefined as number
     };
-    for (const match of qTree.retrieve(segment.limits())) {
-        let other = (match as any).o as Segment;
+    for (const other of qTree.retrieve(segment.limits())) {
         // intersection check
         if (action.priority <= 4) {
             const intersection = doRoadSegmentsIntersect(segment.r, other.r);
@@ -527,7 +425,7 @@ export const generate = function* (seed: string): Iterator<GeneratorResult> {
     priorityQ.push(rootSegment);
     priorityQ.push(oppositeDirection);
     const segments = [] as Segment[];
-    const qTree = new Quadtree(config.mapGeneration.QUADTREE_PARAMS, config.mapGeneration.QUADTREE_MAX_OBJECTS, config.mapGeneration.QUADTREE_MAX_LEVELS);
+    const qTree = new Quadtree<Segment>(config.mapGeneration.QUADTREE_PARAMS, config.mapGeneration.QUADTREE_MAX_OBJECTS, config.mapGeneration.QUADTREE_MAX_LEVELS);
     while (priorityQ.length > 0 && segments.length < config.mapGeneration.SEGMENT_COUNT_LIMIT) {
         //     # pop smallest r(ti, ri, qi) from Q (i.e., smallest 't')
         let minT = Infinity;
@@ -543,7 +441,7 @@ export const generate = function* (seed: string): Iterator<GeneratorResult> {
         if (accepted) {
             if (minSegment.setupBranchLinks != null) minSegment.setupBranchLinks();
             segments.push(minSegment);
-            qTree.insert(minSegment.limits());
+            qTree.insert(minSegment.limits(), minSegment);
             globalGoals.generate(minSegment).forEach(newSegment => {
                 newSegment.t = minSegment.t + 1 + newSegment.t;
                 priorityQ.push(newSegment);
@@ -637,8 +535,16 @@ function animate() {
     }
     if (!done) dobounds(stuff.segments, iteration < 100 ? (1 - iteration / 200) : 0.02);
     graphics.clear();
+    /*for(let x = 0; x < W; x += 10) for(let y = 0; y < H; y+=10) {
+        const p1 = stage.worldTransform.apply(new PIXI.Point(x,y));
+        const p2 = stage.worldTransform.apply(new PIXI.Point(x+5,y+5));
+        graphics.beginFill(0xFF0000);
+        graphics.drawRect(p1.x,p1.y, p2.x,p2.y);
+        graphics.endFill();
+    }*/
     for (const seg of stuff.segments) renderSegment(seg);
     if (!done) for (const seg of stuff.priorityQ) renderSegment(seg, 0xFF0000);
+
     requestAnimationFrame(animate);
     renderer.render(stage);
     iteration++;
