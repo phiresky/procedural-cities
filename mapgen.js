@@ -1,4 +1,3 @@
-// code adapted from http://www.tmwhere.com/city_generation.html
 "use strict";
 var PIXI = require('pixi.js');
 var perlin = require('perlin');
@@ -9,7 +8,6 @@ seedrandom_1.default;
 const math = {
     subtractPoints: (p1, p2) => ({ x: p1.x - p2.x, y: p1.y - p2.y }),
     crossProduct: (a, b) => a.x * b.y - a.y * b.x,
-    /** c = approximate match */
     doLineSegmentsIntersect: (a, b, p, d, c) => {
         b = math.subtractPoints(b, a);
         d = math.subtractPoints(d, p);
@@ -131,7 +129,6 @@ class Segment {
         this.roadRevision = 0;
         this.dirRevision = undefined;
         this.lengthRevision = void 0;
-        /** links backwards and forwards */
         this.links = { b: [], f: [] };
         this.users = [];
         this.id = undefined;
@@ -142,7 +139,6 @@ class Segment {
         if (!q)
             q = { highway: false };
         this.width = q.highway ? config.mapGeneration.HIGHWAY_SEGMENT_WIDTH : config.mapGeneration.DEFAULT_SEGMENT_WIDTH;
-        // representation of road
         this.r = {
             start: start,
             end: end,
@@ -171,11 +167,9 @@ class Segment {
         };
     }
     currentSpeed() {
-        // subtract 1 from user's length so that a single user can go full speed
         return Math.min(config.gameLogic.MIN_SPEED_PROPORTION, 1 - Math.max(0, this.users.length - 1) / this.capacity) * this.maxSpeed;
     }
     ;
-    // clockwise direction
     dir() {
         if (this.dirRevision !== this.roadRevision) {
             this.dirRevision = this.roadRevision;
@@ -260,12 +254,9 @@ class Segment {
         qTree.insert(splitPart.limits());
         splitPart.r.setEnd(point);
         this.r.setStart(point);
-        //# links are not copied using the preceding factory method.
-        //# copy link array for the split part, keeping references the same
         splitPart.links.b = this.links.b.slice(0);
         splitPart.links.f = this.links.f.slice(0);
         let firstSplit, fixLinks, secondSplit;
-        // # determine which links correspond to which end of the split segment
         if (startIsBackwards) {
             firstSplit = splitPart;
             secondSplit = this;
@@ -330,7 +321,6 @@ const localConstraints = function (segment, segments, qTree, debugData) {
     };
     for (const match of qTree.retrieve(segment.limits())) {
         let other = match.o;
-        // intersection check
         if (action.priority <= 4) {
             const intersection = doRoadSegmentsIntersect(segment.r, other.r);
             if (intersection) {
@@ -338,7 +328,6 @@ const localConstraints = function (segment, segments, qTree, debugData) {
                     action.t = intersection.t;
                     action.priority = 4;
                     action.func = function () {
-                        // if intersecting lines are too similar don't continue
                         if (math.minDegreeDifference(other.dir(), segment.dir()) < config.mapGeneration.MINIMUM_INTERSECTION_DEVIATION) {
                             return false;
                         }
@@ -353,27 +342,19 @@ const localConstraints = function (segment, segments, qTree, debugData) {
                 }
             }
         }
-        //     # snap to crossing within radius check
         if (action.priority <= 3) {
-            //# current segment's start must have been checked to have been created.
-            //# other segment's start must have a corresponding end.
             if (math.length(segment.r.end, other.r.end) <= config.mapGeneration.ROAD_SNAP_DISTANCE) {
                 const point = other.r.end;
                 action.priority = 3;
                 action.func = function () {
                     segment.r.end = point;
                     segment.q.severed = true;
-                    //  # update links of otherSegment corresponding to other.r.end
                     const links = other.startIsBackwards() ? other.links.f : other.links.b;
-                    // # check for duplicate lines, don't add if it exists
-                    // # this should be done before links are setup, to avoid having to undo that step
                     if (links.some(link => (math.equalV(link.r.start, segment.r.end) && math.equalV(link.r.end, segment.r.start)) || (math.equalV(link.r.start, segment.r.start) && math.equalV(link.r.end, segment.r.end)))) {
                         return false;
                     }
                     links.forEach(link => {
-                        //# pick links of remaining segments at junction corresponding to other.r.end
                         link.linksForEndContaining(other).push(segment);
-                        // # add junction segments to snapped segment
                         segment.links.f.push(link);
                     });
                     links.push(segment);
@@ -385,7 +366,6 @@ const localConstraints = function (segment, segments, qTree, debugData) {
                 };
             }
         }
-        //  intersection within radius check
         if (action.priority <= 2) {
             const { distance2, pointOnLine, lineProj2, length2 } = math.distanceToLine(segment.r.end, other.r.start, other.r.end);
             if (distance2 < config.mapGeneration.ROAD_SNAP_DISTANCE * config.mapGeneration.ROAD_SNAP_DISTANCE && lineProj2 >= 0 && lineProj2 <= length2) {
@@ -394,7 +374,6 @@ const localConstraints = function (segment, segments, qTree, debugData) {
                 action.func = function () {
                     segment.r.end = point;
                     segment.q.severed = true;
-                    // # if intersecting lines are too closely aligned don't continue
                     if (math.minDegreeDifference(other.dir(), segment.dir()) < config.mapGeneration.MINIMUM_INTERSECTION_DEVIATION) {
                         return false;
                     }
@@ -418,9 +397,7 @@ const globalGoals = {
             const template = function (direction, length, t, q) {
                 return segmentFactory.usingDirection(previousSegment.r.end, direction, length, t, q);
             };
-            // # used for highways or going straight on a normal branch
             const templateContinue = (direction) => template(direction, previousSegment.length(), 0, previousSegment.q);
-            // # not using q, i.e. not highways
             const templateBranch = (direction) => template(direction, config.mapGeneration.DEFAULT_SEGMENT_LENGTH, previousSegment.q.highway ? config.mapGeneration.NORMAL_BRANCH_TIME_DELAY_FROM_HIGHWAY : 0, null);
             const continueStraight = templateContinue(previousSegment.dir());
             const straightPop = heatmap.popOnRoad(continueStraight.r);
@@ -462,7 +439,6 @@ const globalGoals = {
             }
         }
         for (const branch of newBranches) {
-            // # setup links between each current branch and each existing branch stemming from the previous segment
             branch.setupBranchLinks = function () {
                 previousSegment.links.f.forEach(link => {
                     branch.links.b.push(link);
@@ -475,13 +451,11 @@ const globalGoals = {
         return newBranches;
     }
 };
-exports.generate = function (seed) {
+exports.generate = function* (seed) {
     const debugData = {};
     Math.seedrandom(seed);
-    // # NB: this perlin noise library only supports 65536 different seeds
     noise.seed(Math.random());
     const priorityQ = [];
-    // # setup first segments in queue
     const rootSegment = new Segment({ x: 0, y: 0 }, { x: config.mapGeneration.HIGHWAY_SEGMENT_LENGTH, y: 0 }, 0, { highway: true });
     const oppositeDirection = segmentFactory.fromExisting(rootSegment);
     const newEnd = {
@@ -496,7 +470,6 @@ exports.generate = function (seed) {
     const segments = [];
     const qTree = new Quadtree_1.default(config.mapGeneration.QUADTREE_PARAMS, config.mapGeneration.QUADTREE_MAX_OBJECTS, config.mapGeneration.QUADTREE_MAX_LEVELS);
     while (priorityQ.length > 0 && segments.length < config.mapGeneration.SEGMENT_COUNT_LIMIT) {
-        //     # pop smallest r(ti, ri, qi) from Q (i.e., smallest 't')
         let minT = Infinity;
         let minT_i = 0;
         priorityQ.forEach((segment, i) => {
@@ -512,7 +485,9 @@ exports.generate = function (seed) {
                 minSegment.setupBranchLinks();
             segments.push(minSegment);
             qTree.insert(minSegment.limits());
-            globalGoals.generate(minSegment).forEach(newSegment => {
+            const newsegs = globalGoals.generate(minSegment);
+            yield { segments: segments, newsegs: newsegs, priorityQ: priorityQ };
+            newsegs.forEach(newSegment => {
                 newSegment.t = minSegment.t + 1 + newSegment.t;
                 priorityQ.push(newSegment);
             });
@@ -525,7 +500,8 @@ exports.generate = function (seed) {
     return { segments: segments, qTree: qTree, heatmap: heatmap, debugData: debugData };
 };
 console.time("generating");
-const stuff = exports.generate(Math.random() + "bla");
+const iterations = [...exports.generate(Math.random() + "bla")];
+const stuff = iterations.pop();
 console.timeEnd("generating");
 const W = 1500, H = 900;
 const bounds = function () {
@@ -549,8 +525,8 @@ stage.position.y = -bounds.miny * scale;
 stage.scale.x = scale;
 stage.scale.y = scale;
 stage.hitArea = new PIXI.Rectangle(-10000, -10000, 20000, 20000);
-function renderSegment(seg) {
-    graphics.lineStyle(seg.width * 10, 0x000000, 1);
+function renderSegment(seg, color = 0x000000) {
+    graphics.lineStyle(seg.width * 10, color, 1);
     graphics.moveTo(seg.r.start.x, seg.r.start.y);
     graphics.lineTo(seg.r.end.x, seg.r.end.y);
 }
@@ -568,12 +544,10 @@ function onDragStart(event) {
 }
 function onDragEnd() {
     this.dragging = false;
-    // set the interaction data to null
     this.data = null;
 }
 function onDragMove(event) {
     if (this.dragging) {
-        //var newPosition = this.data.getLocalPosition(this.parent);
         this.position.x += event.data.global.x - this.start.x;
         this.position.y += event.data.global.y - this.start.y;
         this.start = { x: event.data.global.x, y: event.data.global.y };
@@ -581,10 +555,13 @@ function onDragMove(event) {
 }
 requestAnimationFrame(animate);
 function animate() {
-    for (const seg of stuff.segments.splice(0, 10))
+    const iter = iterations.length === 0 ? stuff : iterations.shift();
+    graphics.clear();
+    for (const seg of iter.segments)
         renderSegment(seg);
+    for (const seg of iter.priorityQ)
+        renderSegment(seg, 0xFF0000);
     requestAnimationFrame(animate);
-    // render the stage
     renderer.render(stage);
 }
 const glbl = window;
