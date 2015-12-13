@@ -2,7 +2,7 @@ import {math} from "./math";
 import {Segment, generate, GeneratorResult, heatmap} from "./mapgen";
 import * as PIXI from 'pixi.js';
 
-const seed = Math.random() + "bla";
+const seed = "blablabla";
 const worldScale = 1 / 10;
 console.log("generating with seed " + seed);
 const generator = generate(seed);
@@ -34,8 +34,8 @@ stage.hitArea = new PIXI.Rectangle(-1e5, -1e5, 2e5, 2e5);
 function renderSegment(seg: Segment, color = 0x000000) {
     if (!color) color = seg.q.color;
     graphics.lineStyle(seg.width * 10 * worldScale, color, 1);
-    graphics.moveTo(seg.r.start.x * worldScale, seg.r.start.y * worldScale);
-    graphics.lineTo(seg.r.end.x * worldScale, seg.r.end.y * worldScale);
+    graphics.moveTo(seg.start.x * worldScale, seg.start.y * worldScale);
+    graphics.lineTo(seg.end.x * worldScale, seg.end.y * worldScale);
 }
 stage.on('mousedown', onDragStart)
     .on('touchstart', onDragStart)
@@ -57,7 +57,7 @@ function onClick(event: PIXI.interaction.InteractionEvent) {
         width: 20, height: 20
     });
     const dist = (a: Segment) => {
-        const x = math.distanceToLine(p, a.r.start, a.r.end);
+        const x = math.distanceToLine(p, a.start, a.end);
         if (x.lineProj2 >= 0 && x.lineProj2 <= x.length2)
             return x.distance2;
         else return Infinity;
@@ -90,6 +90,12 @@ function zoom(x: number, y: number, direction: number) {
 }
 window.addEventListener('wheel', e => zoom(e.clientX, e.clientY, -math.sign(e.deltaY)));
 let stuff: GeneratorResult;
+const global = window as any;
+global.renderer = renderer;
+global.graphics = graphics;
+global.stage = stage;
+global.bounds = dobounds;
+
 let done = false;
 requestAnimationFrame(animate);
 let iteration = 0;
@@ -98,6 +104,7 @@ function animate() {
         const iter = generator.next();
         if (!iter.done) {
             stuff = iter.value;
+            global.stuff = stuff;
             iteration++;
         } else done = true;
     }
@@ -110,8 +117,7 @@ function animate() {
         //const v = heatmap.populationAt(p.x, p.y) > config.mapGeneration.NORMAL_BRANCH_POPULATION_THRESHOLD ? 255 : config.mapGeneration.HIGHWAY_BRANCH_POPULATION_THRESHOLD ?
         // 180:90;
         graphics.beginFill(v << 16 | v << 8 | v);
-        graphics.drawRect(p.x,
-            p.y,
+        graphics.drawRect(p.x, p.y,
             20 / stage.scale.x,
             20 / stage.scale.y);
         graphics.endFill();
@@ -123,11 +129,6 @@ function animate() {
     renderer.render(stage);
     iteration++;
 }
-const glbl = window as any;
-glbl.renderer = renderer;
-glbl.graphics = graphics;
-glbl.stage = stage;
-glbl.bounds = dobounds;
 
 function onResize() {
     W = window.innerWidth;
