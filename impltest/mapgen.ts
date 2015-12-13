@@ -35,7 +35,7 @@ const config = {
         DEFAULT_BRANCH_PROBABILITY: .4, HIGHWAY_BRANCH_PROBABILITY: .05,
         HIGHWAY_BRANCH_POPULATION_THRESHOLD: .1, NORMAL_BRANCH_POPULATION_THRESHOLD: .1,
         NORMAL_BRANCH_TIME_DELAY_FROM_HIGHWAY: 5, MINIMUM_INTERSECTION_DEVIATION: 30,
-        SEGMENT_COUNT_LIMIT: 5000, DEBUG_DELAY: 0, ROAD_SNAP_DISTANCE: 50,
+        SEGMENT_COUNT_LIMIT: 10000, DEBUG_DELAY: 0, ROAD_SNAP_DISTANCE: 50,
         HEAT_MAP_PIXEL_DIM: 50, DRAW_HEATMAP: !1,
         QUADTREE_PARAMS: { x: -2E4, y: -2E4, width: 4E4, height: 4E4 },
         QUADTREE_MAX_OBJECTS: 10, QUADTREE_MAX_LEVELS: 10, DEBUG: !1
@@ -457,16 +457,17 @@ export const generate = function* (seed: string): Iterator<GeneratorResult> {
     return { segments, qTree, heatmap, debugData };
 };
 const seed = Math.random() + "bla";
+const worldScale = 1/10;
 console.log("generating with seed " + seed);
 const generator = generate(seed);
 let W = window.innerWidth, H = window.innerHeight;
 const dobounds = function(segs: Segment[], interpolate = 1) {
     const lim = segs.map(s => s.limits());
     const bounds = {
-        minx: Math.min(...lim.map(s => s.x)),
-        miny: Math.min(...lim.map(s => s.y)),
-        maxx: Math.max(...lim.map(s => s.x)),
-        maxy: Math.max(...lim.map(s => s.y)),
+        minx: Math.min(...lim.map(s => s.x*worldScale)),
+        miny: Math.min(...lim.map(s => s.y*worldScale)),
+        maxx: Math.max(...lim.map(s => s.x*worldScale)),
+        maxy: Math.max(...lim.map(s => s.y*worldScale)),
     }
     const scale = Math.min(W / (bounds.maxx - bounds.minx), H / (bounds.maxy - bounds.miny)) * 0.9;
     const npx = - (bounds.maxx + bounds.minx) / 2 * scale + W / 2;
@@ -484,9 +485,9 @@ stage.addChild(graphics);
 stage.interactive = true;
 stage.hitArea = new PIXI.Rectangle(-1e5, -1e5, 2e5, 2e5);
 function renderSegment(seg: Segment, color = 0x000000) {
-    graphics.lineStyle(seg.width * 10, color, 1);
-    graphics.moveTo(seg.r.start.x, seg.r.start.y);
-    graphics.lineTo(seg.r.end.x, seg.r.end.y);
+    graphics.lineStyle(seg.width*10*worldScale, color, 1);
+    graphics.moveTo(seg.r.start.x*worldScale, seg.r.start.y*worldScale);
+    graphics.lineTo(seg.r.end.x*worldScale, seg.r.end.y*worldScale);
 }
 stage.on('mousedown', onDragStart)
     .on('touchstart', onDragStart)
