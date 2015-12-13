@@ -58,22 +58,18 @@ export class Quadtree<T> {
             height = this.bounds.height / 2,
             x = this.bounds.x,
             y = this.bounds.y;
-        //top right node
         this.topRight = new Quadtree<T>({
             x: x + width, y, width, height
         }, this.max_objects, this.max_levels, level);
 
-        //top left node
         this.topLeft = new Quadtree<T>({
             x, y, width, height
         }, this.max_objects, this.max_levels, level);
 
-        //bottom left node
         this.bottomLeft = new Quadtree<T>({
             x, y: y + height, width, height
         }, this.max_objects, this.max_levels, level);
 
-        //bottom right node
         this.bottomRight = new Quadtree<T>({
             x: x + width, y: y + height, width, height
         }, this.max_objects, this.max_levels, level);

@@ -1,7 +1,6 @@
 
 // code adapted from http://www.tmwhere.com/city_generation.html
-import perlin = require('perlin');
-const noise = perlin.noise;
+import {noise} from 'perlin';
 import seedrandom from 'seedrandom';
 import {Bounds, Quadtree} from "./Quadtree";
 import {Point, math} from './math';
@@ -14,20 +13,11 @@ interface DistanceInfo {
     lineProj2: number;
     length2: number;
 }
-
-const randomNearCubic = function(b: number) {
-    var d = Math.pow(Math.abs(b), 3);
-    var c = 0;
-    while (c === 0 || Math.random() < Math.pow(Math.abs(c), 3) / d) {
-        c = math.randomRange(-b, b);
-    }
-    return c;
-};
 const config = {
     DEFAULT_SEGMENT_LENGTH: 300, HIGHWAY_SEGMENT_LENGTH: 400,
     DEFAULT_SEGMENT_WIDTH: 6, HIGHWAY_SEGMENT_WIDTH: 16,
-    RANDOM_BRANCH_ANGLE: function() { return randomNearCubic(3) },
-    RANDOM_STRAIGHT_ANGLE: function() { return randomNearCubic(15) },
+    RANDOM_BRANCH_ANGLE: function() { return math.randomNearCubic(3) },
+    RANDOM_STRAIGHT_ANGLE: function() { return math.randomNearCubic(15) },
     DEFAULT_BRANCH_PROBABILITY: .4, HIGHWAY_BRANCH_PROBABILITY: .02,
     HIGHWAY_BRANCH_POPULATION_THRESHOLD: .1, NORMAL_BRANCH_POPULATION_THRESHOLD: .1,
     NORMAL_BRANCH_TIME_DELAY_FROM_HIGHWAY: 5, MINIMUM_INTERSECTION_DEVIATION: 30,
@@ -49,17 +39,8 @@ interface Intersection {
     x: number, t: number, y: number
 }
 export class Segment {
-    limitsRevision: number = undefined;
     cachedDir: number = void 0;
     cachedLength: number = void 0;
-    limits(): Bounds {
-        return {
-            x: Math.min(this.start.x, this.end.x),
-            y: Math.min(this.start.y, this.end.y),
-            width: Math.abs(this.start.x - this.end.x),
-            height: Math.abs(this.start.y - this.end.y)
-        };
-    }
     roadRevision = 0;
     dirRevision: number = undefined;
     lengthRevision: number = void 0;
@@ -70,15 +51,10 @@ export class Segment {
     q: MetaInfo = {};
     /** links backwards and forwards */
     links = { b: [] as Segment[], f: [] as Segment[] };
-    users: number[] = [];
-    id: number = undefined;
     width: number;
-    maxSpeed: number;
-    capacity: number;
     setupBranchLinks: () => void = undefined;
     start: Point;
     end: Point;
-    static End = { START: "start", END: "end" };
     constructor(start: Point, end: Point, t = 0, q: MetaInfo) {
         const obj = this;
         this.start = { x: start.x, y: start.y };
@@ -101,7 +77,6 @@ export class Segment {
             }
         };
         this.t = t;
-        [this.maxSpeed, this.capacity] = this.q.highway ? [1200, 12] : [800, 6];
     }
 
     // clockwise direction
@@ -121,6 +96,14 @@ export class Segment {
         }
         return this.cachedLength;
     };
+    limits(): Bounds {
+        return {
+            x: Math.min(this.start.x, this.end.x),
+            y: Math.min(this.start.y, this.end.y),
+            width: Math.abs(this.start.x - this.end.x),
+            height: Math.abs(this.start.y - this.end.y)
+        };
+    }
 
     debugLinks() {
         this.q.color = 0x00FF00;
@@ -133,21 +116,6 @@ export class Segment {
             return math.equalV(this.links.b[0].r.start, this.r.start) || math.equalV(this.links.b[0].r.end, this.r.start);
         } else {
             return math.equalV(this.links.f[0].r.start, this.r.end) || math.equalV(this.links.f[0].r.end, this.r.end);
-        }
-    };
-    
-    neighbours() {
-        return this.links.f.concat(this.links.b);
-    };
-
-    endContaining(segment: Segment) {
-        var startBackwards = this.startIsBackwards();
-        if (this.links.b.indexOf(segment) !== -1) {
-            return startBackwards ? Segment.End.START : Segment.End.END;
-        } else if (this.links.f.indexOf(segment) !== -1) {
-            return startBackwards ? Segment.End.END : Segment.End.START;
-        } else {
-            return undefined;
         }
     };
 
@@ -314,66 +282,64 @@ const localConstraints = function(segment: Segment, segments: Segment[], qTree: 
     return true;
 };
 
-const globalGoals = {
-    generate: function(previousSegment: Segment) {
-        const newBranches = [] as Segment[];
-        if (!previousSegment.q.severed) {
-            const template = function(direction: number, length: number, t: number, q: MetaInfo) {
-                return Segment.usingDirection(previousSegment.r.end, direction, length, t, q);
-            };
-            // used for highways or going straight on a normal branch
-            const templateContinue = (direction: number) => template(direction, previousSegment.length(), 0, previousSegment.q);
-            // not using q, i.e. not highways
-            const templateBranch = (direction: number) => template(direction, config.DEFAULT_SEGMENT_LENGTH, previousSegment.q.highway ? config.NORMAL_BRANCH_TIME_DELAY_FROM_HIGHWAY : 0, null);
-            const continueStraight = templateContinue(previousSegment.dir());
-            const straightPop = heatmap.popOnRoad(continueStraight.r);
-            if (previousSegment.q.highway) {
-                const randomStraight = templateContinue(previousSegment.dir() + config.RANDOM_STRAIGHT_ANGLE());
-                const randomPop = heatmap.popOnRoad(randomStraight.r);
-                let roadPop: number;
-                if (randomPop > straightPop) {
-                    newBranches.push(randomStraight);
-                    roadPop = randomPop;
-                } else {
-                    newBranches.push(continueStraight);
-                    roadPop = straightPop;
-                }
-                if (roadPop > config.HIGHWAY_BRANCH_POPULATION_THRESHOLD) {
-                    if (Math.random() < config.HIGHWAY_BRANCH_PROBABILITY) {
-                        const leftHighwayBranch = templateContinue(previousSegment.dir() - 90 + config.RANDOM_BRANCH_ANGLE());
-                        newBranches.push(leftHighwayBranch);
-                    } else if (Math.random() < config.HIGHWAY_BRANCH_PROBABILITY) {
-                        const rightHighwayBranch = templateContinue(previousSegment.dir() + 90 + config.RANDOM_BRANCH_ANGLE());
-                        newBranches.push(rightHighwayBranch);
-                    }
-                }
-            } else if (straightPop > config.NORMAL_BRANCH_POPULATION_THRESHOLD) {
+function globalGoalsGenerate(previousSegment: Segment) {
+    const newBranches = [] as Segment[];
+    if (!previousSegment.q.severed) {
+        const template = function(direction: number, length: number, t: number, q: MetaInfo) {
+            return Segment.usingDirection(previousSegment.r.end, direction, length, t, q);
+        };
+        // used for highways or going straight on a normal branch
+        const templateContinue = (direction: number) => template(direction, previousSegment.length(), 0, previousSegment.q);
+        // not using q, i.e. not highways
+        const templateBranch = (direction: number) => template(direction, config.DEFAULT_SEGMENT_LENGTH, previousSegment.q.highway ? config.NORMAL_BRANCH_TIME_DELAY_FROM_HIGHWAY : 0, null);
+        const continueStraight = templateContinue(previousSegment.dir());
+        const straightPop = heatmap.popOnRoad(continueStraight.r);
+        if (previousSegment.q.highway) {
+            const randomStraight = templateContinue(previousSegment.dir() + config.RANDOM_STRAIGHT_ANGLE());
+            const randomPop = heatmap.popOnRoad(randomStraight.r);
+            let roadPop: number;
+            if (randomPop > straightPop) {
+                newBranches.push(randomStraight);
+                roadPop = randomPop;
+            } else {
                 newBranches.push(continueStraight);
+                roadPop = straightPop;
             }
-            if (straightPop > config.NORMAL_BRANCH_POPULATION_THRESHOLD) {
-                if (Math.random() < config.DEFAULT_BRANCH_PROBABILITY) {
-                    const leftBranch = templateBranch(previousSegment.dir() - 90 + config.RANDOM_BRANCH_ANGLE());
-                    newBranches.push(leftBranch);
-                } else if (Math.random() < config.DEFAULT_BRANCH_PROBABILITY) {
-                    const rightBranch = templateBranch(previousSegment.dir() + 90 + config.RANDOM_BRANCH_ANGLE());
-                    newBranches.push(rightBranch);
+            if (roadPop > config.HIGHWAY_BRANCH_POPULATION_THRESHOLD) {
+                if (Math.random() < config.HIGHWAY_BRANCH_PROBABILITY) {
+                    const leftHighwayBranch = templateContinue(previousSegment.dir() - 90 + config.RANDOM_BRANCH_ANGLE());
+                    newBranches.push(leftHighwayBranch);
+                } else if (Math.random() < config.HIGHWAY_BRANCH_PROBABILITY) {
+                    const rightHighwayBranch = templateContinue(previousSegment.dir() + 90 + config.RANDOM_BRANCH_ANGLE());
+                    newBranches.push(rightHighwayBranch);
                 }
             }
+        } else if (straightPop > config.NORMAL_BRANCH_POPULATION_THRESHOLD) {
+            newBranches.push(continueStraight);
         }
-        for (const branch of newBranches) {
-            // setup links between each current branch and each existing branch stemming from the previous segment
-            branch.setupBranchLinks = function() {
-                previousSegment.links.f.forEach(link => {
-                    branch.links.b.push(link);
-                    link.linksForEndContaining(previousSegment).push(branch);
-                });
-                previousSegment.links.f.push(branch);
-                return branch.links.b.push(previousSegment);
-            };
+        if (straightPop > config.NORMAL_BRANCH_POPULATION_THRESHOLD) {
+            if (Math.random() < config.DEFAULT_BRANCH_PROBABILITY) {
+                const leftBranch = templateBranch(previousSegment.dir() - 90 + config.RANDOM_BRANCH_ANGLE());
+                newBranches.push(leftBranch);
+            } else if (Math.random() < config.DEFAULT_BRANCH_PROBABILITY) {
+                const rightBranch = templateBranch(previousSegment.dir() + 90 + config.RANDOM_BRANCH_ANGLE());
+                newBranches.push(rightBranch);
+            }
         }
-        return newBranches;
     }
-};
+    for (const branch of newBranches) {
+        // setup links between each current branch and each existing branch stemming from the previous segment
+        branch.setupBranchLinks = function() {
+            previousSegment.links.f.forEach(link => {
+                branch.links.b.push(link);
+                link.linksForEndContaining(previousSegment).push(branch);
+            });
+            previousSegment.links.f.push(branch);
+            return branch.links.b.push(previousSegment);
+        };
+    }
+    return newBranches;
+}
 class PriorityQueue<T> {
     public elements: T[] = [];
     constructor(private getPriority: (ele: T) => number) { }
@@ -412,7 +378,6 @@ function makeInitialSegments() {
 export const generate = function* (seed: string): Iterator<GeneratorResult> {
     const debugData = {};
     Math.seedrandom(seed);
-    // NB: this perlin noise library only supports 65536 different seeds
     noise.seed(Math.random());
     const priorityQ = new PriorityQueue<Segment>(s => s.t);
 
@@ -426,15 +391,13 @@ export const generate = function* (seed: string): Iterator<GeneratorResult> {
             if (minSegment.setupBranchLinks != null) minSegment.setupBranchLinks();
             segments.push(minSegment);
             qTree.insert(minSegment.limits(), minSegment);
-            globalGoals.generate(minSegment).forEach(newSegment => {
+            globalGoalsGenerate(minSegment).forEach(newSegment => {
                 newSegment.t = minSegment.t + 1 + newSegment.t;
                 priorityQ.enqueue(newSegment);
             });
             yield { segments, priorityQ: priorityQ.elements, qTree };
         }
     }
-    let id = 0;
-    for (const segment of segments) segment.id = id++;
     console.log(segments.length + " segments generated.");
     yield { segments, qTree, priorityQ: priorityQ.elements };
 };

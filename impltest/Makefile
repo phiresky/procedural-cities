@@ -17,4 +17,7 @@ bin:
 gh-pages: bin/.git
 	cd bin; git add -A; git commit -m'update binaries'; git push
 
+clean:
+	rm -r bin/* tsc/*
+
 .PHONY: gh-pages

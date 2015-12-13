@@ -94,5 +94,13 @@ export const math = {
     },
     lerp: function(a: number, b: number, x: number) {
         return a * (1 - x) + b * x;
+    },
+    randomNearCubic: function(b: number) {
+        var d = Math.pow(Math.abs(b), 3);
+        var c = 0;
+        while (c === 0 || Math.random() < Math.pow(Math.abs(c), 3) / d) {
+            c = math.randomRange(-b, b);
+        }
+        return c;
     }
 };
