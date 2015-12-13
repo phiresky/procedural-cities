@@ -104,7 +104,8 @@ export class Quadtree<T> {
         if (r.x <= midX) { // left
             if (isTop) qs.push(this.topLeft);
             if (isBottom) qs.push(this.bottomLeft);
-        } else if (r.x + r.width > midX) { // right
+        }
+        if (r.x + r.width > midX) { // right
             if (isTop) qs.push(this.topRight);
             if (isBottom) qs.push(this.bottomRight);
         }
