@@ -509,9 +509,16 @@ function onClick(event: PIXI.interaction.InteractionEvent) {
         x: p.x - 10, y: p.y - 10,
         width: 20, height: 20
     });
-    for(const seg of poss) {
-        seg.q.color = 0xff0000;
-    }
+    const dist = (a:Segment) => {
+        const x = math.distanceToLine(p, a.r.start, a.r.end);
+        if(x.lineProj2 >= 0 && x.lineProj2 <= x.length2)
+            return x.distance2;
+        else return Infinity;
+    };
+    poss.sort((a,b) => dist(a)-dist(b));
+    //for(poss[0].linksaa)
+    poss[0].debugLinks();
+    //poss[0].q.color = 0xff0000;
 }
 
 function onDragStart(event: PIXI.interaction.InteractionEvent) {
