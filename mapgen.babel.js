@@ -8,120 +8,33 @@ var perlin = require('perlin');
 const noise = perlin.noise;
 var Quadtree_1 = require("./Quadtree");
 var seedrandom_1 = require('seedrandom');
+var math_1 = require('./math');
 seedrandom_1.default;
-const math = {
-    subtractPoints: (p1, p2) => ({ x: p1.x - p2.x, y: p1.y - p2.y }),
-    crossProduct: (a, b) => a.x * b.y - a.y * b.x,
-    /** c = approximate match */
-    doLineSegmentsIntersect: (a, b, p, d, c) => {
-        b = math.subtractPoints(b, a);
-        d = math.subtractPoints(d, p);
-        var f = math.crossProduct(math.subtractPoints(p, a), b);
-        var k = math.crossProduct(b, d);
-        if (0 == f && 0 == k || 0 == k) return null;
-        f /= k;
-        let e = math.crossProduct(math.subtractPoints(p, a), d) / k;
-        const intersect = c ? 0.001 < e && 0.999 > e && 0.001 < f && 0.999 > f : 0 <= e && 1 >= e && 0 <= f && 1 >= f;
-        return intersect ? { x: a.x + e * b.x, y: a.y + e * b.y, t: e } : null;
-    },
-    minDegreeDifference: (val1, val2) => {
-        const bottom = Math.abs(val1 - val2) % 180;
-        return Math.min(bottom, Math.abs(bottom - 180));
-    },
-    equalV: function (a, b) {
-        var e = math.subtractPoints(a, b);
-        return 1E-8 > math.lengthV2(e);
-    },
-    dotProduct: function (a, b) {
-        return a.x * b.x + a.y * b.y;
-    },
-    length: function (a, b) {
-        return math.lengthV(math.subtractPoints(b, a));
-    },
-    length2: function (a, b) {
-        return math.lengthV2(math.subtractPoints(b, a));
-    },
-    lengthV: function (a) {
-        return Math.sqrt(math.lengthV2(a));
-    },
-    lengthV2: function (a) {
-        return a.x * a.x + a.y * a.y;
-    },
-    angleBetween: function (a, b) {
-        const angleRad = Math.acos((a.x * b.x + a.y * b.y) / (math.lengthV(a) * math.lengthV(b)));
-        return 180 * angleRad / Math.PI;
-    },
-    sign: function (a) {
-        return 0 < a ? 1 : 0 > a ? -1 : 0;
-    },
-    fractionBetween: function (a, b, e) {
-        b = math.subtractPoints(b, a);
-        return {
-            x: a.x + b.x * e,
-            y: a.y + b.y * e
-        };
-    },
-    randomRange: function (a, b) {
-        return Math.random() * (b - a) + a;
-    },
-    addPoints: function (a, b) {
-        return { x: a.x + b.x, y: a.y + b.y };
-    },
-    distanceToLine: function (a, b, e) {
-        var d = math.subtractPoints(a, b);
-        e = math.subtractPoints(e, b);
-        const proj = math.project(d, e);
-        var c = proj.projected;
-        b = math.addPoints(b, c);
-        return {
-            distance2: math.length2(b, a),
-            pointOnLine: b,
-            lineProj2: math.sign(proj.dotProduct) * math.lengthV2(c),
-            length2: math.lengthV2(e)
-        };
-    },
-    project: function (a, b) {
-        var e = math.dotProduct(a, b);
-        return {
-            dotProduct: e,
-            projected: math.multVScalar(b, e / math.lengthV2(b))
-        };
-    },
-    multVScalar: function (a, b) {
-        return {
-            x: a.x * b,
-            y: a.y * b
-        };
-    },
-    divVScalar: function (a, b) {
-        return {
-            x: a.x / b,
-            y: a.y / b
-        };
-    }
-};
-const randomWat = function (b) {
+const randomNearCubic = function (b) {
     var d = Math.pow(Math.abs(b), 3);
     var c = 0;
-    while (0 === c || Math.random() < Math.pow(Math.abs(c), 3) / d) {
-        c = math.randomRange(-b, b);
+    while (c === 0 || Math.random() < Math.pow(Math.abs(c), 3) / d) {
+        c = math_1.math.randomRange(-b, b);
     }
     return c;
 };
 const config = {
     mapGeneration: {
-        DEFAULT_SEGMENT_LENGTH: 300, HIGHWAY_SEGMENT_LENGTH: 400, DEFAULT_SEGMENT_WIDTH: 6, HIGHWAY_SEGMENT_WIDTH: 16,
+        DEFAULT_SEGMENT_LENGTH: 300, HIGHWAY_SEGMENT_LENGTH: 400,
+        DEFAULT_SEGMENT_WIDTH: 6, HIGHWAY_SEGMENT_WIDTH: 16,
         RANDOM_BRANCH_ANGLE: function () {
-            return randomWat(3);
+            return randomNearCubic(3);
         },
         RANDOM_STRAIGHT_ANGLE: function () {
-            return randomWat(15);
+            return randomNearCubic(15);
         },
         DEFAULT_BRANCH_PROBABILITY: .4, HIGHWAY_BRANCH_PROBABILITY: .05,
         HIGHWAY_BRANCH_POPULATION_THRESHOLD: .1, NORMAL_BRANCH_POPULATION_THRESHOLD: .1,
         NORMAL_BRANCH_TIME_DELAY_FROM_HIGHWAY: 5, MINIMUM_INTERSECTION_DEVIATION: 30,
-        SEGMENT_COUNT_LIMIT: 3000, DEBUG_DELAY: 0, ROAD_SNAP_DISTANCE: 50, HEAT_MAP_PIXEL_DIM: 50, DRAW_HEATMAP: !1,
-        QUADTREE_PARAMS: { x: -2E4, y: -2E4, width: 4E4, height: 4E4 }, QUADTREE_MAX_OBJECTS: 10, QUADTREE_MAX_LEVELS: 10, DEBUG: !1
+        SEGMENT_COUNT_LIMIT: 10000, DEBUG_DELAY: 0, ROAD_SNAP_DISTANCE: 50,
+        HEAT_MAP_PIXEL_DIM: 50, DRAW_HEATMAP: !1,
+        QUADTREE_PARAMS: { x: -2E4, y: -2E4, width: 4E4, height: 4E4 },
+        QUADTREE_MAX_OBJECTS: 10, QUADTREE_MAX_LEVELS: 10, DEBUG: !1
     },
     gameLogic: {
         SELECT_PAN_THRESHOLD: 50, SELECTION_RANGE: 50, DEFAULT_PICKUP_RANGE: 150,
@@ -132,7 +45,7 @@ const config = {
 class Segment {
     constructor(start, end) {
         let t = arguments.length <= 2 || arguments[2] === undefined ? 0 : arguments[2];
-        let q = arguments.length <= 3 || arguments[3] === undefined ? { highway: false } : arguments[3];
+        let q = arguments[3];
 
         this.limitsRevision = undefined;
         this.cachedDir = void 0;
@@ -140,6 +53,8 @@ class Segment {
         this.roadRevision = 0;
         this.dirRevision = undefined;
         this.lengthRevision = void 0;
+        /** meta-information relevant to global goals */
+        this.q = {};
         /** links backwards and forwards */
         this.links = { b: [], f: [] };
         this.users = [];
@@ -148,8 +63,8 @@ class Segment {
         const obj = this;
         this.start = { x: start.x, y: start.y };
         this.end = { x: end.x, y: end.y };
-        if (!q) q = { highway: false };
-        this.width = q.highway ? config.mapGeneration.HIGHWAY_SEGMENT_WIDTH : config.mapGeneration.DEFAULT_SEGMENT_WIDTH;
+        for (const t in q) this.q[t] = q[t];
+        this.width = this.q.highway ? config.mapGeneration.HIGHWAY_SEGMENT_WIDTH : config.mapGeneration.DEFAULT_SEGMENT_WIDTH;
         // representation of road
         this.r = {
             start: start,
@@ -166,9 +81,8 @@ class Segment {
             }
         };
         this.t = t;
-        this.q = q;
 
-        var _ref = q.highway ? [1200, 12] : [800, 6];
+        var _ref = this.q.highway ? [1200, 12] : [800, 6];
 
         var _ref2 = _slicedToArray(_ref, 2);
 
@@ -180,8 +94,7 @@ class Segment {
             x: Math.min(this.start.x, this.end.x),
             y: Math.min(this.start.y, this.end.y),
             width: Math.abs(this.start.x - this.end.x),
-            height: Math.abs(this.start.y - this.end.y),
-            o: this
+            height: Math.abs(this.start.y - this.end.y)
         };
     }
     currentSpeed() {
@@ -193,8 +106,8 @@ class Segment {
     dir() {
         if (this.dirRevision !== this.roadRevision) {
             this.dirRevision = this.roadRevision;
-            const vector = math.subtractPoints(this.r.end, this.r.start);
-            this.cachedDir = -1 * math.sign(math.crossProduct({ x: 0, y: 1 }, vector)) * math.angleBetween({ x: 0, y: 1 }, vector);
+            const vector = math_1.math.subtractPoints(this.r.end, this.r.start);
+            this.cachedDir = -1 * math_1.math.sign(math_1.math.crossProduct({ x: 0, y: 1 }, vector)) * math_1.math.angleBetween({ x: 0, y: 1 }, vector);
         }
         return this.cachedDir;
     }
@@ -202,7 +115,7 @@ class Segment {
     length() {
         if (this.lengthRevision !== this.roadRevision) {
             this.lengthRevision = this.roadRevision;
-            this.cachedLength = math.length(this.r.start, this.r.end);
+            this.cachedLength = math_1.math.length(this.r.start, this.r.end);
         }
         return this.cachedLength;
     }
@@ -215,9 +128,9 @@ class Segment {
 
     startIsBackwards() {
         if (this.links.b.length > 0) {
-            return math.equalV(this.links.b[0].r.start, this.r.start) || math.equalV(this.links.b[0].r.end, this.r.start);
+            return math_1.math.equalV(this.links.b[0].r.start, this.r.start) || math_1.math.equalV(this.links.b[0].r.end, this.r.start);
         } else {
-            return math.equalV(this.links.f[0].r.start, this.r.end) || math.equalV(this.links.f[0].r.end, this.r.end);
+            return math_1.math.equalV(this.links.f[0].r.start, this.r.end) || math_1.math.equalV(this.links.f[0].r.end, this.r.end);
         }
     }
 
@@ -263,7 +176,7 @@ class Segment {
         const splitPart = segmentFactory.fromExisting(this);
         const startIsBackwards = this.startIsBackwards();
         segmentList.push(splitPart);
-        qTree.insert(splitPart.limits());
+        qTree.insert(splitPart.limits(), splitPart);
         splitPart.r.setEnd(point);
         this.r.setStart(point);
         //# links are not copied using the preceding factory method.
@@ -331,7 +244,7 @@ const heatmap = {
     }
 };
 function doRoadSegmentsIntersect(r1, r2) {
-    return math.doLineSegmentsIntersect(r1.start, r1.end, r2.start, r2.end, true);
+    return math_1.math.doLineSegmentsIntersect(r1.start, r1.end, r2.start, r2.end, true);
 }
 ;
 const localConstraints = function (segment, segments, qTree, debugData) {
@@ -340,8 +253,7 @@ const localConstraints = function (segment, segments, qTree, debugData) {
         func: undefined,
         t: undefined
     };
-    for (const match of qTree.retrieve(segment.limits())) {
-        let other = match.o;
+    for (const other of qTree.retrieve(segment.limits())) {
         // intersection check
         if (action.priority <= 4) {
             const intersection = doRoadSegmentsIntersect(segment.r, other.r);
@@ -351,7 +263,7 @@ const localConstraints = function (segment, segments, qTree, debugData) {
                     action.priority = 4;
                     action.func = function () {
                         // if intersecting lines are too similar don't continue
-                        if (math.minDegreeDifference(other.dir(), segment.dir()) < config.mapGeneration.MINIMUM_INTERSECTION_DEVIATION) {
+                        if (math_1.math.minDegreeDifference(other.dir(), segment.dir()) < config.mapGeneration.MINIMUM_INTERSECTION_DEVIATION) {
                             return false;
                         }
                         other.split(intersection, segment, segments, qTree);
@@ -368,7 +280,7 @@ const localConstraints = function (segment, segments, qTree, debugData) {
         if (action.priority <= 3) {
             //# current segment's start must have been checked to have been created.
             //# other segment's start must have a corresponding end.
-            if (math.length(segment.r.end, other.r.end) <= config.mapGeneration.ROAD_SNAP_DISTANCE) {
+            if (math_1.math.length(segment.r.end, other.r.end) <= config.mapGeneration.ROAD_SNAP_DISTANCE) {
                 const point = other.r.end;
                 action.priority = 3;
                 action.func = function () {
@@ -378,7 +290,7 @@ const localConstraints = function (segment, segments, qTree, debugData) {
                     const links = other.startIsBackwards() ? other.links.f : other.links.b;
                     // # check for duplicate lines, don't add if it exists
                     // # this should be done before links are setup, to avoid having to undo that step
-                    if (links.some(link => math.equalV(link.r.start, segment.r.end) && math.equalV(link.r.end, segment.r.start) || math.equalV(link.r.start, segment.r.start) && math.equalV(link.r.end, segment.r.end))) {
+                    if (links.some(link => math_1.math.equalV(link.r.start, segment.r.end) && math_1.math.equalV(link.r.end, segment.r.start) || math_1.math.equalV(link.r.start, segment.r.start) && math_1.math.equalV(link.r.end, segment.r.end))) {
                         return false;
                     }
                     links.forEach(link => {
@@ -397,12 +309,12 @@ const localConstraints = function (segment, segments, qTree, debugData) {
         }
         //  intersection within radius check
         if (action.priority <= 2) {
-            var _math$distanceToLine = math.distanceToLine(segment.r.end, other.r.start, other.r.end);
+            var _math_1$math$distance = math_1.math.distanceToLine(segment.r.end, other.r.start, other.r.end);
 
-            const distance2 = _math$distanceToLine.distance2;
-            const pointOnLine = _math$distanceToLine.pointOnLine;
-            const lineProj2 = _math$distanceToLine.lineProj2;
-            const length2 = _math$distanceToLine.length2;
+            const distance2 = _math_1$math$distance.distance2;
+            const pointOnLine = _math_1$math$distance.pointOnLine;
+            const lineProj2 = _math_1$math$distance.lineProj2;
+            const length2 = _math_1$math$distance.length2;
 
             if (distance2 < config.mapGeneration.ROAD_SNAP_DISTANCE * config.mapGeneration.ROAD_SNAP_DISTANCE && lineProj2 >= 0 && lineProj2 <= length2) {
                 const point = pointOnLine;
@@ -411,7 +323,7 @@ const localConstraints = function (segment, segments, qTree, debugData) {
                     segment.r.end = point;
                     segment.q.severed = true;
                     // # if intersecting lines are too closely aligned don't continue
-                    if (math.minDegreeDifference(other.dir(), segment.dir()) < config.mapGeneration.MINIMUM_INTERSECTION_DEVIATION) {
+                    if (math_1.math.minDegreeDifference(other.dir(), segment.dir()) < config.mapGeneration.MINIMUM_INTERSECTION_DEVIATION) {
                         return false;
                     }
                     other.split(point, segment, segments, qTree);
@@ -485,7 +397,7 @@ const globalGoals = {
         return newBranches;
     }
 };
-exports.generate = function (seed) {
+exports.generate = function* (seed) {
     const debugData = {};
     Math.seedrandom(seed);
     // # NB: this perlin noise library only supports 65536 different seeds
@@ -504,7 +416,7 @@ exports.generate = function (seed) {
     priorityQ.push(rootSegment);
     priorityQ.push(oppositeDirection);
     const segments = [];
-    const qTree = new Quadtree_1.default(config.mapGeneration.QUADTREE_PARAMS, config.mapGeneration.QUADTREE_MAX_OBJECTS, config.mapGeneration.QUADTREE_MAX_LEVELS);
+    const qTree = new Quadtree_1.Quadtree(config.mapGeneration.QUADTREE_PARAMS, config.mapGeneration.QUADTREE_MAX_OBJECTS, config.mapGeneration.QUADTREE_MAX_LEVELS);
     while (priorityQ.length > 0 && segments.length < config.mapGeneration.SEGMENT_COUNT_LIMIT) {
         //     # pop smallest r(ti, ri, qi) from Q (i.e., smallest 't')
         let minT = Infinity;
@@ -520,77 +432,134 @@ exports.generate = function (seed) {
         if (accepted) {
             if (minSegment.setupBranchLinks != null) minSegment.setupBranchLinks();
             segments.push(minSegment);
-            qTree.insert(minSegment.limits());
+            qTree.insert(minSegment.limits(), minSegment);
             globalGoals.generate(minSegment).forEach(newSegment => {
                 newSegment.t = minSegment.t + 1 + newSegment.t;
                 priorityQ.push(newSegment);
             });
+            yield { segments: segments, priorityQ: priorityQ, qTree: qTree };
         }
     }
     let id = 0;
     for (const segment of segments) segment.id = id++;
     console.log(segments.length + " segments generated.");
-    return { segments: segments, qTree: qTree, heatmap: heatmap, debugData: debugData };
+    return { segments: segments, qTree: qTree, priorityQ: priorityQ };
 };
-console.time("generating");
-const stuff = exports.generate(Math.random() + "bla");
-console.timeEnd("generating");
-const W = 1500,
-      H = 900;
-const bounds = (function () {
-    const lim = stuff.segments.map(s => s.limits());
-    return {
-        minx: Math.min(...lim.map(s => s.x)),
-        miny: Math.min(...lim.map(s => s.y)),
-        maxx: Math.max(...lim.map(s => s.x)),
-        maxy: Math.max(...lim.map(s => s.y))
+const seed = Math.random() + "bla";
+const worldScale = 1 / 10;
+console.log("generating with seed " + seed);
+const generator = exports.generate(seed);
+let W = window.innerWidth,
+    H = window.innerHeight;
+const dobounds = function (segs) {
+    let interpolate = arguments.length <= 1 || arguments[1] === undefined ? 1 : arguments[1];
+
+    const lim = segs.map(s => s.limits());
+    const bounds = {
+        minx: Math.min(...lim.map(s => s.x * worldScale)),
+        miny: Math.min(...lim.map(s => s.y * worldScale)),
+        maxx: Math.max(...lim.map(s => s.x * worldScale)),
+        maxy: Math.max(...lim.map(s => s.y * worldScale))
     };
-})();
-const renderer = PIXI.autoDetectRenderer(W, H, { backgroundColor: 0xaaaaaa, antialias: true });
+    const scale = Math.min(W / (bounds.maxx - bounds.minx), H / (bounds.maxy - bounds.miny)) * 0.9;
+    const npx = -(bounds.maxx + bounds.minx) / 2 * scale + W / 2;
+    const npy = -(bounds.maxy + bounds.miny) / 2 * scale + H / 2;
+    stage.position.x = math_1.math.lerp(stage.position.x, npx, interpolate);
+    stage.position.y = math_1.math.lerp(stage.position.y, npy, interpolate);
+    stage.scale.x = math_1.math.lerp(stage.scale.x, scale, interpolate);
+    stage.scale.y = math_1.math.lerp(stage.scale.y, scale, interpolate);
+};
+const renderer = PIXI.autoDetectRenderer(W, H, { backgroundColor: 0xeeeeee, antialias: true });
 document.body.appendChild(renderer.view);
 const graphics = new PIXI.Graphics();
 const stage = new PIXI.Container();
+const makeSpeed = 2;
 stage.addChild(graphics);
 stage.interactive = true;
-const scale = Math.min(W / (bounds.maxx - bounds.minx), H / (bounds.maxy - bounds.miny));
-stage.position.x = -bounds.minx * scale;
-stage.position.y = -bounds.miny * scale;
-stage.scale.x = scale;
-stage.scale.y = scale;
-stage.hitArea = new PIXI.Rectangle(-10000, -10000, 20000, 20000);
+stage.hitArea = new PIXI.Rectangle(-1e5, -1e5, 2e5, 2e5);
 function renderSegment(seg) {
-    graphics.lineStyle(seg.width * 10, 0x000000, 1);
-    graphics.moveTo(seg.r.start.x, seg.r.start.y);
-    graphics.lineTo(seg.r.end.x, seg.r.end.y);
+    let color = arguments.length <= 1 || arguments[1] === undefined ? 0x000000 : arguments[1];
+
+    if (!color) color = seg.q.color;
+    graphics.lineStyle(seg.width * 10 * worldScale, color, 1);
+    graphics.moveTo(seg.r.start.x * worldScale, seg.r.start.y * worldScale);
+    graphics.lineTo(seg.r.end.x * worldScale, seg.r.end.y * worldScale);
 }
-stage.on('mousedown', onDragStart).on('touchstart', onDragStart).on('mouseup', onDragEnd).on('mouseupoutside', onDragEnd).on('touchend', onDragEnd).on('touchendoutside', onDragEnd).on('mousemove', onDragMove).on('touchmove', onDragMove);
-function onDragStart(event) {
-    this.start = { x: event.data.global.x, y: event.data.global.y };
-    this.dragging = true;
-}
-function onDragEnd() {
-    this.dragging = false;
-    // set the interaction data to null
-    this.data = null;
-}
-function onDragMove(event) {
-    if (this.dragging) {
-        //var newPosition = this.data.getLocalPosition(this.parent);
-        this.position.x += event.data.global.x - this.start.x;
-        this.position.y += event.data.global.y - this.start.y;
-        this.start = { x: event.data.global.x, y: event.data.global.y };
+stage.on('mousedown', onDragStart).on('touchstart', onDragStart).on('mouseup', onDragEnd).on('mouseupoutside', onDragEnd).on('touchend', onDragEnd).on('touchendoutside', onDragEnd).on('mousemove', onDragMove).on('touchmove', onDragMove).on('click', onClick);
+function onClick(event) {
+    const p = event.data.getLocalPosition(graphics);
+    p.x /= worldScale;
+    p.y /= worldScale;
+    const poss = stuff.qTree.retrieve({
+        x: p.x - 10, y: p.y - 10,
+        width: 20, height: 20
+    });
+    for (const seg of poss) {
+        seg.q.color = 0xff0000;
     }
 }
+function onDragStart(event) {
+    this.dragstart = { x: event.data.global.x, y: event.data.global.y };
+}
+function onDragEnd() {
+    this.dragstart = null;
+}
+function onDragMove(event) {
+    if (this.dragstart) {
+        this.position.x += event.data.global.x - this.dragstart.x;
+        this.position.y += event.data.global.y - this.dragstart.y;
+        this.dragstart = { x: event.data.global.x, y: event.data.global.y };
+    }
+}
+function zoom(x, y, direction) {
+    const beforeTransform = stage.toLocal(new PIXI.Point(x, y));
+    var factor = 1 + direction * 0.1;
+    stage.scale.x *= factor;
+    stage.scale.y *= factor;
+    const afterTransform = stage.toLocal(new PIXI.Point(x, y));
+    stage.position.x += (afterTransform.x - beforeTransform.x) * stage.scale.x;
+    stage.position.y += (afterTransform.y - beforeTransform.y) * stage.scale.y;
+}
+window.addEventListener('wheel', e => zoom(e.clientX, e.clientY, -math_1.math.sign(e.deltaY)));
+let stuff;
+let done = false;
 requestAnimationFrame(animate);
+let iteration = 0;
 function animate() {
-    for (const seg of stuff.segments.splice(0, 10)) renderSegment(seg);
+    for (let i = 0; i < iteration / 100 * makeSpeed + 1; i++) {
+        const iter = generator.next();
+        if (!iter.done) {
+            stuff = iter.value;
+            iteration++;
+        } else done = true;
+    }
+    if (!done) dobounds(stuff.segments, iteration < 20 ? 1 : 0.02);
+    graphics.clear();
+    for (let x = 0; x < W; x += 20) for (let y = 0; y < H; y += 20) {
+        // (x-stage.position.x)/stage.scale.x, (y-stage.position.y)/stage.scale.y
+        const p = stage.toLocal(new PIXI.Point(x, y));
+        const v = 255 - heatmap.populationAt(p.x, p.y) * 127 | 0;
+        //const v = heatmap.populationAt(p.x, p.y) > config.mapGeneration.NORMAL_BRANCH_POPULATION_THRESHOLD ? 255 : config.mapGeneration.HIGHWAY_BRANCH_POPULATION_THRESHOLD ?
+        // 180:90;
+        graphics.beginFill(v << 16 | v << 8 | v);
+        graphics.drawRect(p.x, p.y, 20 / stage.scale.x, 20 / stage.scale.y);
+        graphics.endFill();
+    }
+    for (const seg of stuff.segments) renderSegment(seg);
+    if (!done) for (const seg of stuff.priorityQ) renderSegment(seg, 0xFF0000);
     requestAnimationFrame(animate);
-    // render the stage
     renderer.render(stage);
+    iteration++;
 }
 const glbl = window;
 glbl.renderer = renderer;
 glbl.graphics = graphics;
 glbl.stage = stage;
-glbl.bounds = bounds;
+glbl.bounds = dobounds;
+function onResize() {
+    W = window.innerWidth;
+    H = window.innerHeight;
+    renderer.resize(W, H);
+}
+window.addEventListener("resize", onResize);
 

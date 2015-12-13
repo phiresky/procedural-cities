@@ -20,147 +20,101 @@ class Quadtree {
         this.max_levels = max_levels;
         this.level = level;
         this.objects = [];
-        this.nodes = [];
+        this.objectsO = [];
+        this.isLeaf = true;
         if (this.level === undefined)
             this.level = 0;
     }
     ;
-    /*
+    /**
      * Split the node into 4 subnodes
      */
     split() {
-        var nextLevel = this.level + 1, subWidth = Math.round(this.bounds.width / 2), subHeight = Math.round(this.bounds.height / 2), x = Math.round(this.bounds.x), y = Math.round(this.bounds.y);
+        this.isLeaf = false;
+        const level = this.level + 1, width = this.bounds.width / 2, height = this.bounds.height / 2, x = this.bounds.x, y = this.bounds.y;
         //top right node
-        this.nodes[0] = new Quadtree({
-            x: x + subWidth,
-            y: y,
-            width: subWidth,
-            height: subHeight
-        }, this.max_objects, this.max_levels, nextLevel);
+        this.topRight = new Quadtree({
+            x: x + width, y: y, width: width, height: height
+        }, this.max_objects, this.max_levels, level);
         //top left node
-        this.nodes[1] = new Quadtree({
-            x: x,
-            y: y,
-            width: subWidth,
-            height: subHeight
-        }, this.max_objects, this.max_levels, nextLevel);
+        this.topLeft = new Quadtree({
+            x: x, y: y, width: width, height: height
+        }, this.max_objects, this.max_levels, level);
         //bottom left node
-        this.nodes[2] = new Quadtree({
-            x: x,
-            y: y + subHeight,
-            width: subWidth,
-            height: subHeight
-        }, this.max_objects, this.max_levels, nextLevel);
+        this.bottomLeft = new Quadtree({
+            x: x, y: y + height, width: width, height: height
+        }, this.max_objects, this.max_levels, level);
         //bottom right node
-        this.nodes[3] = new Quadtree({
-            x: x + subWidth,
-            y: y + subHeight,
-            width: subWidth,
-            height: subHeight
-        }, this.max_objects, this.max_levels, nextLevel);
+        this.bottomRight = new Quadtree({
+            x: x + width, y: y + height, width: width, height: height
+        }, this.max_objects, this.max_levels, level);
+        //add all objects to there corresponding subnodes
+        for (let i = 0; i < this.objects.length; i++) {
+            const rect = this.objects[i];
+            const obj = this.objectsO[i];
+            for (const node of this.getRelevantNodes(rect))
+                node.insert(rect, obj);
+        }
+        this.objects = [];
+        this.objectsO = [];
     }
     ;
-    /*
-     * Determine which node the object belongs to
-     * @param Object pRect		bounds of the area to be checked, with x, y, width, height
-     * @return Integer		index of the subnode (0-3), or -1 if pRect cannot completely fit within a subnode and is part of the parent node
+    /**
+     * Determine which nodes the object belongs to
+     * @param r the AABB to check
      */
-    getIndex(pRect) {
-        var index = -1, verticalMidpoint = this.bounds.x + (this.bounds.width / 2), horizontalMidpoint = this.bounds.y + (this.bounds.height / 2), 
-        //pRect can completely fit within the top quadrants
-        topQuadrant = (pRect.y < horizontalMidpoint && pRect.y + pRect.height < horizontalMidpoint), 
-        //pRect can completely fit within the bottom quadrants
-        bottomQuadrant = (pRect.y > horizontalMidpoint);
-        //pRect can completely fit within the left quadrants
-        if (pRect.x < verticalMidpoint && pRect.x + pRect.width < verticalMidpoint) {
-            if (topQuadrant) {
-                index = 1;
-            }
-            else if (bottomQuadrant) {
-                index = 2;
-            }
+    getRelevantNodes(r) {
+        const midX = this.bounds.x + (this.bounds.width / 2);
+        const midY = this.bounds.y + (this.bounds.height / 2);
+        const qs = [];
+        const isTop = r.y <= midY;
+        const isBottom = r.y + r.height > midY;
+        if (r.x <= midX) {
+            if (isTop)
+                qs.push(this.topLeft);
+            if (isBottom)
+                qs.push(this.bottomLeft);
         }
-        else if (pRect.x > verticalMidpoint) {
-            if (topQuadrant) {
-                index = 0;
-            }
-            else if (bottomQuadrant) {
-                index = 3;
-            }
+        if (r.x + r.width > midX) {
+            if (isTop)
+                qs.push(this.topRight);
+            if (isBottom)
+                qs.push(this.bottomRight);
         }
-        return index;
+        return qs;
     }
     ;
-    /*
+    /**
      * Insert the object into the node. If the node
      * exceeds the capacity, it will split and add all
      * objects to their corresponding subnodes.
      * @param Object pRect		bounds of the object to be added, with x, y, width, height
      */
-    insert(pRect) {
-        var i = 0, index;
-        //if we have subnodes ...
-        if (typeof this.nodes[0] !== 'undefined') {
-            index = this.getIndex(pRect);
-            if (index !== -1) {
-                this.nodes[index].insert(pRect);
-                return;
-            }
+    insert(pRect, obj) {
+        if (!this.isLeaf) {
+            for (const node of this.getRelevantNodes(pRect))
+                node.insert(pRect, obj);
+            return;
         }
         this.objects.push(pRect);
-        if (this.objects.length > this.max_objects && this.level < this.max_levels) {
-            //split if we don't already have subnodes
-            if (typeof this.nodes[0] === 'undefined') {
-                this.split();
-            }
-            //add all objects to there corresponding subnodes
-            while (i < this.objects.length) {
-                index = this.getIndex(this.objects[i]);
-                if (index !== -1) {
-                    this.nodes[index].insert(this.objects.splice(i, 1)[0]);
-                }
-                else {
-                    i = i + 1;
-                }
-            }
-        }
+        this.objectsO.push(obj);
+        if (this.objects.length > this.max_objects && this.level < this.max_levels)
+            this.split();
     }
     ;
-    /*
+    /**
      * Return all objects that could collide with the given object
      * @param Object pRect		bounds of the object to be checked, with x, y, width, height
      * @Return Array		array with all detected objects
      */
     retrieve(pRect) {
-        var index = this.getIndex(pRect), returnObjects = this.objects;
-        //if we have subnodes ...
-        if (typeof this.nodes[0] !== 'undefined') {
-            //if pRect fits into a subnode ..
-            if (index !== -1) {
-                returnObjects = returnObjects.concat(this.nodes[index].retrieve(pRect));
-            }
-            else {
-                for (var i = 0; i < this.nodes.length; i = i + 1) {
-                    returnObjects = returnObjects.concat(this.nodes[i].retrieve(pRect));
-                }
-            }
-        }
-        return returnObjects;
-    }
-    ;
-    /*
-     * Clear the quadtree
-     */
-    clear() {
-        this.objects = [];
-        for (var i = 0; i < this.nodes.length; i = i + 1) {
-            if (typeof this.nodes[i] !== 'undefined') {
-                this.nodes[i].clear();
-            }
-        }
-        this.nodes = [];
+        if (this.isLeaf)
+            return this.objectsO;
+        let relevant = [];
+        for (const node of this.getRelevantNodes(pRect))
+            relevant = relevant.concat(node.retrieve(pRect));
+        return relevant;
     }
     ;
 }
-Object.defineProperty(exports, "__esModule", { value: true });
-exports.default = Quadtree;
+exports.Quadtree = Quadtree;
