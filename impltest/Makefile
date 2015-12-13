@@ -1,5 +1,5 @@
-all: bin/index.html bin/render.browser.js
-bin/index.html: index.html bin
+all: bin bin/index.html bin/render.browser.js
+bin/index.html: index.html
 	cat $< > $@
 
 bin/%.browser.js: $(patsubst %.ts, bin/%.js, $(wildcard *.ts))

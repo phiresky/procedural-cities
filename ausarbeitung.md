@@ -156,7 +156,7 @@ Most systems employ at least two street types. @cities2001 introduce highways an
 
 @cities2001 use a complex L-system to produce the road network. The L-system has two external functions: `localConstraints` and `globalGoals`. GlobalGoals is used for the general structure of the roads. For the highways this is done by searching for the nearest population centers and navigating in that direction. Normal streets and highways are also directed according to road patterns, described in [@sec:road-patterns].
 
-LocalConstraints contains more local rules relevant for specific points on the map. In these specific points (described in [@sec:constraints]) the localConstraints function can adjust the parameters of the next iteration, or return FAILED if no there is no fitting solution.
+LocalConstraints contains more local rules relevant for specific points on the map. In these specific points (described in [@sec:constraints]) the localConstraints function can adjust the parameters of the next iteration, or return FAILED if there is no fitting solution.
 
 The approaches used in the other documents are described in more detail in [@sec:street-approaches].
 

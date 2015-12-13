@@ -1,8 +1,8 @@
 import {math} from "./math";
-import {Segment, generate, GeneratorResult, heatmap} from "./mapgen";
+import {config, Segment, generate, GeneratorResult, heatmap} from "./mapgen";
 import * as PIXI from 'pixi.js';
 
-const seed = "blablabla";
+const seed = "blablabla" + Math.random();
 const worldScale = 1 / 10;
 console.log("generating with seed " + seed);
 const generator = generate(seed);
@@ -23,10 +23,10 @@ const dobounds = function(segs: Segment[], interpolate = 1) {
     stage.scale.x = math.lerp(stage.scale.x, scale, interpolate);
     stage.scale.y = math.lerp(stage.scale.y, scale, interpolate);
 };
-const renderer = PIXI.autoDetectRenderer(W, H, { backgroundColor: 0xeeeeee, antialias: true });
+export const renderer = PIXI.autoDetectRenderer(W, H, { backgroundColor: 0xeeeeee, antialias: true });
 document.body.appendChild(renderer.view);
-const graphics = new PIXI.Graphics();
-const stage = new PIXI.Container();
+export const graphics = new PIXI.Graphics();
+export const stage = new PIXI.Container();
 const makeSpeed = 1;
 stage.addChild(graphics);
 stage.interactive = true;
@@ -89,12 +89,7 @@ function zoom(x: number, y: number, direction: number) {
     stage.position.y += (afterTransform.y - beforeTransform.y) * stage.scale.y;
 }
 window.addEventListener('wheel', e => zoom(e.clientX, e.clientY, -math.sign(e.deltaY)));
-let stuff: GeneratorResult;
-const global = window as any;
-global.renderer = renderer;
-global.graphics = graphics;
-global.stage = stage;
-global.bounds = dobounds;
+export let stuff: GeneratorResult;
 
 let done = false;
 requestAnimationFrame(animate);
@@ -104,23 +99,26 @@ function animate() {
         const iter = generator.next();
         if (!iter.done) {
             stuff = iter.value;
-            global.stuff = stuff;
+            stuff = stuff;
             iteration++;
         } else done = true;
     }
     if (!done) dobounds(stuff.segments, iteration < 20 ? 1 : 0.02);
     graphics.clear();
-    for (let x = 0; x < W; x += 20) for (let y = 0; y < H; y += 20) {
-        // (x-stage.position.x)/stage.scale.x, (y-stage.position.y)/stage.scale.y
-        const p = stage.toLocal(new PIXI.Point(x, y));
-        const v = 255 - (heatmap.populationAt(p.x, p.y) * 127) | 0;
-        //const v = heatmap.populationAt(p.x, p.y) > config.mapGeneration.NORMAL_BRANCH_POPULATION_THRESHOLD ? 255 : config.mapGeneration.HIGHWAY_BRANCH_POPULATION_THRESHOLD ?
-        // 180:90;
-        graphics.beginFill(v << 16 | v << 8 | v);
-        graphics.drawRect(p.x, p.y,
-            20 / stage.scale.x,
-            20 / stage.scale.y);
-        graphics.endFill();
+    if (config.DRAW_HEATMAP) {
+        const dim = config.HEAT_MAP_PIXEL_DIM;
+        for (let x = 0; x < W; x += dim) for (let y = 0; y < H; y += dim) {
+            const p = stage.toLocal(new PIXI.Point(x, y));
+            const pop = heatmap.populationAt((p.x+dim/2) / worldScale, (p.y+dim/2) / worldScale);
+            //const v = 255 - (pop * 127) | 0;
+            const v = pop > config.NORMAL_BRANCH_POPULATION_THRESHOLD ? 255 :
+                pop > config.HIGHWAY_BRANCH_POPULATION_THRESHOLD ? 200 : 150;
+            graphics.beginFill(v << 16 | v << 8 | v);
+            graphics.drawRect(p.x, p.y,
+                dim / stage.scale.x,
+                dim / stage.scale.y);
+            graphics.endFill();
+        }
     }
     for (const seg of stuff.segments) renderSegment(seg);
     if (!done) for (const seg of stuff.priorityQ) renderSegment(seg, 0xFF0000);
@@ -129,12 +127,10 @@ function animate() {
     renderer.render(stage);
     iteration++;
 }
-
 function onResize() {
     W = window.innerWidth;
     H = window.innerHeight;
     renderer.resize(W, H);
 }
-console.log("hi");
-
 window.addEventListener("resize", onResize);
+(window as any)._render = this;

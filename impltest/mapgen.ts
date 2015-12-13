@@ -5,16 +5,16 @@ import seedrandom from 'seedrandom'; seedrandom;
 import {Bounds, Quadtree} from "./Quadtree";
 import {Point, math} from './math';
 
-const config = {
+export const config = {
     DEFAULT_SEGMENT_LENGTH: 300, HIGHWAY_SEGMENT_LENGTH: 400,
     DEFAULT_SEGMENT_WIDTH: 6, HIGHWAY_SEGMENT_WIDTH: 16,
     RANDOM_BRANCH_ANGLE: function() { return math.randomNearCubic(3) },
     RANDOM_STRAIGHT_ANGLE: function() { return math.randomNearCubic(15) },
     DEFAULT_BRANCH_PROBABILITY: .4, HIGHWAY_BRANCH_PROBABILITY: .02,
     HIGHWAY_BRANCH_POPULATION_THRESHOLD: .1, NORMAL_BRANCH_POPULATION_THRESHOLD: .1,
-    NORMAL_BRANCH_TIME_DELAY_FROM_HIGHWAY: 5, MINIMUM_INTERSECTION_DEVIATION: 30,
-    SEGMENT_COUNT_LIMIT: 10000, DEBUG_DELAY: 0, ROAD_SNAP_DISTANCE: 50,
-    HEAT_MAP_PIXEL_DIM: 50, DRAW_HEATMAP: !1,
+    NORMAL_BRANCH_TIME_DELAY_FROM_HIGHWAY: 10, MINIMUM_INTERSECTION_DEVIATION: 30,
+    SEGMENT_COUNT_LIMIT: 10000, ROAD_SNAP_DISTANCE: 50,
+    HEAT_MAP_PIXEL_DIM: 25, DRAW_HEATMAP: true,
     QUADTREE_PARAMS: { x: -2E4, y: -2E4, width: 4E4, height: 4E4 },
     QUADTREE_MAX_OBJECTS: 10, QUADTREE_MAX_LEVELS: 10, DEBUG: !1
 };
@@ -142,12 +142,14 @@ export const heatmap = {
         return Math.pow((value1 * value2 + value3) / 2, 2);
     }
 };
-interface DebugData {
-    snaps?: Point[];
-    intersectionsRadius: Point[];
-    intersections: { x: number, t: number, y: number }[];
+class DebugData {
+    snaps: Point[] = [];
+    intersectionsRadius: Point[] = [];
+    intersections: { x: number, t: number, y: number }[] = [];
 }
-const localConstraints = function(segment: Segment, segments: Segment[], qTree: Quadtree<Segment>, debugData: DebugData) {
+let debugData = new DebugData();
+
+const localConstraints = function(segment: Segment, segments: Segment[], qTree: Quadtree<Segment>) {
     const action = {
         priority: 0, func: undefined as () => boolean, t: undefined as number
     };
@@ -167,7 +169,6 @@ const localConstraints = function(segment: Segment, segments: Segment[], qTree: 
                         other.split(intersection, segment, segments, qTree);
                         segment.end = intersection;
                         segment.q.severed = true;
-                        if (debugData.intersections == null) debugData.intersections = [];
                         debugData.intersections.push(intersection);
                         return true;
                     };
@@ -196,13 +197,12 @@ const localConstraints = function(segment: Segment, segments: Segment[], qTree: 
                     }
                     links.forEach(link => {
                         // pick links of remaining segments at junction corresponding to other.r.end
-                        link.linksForEndContaining(other).push(segment)
+                        link.linksForEndContaining(other).push(segment);
                         // add junction segments to snapped segment
-                        segment.links.f.push(link)
+                        segment.links.f.push(link);
                     });
                     links.push(segment);
                     segment.links.f.push(other);
-                    if (debugData.snaps == null) debugData.snaps = [];
                     debugData.snaps.push({ x: point.x, y: point.y });
                     return true;
                 };
@@ -222,7 +222,6 @@ const localConstraints = function(segment: Segment, segments: Segment[], qTree: 
                         return false;
                     }
                     other.split(point, segment, segments, qTree);
-                    if (debugData.intersectionsRadius == null) debugData.intersectionsRadius = [];
                     debugData.intersectionsRadius.push({ x: point.x, y: point.y });
                     return true;
                 };
@@ -321,8 +320,20 @@ function makeInitialSegments() {
     rootSegment.links.b.push(oppositeDirection);
     return [rootSegment, oppositeDirection];
 }
-export const generate = function* (seed: string): Iterator<GeneratorResult> {
-    const debugData = {};
+function generationStep(priorityQ: PriorityQueue<Segment>, segments: Segment[], qTree: Quadtree<Segment>) {
+    const minSegment = priorityQ.dequeue();
+    const accepted = localConstraints(minSegment, segments, qTree);
+    if (accepted) {
+        if (minSegment.setupBranchLinks != null) minSegment.setupBranchLinks();
+        segments.push(minSegment);
+        qTree.insert(minSegment.limits(), minSegment);
+        globalGoalsGenerate(minSegment).forEach(newSegment => {
+            newSegment.t = minSegment.t + 1 + newSegment.t;
+            priorityQ.enqueue(newSegment);
+        });
+    }
+}
+export function* generate(seed: string): Iterator<GeneratorResult> {
     Math.seedrandom(seed);
     noise.seed(Math.random());
     const priorityQ = new PriorityQueue<Segment>(s => s.t);
@@ -331,19 +342,10 @@ export const generate = function* (seed: string): Iterator<GeneratorResult> {
     const segments = [] as Segment[];
     const qTree = new Quadtree<Segment>(config.QUADTREE_PARAMS, config.QUADTREE_MAX_OBJECTS, config.QUADTREE_MAX_LEVELS);
     while (!priorityQ.empty() && segments.length < config.SEGMENT_COUNT_LIMIT) {
-        const minSegment = priorityQ.dequeue();
-        const accepted = localConstraints(minSegment, segments, qTree, debugData as any);
-        if (accepted) {
-            if (minSegment.setupBranchLinks != null) minSegment.setupBranchLinks();
-            segments.push(minSegment);
-            qTree.insert(minSegment.limits(), minSegment);
-            globalGoalsGenerate(minSegment).forEach(newSegment => {
-                newSegment.t = minSegment.t + 1 + newSegment.t;
-                priorityQ.enqueue(newSegment);
-            });
-            yield { segments, priorityQ: priorityQ.elements, qTree };
-        }
+        generationStep(priorityQ, segments, qTree);
+        yield { segments, priorityQ: priorityQ.elements, qTree };
     }
     console.log(segments.length + " segments generated.");
     yield { segments, qTree, priorityQ: priorityQ.elements };
 };
+(window as any)._mapgen = this;
