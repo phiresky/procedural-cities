@@ -24,24 +24,17 @@ const randomNearCubic = function(b: number) {
     return c;
 };
 const config = {
-    mapGeneration: {
-        DEFAULT_SEGMENT_LENGTH: 300, HIGHWAY_SEGMENT_LENGTH: 400,
-        DEFAULT_SEGMENT_WIDTH: 6, HIGHWAY_SEGMENT_WIDTH: 16,
-        RANDOM_BRANCH_ANGLE: function() { return randomNearCubic(3) },
-        RANDOM_STRAIGHT_ANGLE: function() { return randomNearCubic(15) },
-        DEFAULT_BRANCH_PROBABILITY: .4, HIGHWAY_BRANCH_PROBABILITY: .02,
-        HIGHWAY_BRANCH_POPULATION_THRESHOLD: .1, NORMAL_BRANCH_POPULATION_THRESHOLD: .1,
-        NORMAL_BRANCH_TIME_DELAY_FROM_HIGHWAY: 5, MINIMUM_INTERSECTION_DEVIATION: 30,
-        SEGMENT_COUNT_LIMIT: 10000, DEBUG_DELAY: 0, ROAD_SNAP_DISTANCE: 50,
-        HEAT_MAP_PIXEL_DIM: 50, DRAW_HEATMAP: !1,
-        QUADTREE_PARAMS: { x: -2E4, y: -2E4, width: 4E4, height: 4E4 },
-        QUADTREE_MAX_OBJECTS: 10, QUADTREE_MAX_LEVELS: 10, DEBUG: !1
-    },
-    gameLogic: {
-        SELECT_PAN_THRESHOLD: 50, SELECTION_RANGE: 50, DEFAULT_PICKUP_RANGE: 150,
-        DEFAULT_BOOST_FACTOR: 2, DEFAULT_BOOST_DURATION: 2,
-        MIN_LENGTH_FOR_VEHICLE_ARRIVAL: .1, DEFAULT_CARGO_CAPACITY: 1, MIN_SPEED_PROPORTION: .1
-    }
+    DEFAULT_SEGMENT_LENGTH: 300, HIGHWAY_SEGMENT_LENGTH: 400,
+    DEFAULT_SEGMENT_WIDTH: 6, HIGHWAY_SEGMENT_WIDTH: 16,
+    RANDOM_BRANCH_ANGLE: function() { return randomNearCubic(3) },
+    RANDOM_STRAIGHT_ANGLE: function() { return randomNearCubic(15) },
+    DEFAULT_BRANCH_PROBABILITY: .4, HIGHWAY_BRANCH_PROBABILITY: .02,
+    HIGHWAY_BRANCH_POPULATION_THRESHOLD: .1, NORMAL_BRANCH_POPULATION_THRESHOLD: .1,
+    NORMAL_BRANCH_TIME_DELAY_FROM_HIGHWAY: 5, MINIMUM_INTERSECTION_DEVIATION: 30,
+    SEGMENT_COUNT_LIMIT: 10000, DEBUG_DELAY: 0, ROAD_SNAP_DISTANCE: 50,
+    HEAT_MAP_PIXEL_DIM: 50, DRAW_HEATMAP: !1,
+    QUADTREE_PARAMS: { x: -2E4, y: -2E4, width: 4E4, height: 4E4 },
+    QUADTREE_MAX_OBJECTS: 10, QUADTREE_MAX_LEVELS: 10, DEBUG: !1
 };
 interface Road {
     start: Point;
@@ -91,7 +84,7 @@ export class Segment {
         this.start = { x: start.x, y: start.y };
         this.end = { x: end.x, y: end.y };
         for (const t in q) this.q[t] = q[t];
-        this.width = this.q.highway ? config.mapGeneration.HIGHWAY_SEGMENT_WIDTH : config.mapGeneration.DEFAULT_SEGMENT_WIDTH;
+        this.width = this.q.highway ? config.HIGHWAY_SEGMENT_WIDTH : config.DEFAULT_SEGMENT_WIDTH;
         // representation of road
         this.r = {
             start: start,
@@ -110,11 +103,6 @@ export class Segment {
         this.t = t;
         [this.maxSpeed, this.capacity] = this.q.highway ? [1200, 12] : [800, 6];
     }
-
-    currentSpeed() {
-        // subtract 1 from user's length so that a single user can go full speed
-        return Math.min(config.gameLogic.MIN_SPEED_PROPORTION, 1 - Math.max(0, this.users.length - 1) / this.capacity) * this.maxSpeed;
-    };
 
     // clockwise direction
     dir() {
@@ -147,21 +135,7 @@ export class Segment {
             return math.equalV(this.links.f[0].r.start, this.r.end) || math.equalV(this.links.f[0].r.end, this.r.end);
         }
     };
-
-    cost() {
-        return this.length() / this.currentSpeed();
-    };
-
-    costTo(other: Segment, fromFraction?: number) {
-        const segmentEnd = this.endContaining(other);
-        let res: number = 0.5;
-        if (fromFraction != null) {
-            if (segmentEnd === Segment.End.START) res = fromFraction;
-            else res = 1 - fromFraction;
-        }
-        return this.cost() * res;
-    };
-
+    
     neighbours() {
         return this.links.f.concat(this.links.b);
     };
@@ -226,7 +200,7 @@ export class Segment {
     clone(t = this.t, r = this.r, q = this.q) {
         return new Segment(r.start, r.end, t, q);
     }
-    static usingDirection(start: Point, dir = 90, length = config.mapGeneration.DEFAULT_SEGMENT_LENGTH,
+    static usingDirection(start: Point, dir = 90, length = config.DEFAULT_SEGMENT_LENGTH,
         t: number, q: MetaInfo) {
 
         var end = {
@@ -271,7 +245,7 @@ const localConstraints = function(segment: Segment, segments: Segment[], qTree: 
                     action.priority = 4;
                     action.func = function() {
                         // if intersecting lines are too similar don't continue
-                        if (math.minDegreeDifference(other.dir(), segment.dir()) < config.mapGeneration.MINIMUM_INTERSECTION_DEVIATION) {
+                        if (math.minDegreeDifference(other.dir(), segment.dir()) < config.MINIMUM_INTERSECTION_DEVIATION) {
                             return false;
                         }
                         other.split(intersection, segment, segments, qTree);
@@ -288,7 +262,7 @@ const localConstraints = function(segment: Segment, segments: Segment[], qTree: 
         if (action.priority <= 3) {
             // current segment's start must have been checked to have been created.
             // other segment's start must have a corresponding end.
-            if (math.length(segment.r.end, other.r.end) <= config.mapGeneration.ROAD_SNAP_DISTANCE) {
+            if (math.length(segment.r.end, other.r.end) <= config.ROAD_SNAP_DISTANCE) {
                 const point = other.r.end;
                 action.priority = 3;
                 action.func = function() {
@@ -318,14 +292,14 @@ const localConstraints = function(segment: Segment, segments: Segment[], qTree: 
         //  intersection within radius check
         if (action.priority <= 2) {
             const {distance2, pointOnLine, lineProj2, length2} = math.distanceToLine(segment.r.end, other.r.start, other.r.end);
-            if (distance2 < config.mapGeneration.ROAD_SNAP_DISTANCE * config.mapGeneration.ROAD_SNAP_DISTANCE && lineProj2 >= 0 && lineProj2 <= length2) {
+            if (distance2 < config.ROAD_SNAP_DISTANCE * config.ROAD_SNAP_DISTANCE && lineProj2 >= 0 && lineProj2 <= length2) {
                 const point = pointOnLine;
                 action.priority = 2;
                 action.func = function() {
                     segment.r.end = point;
                     segment.q.severed = true;
                     // if intersecting lines are too closely aligned don't continue
-                    if (math.minDegreeDifference(other.dir(), segment.dir()) < config.mapGeneration.MINIMUM_INTERSECTION_DEVIATION) {
+                    if (math.minDegreeDifference(other.dir(), segment.dir()) < config.MINIMUM_INTERSECTION_DEVIATION) {
                         return false;
                     }
                     other.split(point, segment, segments, qTree);
@@ -350,11 +324,11 @@ const globalGoals = {
             // used for highways or going straight on a normal branch
             const templateContinue = (direction: number) => template(direction, previousSegment.length(), 0, previousSegment.q);
             // not using q, i.e. not highways
-            const templateBranch = (direction: number) => template(direction, config.mapGeneration.DEFAULT_SEGMENT_LENGTH, previousSegment.q.highway ? config.mapGeneration.NORMAL_BRANCH_TIME_DELAY_FROM_HIGHWAY : 0, null);
+            const templateBranch = (direction: number) => template(direction, config.DEFAULT_SEGMENT_LENGTH, previousSegment.q.highway ? config.NORMAL_BRANCH_TIME_DELAY_FROM_HIGHWAY : 0, null);
             const continueStraight = templateContinue(previousSegment.dir());
             const straightPop = heatmap.popOnRoad(continueStraight.r);
             if (previousSegment.q.highway) {
-                const randomStraight = templateContinue(previousSegment.dir() + config.mapGeneration.RANDOM_STRAIGHT_ANGLE());
+                const randomStraight = templateContinue(previousSegment.dir() + config.RANDOM_STRAIGHT_ANGLE());
                 const randomPop = heatmap.popOnRoad(randomStraight.r);
                 let roadPop: number;
                 if (randomPop > straightPop) {
@@ -364,24 +338,24 @@ const globalGoals = {
                     newBranches.push(continueStraight);
                     roadPop = straightPop;
                 }
-                if (roadPop > config.mapGeneration.HIGHWAY_BRANCH_POPULATION_THRESHOLD) {
-                    if (Math.random() < config.mapGeneration.HIGHWAY_BRANCH_PROBABILITY) {
-                        const leftHighwayBranch = templateContinue(previousSegment.dir() - 90 + config.mapGeneration.RANDOM_BRANCH_ANGLE());
+                if (roadPop > config.HIGHWAY_BRANCH_POPULATION_THRESHOLD) {
+                    if (Math.random() < config.HIGHWAY_BRANCH_PROBABILITY) {
+                        const leftHighwayBranch = templateContinue(previousSegment.dir() - 90 + config.RANDOM_BRANCH_ANGLE());
                         newBranches.push(leftHighwayBranch);
-                    } else if (Math.random() < config.mapGeneration.HIGHWAY_BRANCH_PROBABILITY) {
-                        const rightHighwayBranch = templateContinue(previousSegment.dir() + 90 + config.mapGeneration.RANDOM_BRANCH_ANGLE());
+                    } else if (Math.random() < config.HIGHWAY_BRANCH_PROBABILITY) {
+                        const rightHighwayBranch = templateContinue(previousSegment.dir() + 90 + config.RANDOM_BRANCH_ANGLE());
                         newBranches.push(rightHighwayBranch);
                     }
                 }
-            } else if (straightPop > config.mapGeneration.NORMAL_BRANCH_POPULATION_THRESHOLD) {
+            } else if (straightPop > config.NORMAL_BRANCH_POPULATION_THRESHOLD) {
                 newBranches.push(continueStraight);
             }
-            if (straightPop > config.mapGeneration.NORMAL_BRANCH_POPULATION_THRESHOLD) {
-                if (Math.random() < config.mapGeneration.DEFAULT_BRANCH_PROBABILITY) {
-                    const leftBranch = templateBranch(previousSegment.dir() - 90 + config.mapGeneration.RANDOM_BRANCH_ANGLE());
+            if (straightPop > config.NORMAL_BRANCH_POPULATION_THRESHOLD) {
+                if (Math.random() < config.DEFAULT_BRANCH_PROBABILITY) {
+                    const leftBranch = templateBranch(previousSegment.dir() - 90 + config.RANDOM_BRANCH_ANGLE());
                     newBranches.push(leftBranch);
-                } else if (Math.random() < config.mapGeneration.DEFAULT_BRANCH_PROBABILITY) {
-                    const rightBranch = templateBranch(previousSegment.dir() + 90 + config.mapGeneration.RANDOM_BRANCH_ANGLE());
+                } else if (Math.random() < config.DEFAULT_BRANCH_PROBABILITY) {
+                    const rightBranch = templateBranch(previousSegment.dir() + 90 + config.RANDOM_BRANCH_ANGLE());
                     newBranches.push(rightBranch);
                 }
             }
@@ -424,10 +398,10 @@ export interface GeneratorResult {
 }
 function makeInitialSegments() {
     // setup first segments in queue
-    const rootSegment = new Segment({ x: 0, y: 0 }, { x: config.mapGeneration.HIGHWAY_SEGMENT_LENGTH, y: 0 }, 0, { highway: true });
+    const rootSegment = new Segment({ x: 0, y: 0 }, { x: config.HIGHWAY_SEGMENT_LENGTH, y: 0 }, 0, { highway: true });
     const oppositeDirection = rootSegment.clone();
     const newEnd = {
-        x: rootSegment.r.start.x - config.mapGeneration.HIGHWAY_SEGMENT_LENGTH,
+        x: rootSegment.r.start.x - config.HIGHWAY_SEGMENT_LENGTH,
         y: oppositeDirection.r.end.y
     };
     oppositeDirection.r.setEnd(newEnd);
@@ -444,8 +418,8 @@ export const generate = function* (seed: string): Iterator<GeneratorResult> {
 
     priorityQ.enqueue(...makeInitialSegments());
     const segments = [] as Segment[];
-    const qTree = new Quadtree<Segment>(config.mapGeneration.QUADTREE_PARAMS, config.mapGeneration.QUADTREE_MAX_OBJECTS, config.mapGeneration.QUADTREE_MAX_LEVELS);
-    while (!priorityQ.empty() && segments.length < config.mapGeneration.SEGMENT_COUNT_LIMIT) {
+    const qTree = new Quadtree<Segment>(config.QUADTREE_PARAMS, config.QUADTREE_MAX_OBJECTS, config.QUADTREE_MAX_LEVELS);
+    while (!priorityQ.empty() && segments.length < config.SEGMENT_COUNT_LIMIT) {
         const minSegment = priorityQ.dequeue();
         const accepted = localConstraints(minSegment, segments, qTree, debugData as any);
         if (accepted) {
