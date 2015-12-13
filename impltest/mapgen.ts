@@ -481,6 +481,7 @@ const renderer = PIXI.autoDetectRenderer(W, H, { backgroundColor: 0xeeeeee, anti
 document.body.appendChild(renderer.view);
 const graphics = new PIXI.Graphics();
 const stage = new PIXI.Container();
+const makeSpeed = 2;
 stage.addChild(graphics);
 stage.interactive = true;
 stage.hitArea = new PIXI.Rectangle(-1e5, -1e5, 2e5, 2e5);
@@ -540,7 +541,7 @@ let done = false;
 requestAnimationFrame(animate);
 let iteration = 0;
 function animate() {
-    for (let i = 0; i < (iteration / 100) + 1; i++) {
+    for (let i = 0; i < (iteration / 100 * makeSpeed) + 1; i++) {
         const iter = generator.next();
         if (!iter.done) {
             stuff = iter.value;
