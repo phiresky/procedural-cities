@@ -93,7 +93,7 @@ export class Segment {
         const obj = this;
         this.start = { x: start.x, y: start.y };
         this.end = { x: end.x, y: end.y };
-        for(const t in q) this.q[t] = q[t];
+        for (const t in q) this.q[t] = q[t];
         this.width = this.q.highway ? config.mapGeneration.HIGHWAY_SEGMENT_WIDTH : config.mapGeneration.DEFAULT_SEGMENT_WIDTH;
         // representation of road
         this.r = {
@@ -191,18 +191,18 @@ export class Segment {
     };
 
     split(point: Point, segment: Segment, segmentList: Segment[], qTree: Quadtree<Segment>) {
-        const splitPart = segmentFactory.fromExisting(this);
+        const splitPart = this.clone();
         const startIsBackwards = this.startIsBackwards();
         segmentList.push(splitPart);
         qTree.insert(splitPart.limits(), splitPart);
         splitPart.r.setEnd(point);
         this.r.setStart(point);
-        //# links are not copied using the preceding factory method.
-        //# copy link array for the split part, keeping references the same
+        // links are not copied using the preceding factory method.
+        // copy link array for the split part, keeping references the same
         splitPart.links.b = this.links.b.slice(0);
         splitPart.links.f = this.links.f.slice(0);
         let firstSplit: Segment, fixLinks: Segment[], secondSplit: Segment;
-        // # determine which links correspond to which end of the split segment
+        // determine which links correspond to which end of the split segment
         if (startIsBackwards) {
             firstSplit = splitPart;
             secondSplit = this;
@@ -226,13 +226,12 @@ export class Segment {
         segment.links.f.push(firstSplit);
         segment.links.f.push(secondSplit);
     };
-}
-
-const segmentFactory = {
-    fromExisting: function(segment: Segment, t = segment.t, r = segment.r, q = segment.q) {
+    clone(t = this.t, r = this.r, q = this.q) {
         return new Segment(r.start, r.end, t, q);
-    },
-    usingDirection: function(start: Point, dir = 90, length = config.mapGeneration.DEFAULT_SEGMENT_LENGTH, t: number, q: MetaInfo) {
+    }
+    static usingDirection(start: Point, dir = 90, length = config.mapGeneration.DEFAULT_SEGMENT_LENGTH,
+        t: number, q: MetaInfo) {
+
         var end = {
             x: start.x + length * Math.sin(dir * Math.PI / 180),
             y: start.y + length * Math.cos(dir * Math.PI / 180)
@@ -288,27 +287,27 @@ const localConstraints = function(segment: Segment, segments: Segment[], qTree: 
                 }
             }
         }
-        //     # snap to crossing within radius check
+        // snap to crossing within radius check
         if (action.priority <= 3) {
-            //# current segment's start must have been checked to have been created.
-            //# other segment's start must have a corresponding end.
+            // current segment's start must have been checked to have been created.
+            // other segment's start must have a corresponding end.
             if (math.length(segment.r.end, other.r.end) <= config.mapGeneration.ROAD_SNAP_DISTANCE) {
                 const point = other.r.end;
                 action.priority = 3;
                 action.func = function() {
                     segment.r.end = point;
                     segment.q.severed = true;
-                    //  # update links of otherSegment corresponding to other.r.end
+                    // update links of otherSegment corresponding to other.r.end
                     const links = other.startIsBackwards() ? other.links.f : other.links.b;
-                    // # check for duplicate lines, don't add if it exists
-                    // # this should be done before links are setup, to avoid having to undo that step
+                    // check for duplicate lines, don't add if it exists
+                    // this should be done before links are setup, to avoid having to undo that step
                     if (links.some(link => (math.equalV(link.r.start, segment.r.end) && math.equalV(link.r.end, segment.r.start)) || (math.equalV(link.r.start, segment.r.start) && math.equalV(link.r.end, segment.r.end)))) {
                         return false;
                     }
                     links.forEach(link => {
-                        //# pick links of remaining segments at junction corresponding to other.r.end
+                        // pick links of remaining segments at junction corresponding to other.r.end
                         link.linksForEndContaining(other).push(segment)
-                        // # add junction segments to snapped segment
+                        // add junction segments to snapped segment
                         segment.links.f.push(link)
                     });
                     links.push(segment);
@@ -328,7 +327,7 @@ const localConstraints = function(segment: Segment, segments: Segment[], qTree: 
                 action.func = function() {
                     segment.r.end = point;
                     segment.q.severed = true;
-                    // # if intersecting lines are too closely aligned don't continue
+                    // if intersecting lines are too closely aligned don't continue
                     if (math.minDegreeDifference(other.dir(), segment.dir()) < config.mapGeneration.MINIMUM_INTERSECTION_DEVIATION) {
                         return false;
                     }
@@ -349,11 +348,11 @@ const globalGoals = {
         const newBranches = [] as Segment[];
         if (!previousSegment.q.severed) {
             const template = function(direction: number, length: number, t: number, q: MetaInfo) {
-                return segmentFactory.usingDirection(previousSegment.r.end, direction, length, t, q);
+                return Segment.usingDirection(previousSegment.r.end, direction, length, t, q);
             };
-            // # used for highways or going straight on a normal branch
+            // used for highways or going straight on a normal branch
             const templateContinue = (direction: number) => template(direction, previousSegment.length(), 0, previousSegment.q);
-            // # not using q, i.e. not highways
+            // not using q, i.e. not highways
             const templateBranch = (direction: number) => template(direction, config.mapGeneration.DEFAULT_SEGMENT_LENGTH, previousSegment.q.highway ? config.mapGeneration.NORMAL_BRANCH_TIME_DELAY_FROM_HIGHWAY : 0, null);
             const continueStraight = templateContinue(previousSegment.dir());
             const straightPop = heatmap.popOnRoad(continueStraight.r);
@@ -391,7 +390,7 @@ const globalGoals = {
             }
         }
         for (const branch of newBranches) {
-            // # setup links between each current branch and each existing branch stemming from the previous segment
+            // setup links between each current branch and each existing branch stemming from the previous segment
             branch.setupBranchLinks = function() {
                 previousSegment.links.f.forEach(link => {
                     branch.links.b.push(link);
@@ -404,18 +403,36 @@ const globalGoals = {
         return newBranches;
     }
 };
+class PriorityQueue<T> {
+    public elements: T[] = [];
+    constructor(private getPriority: (ele: T) => number) { }
+    enqueue(ele: T) { this.elements.push(ele); }
+    dequeue() {
+        let minT = Infinity;
+        let minT_i = 0;
+        this.elements.forEach((segment, i) => {
+            const t = this.getPriority(segment);
+            if (t < minT) {
+                minT = t;
+                minT_i = i;
+            }
+        });
+        return this.elements.splice(minT_i, 1)[0];
+    }
+    empty() { return this.elements.length === 0; }
+}
 interface GeneratorResult {
     segments: Segment[]; priorityQ: Segment[]; qTree: Quadtree<Segment>;
 }
 export const generate = function* (seed: string): Iterator<GeneratorResult> {
     const debugData = {};
     Math.seedrandom(seed);
-    // # NB: this perlin noise library only supports 65536 different seeds
+    // NB: this perlin noise library only supports 65536 different seeds
     noise.seed(Math.random());
-    const priorityQ = [] as Segment[];
-    // # setup first segments in queue
+    const priorityQ = new PriorityQueue<Segment>(s => s.t);
+    // setup first segments in queue
     const rootSegment = new Segment({ x: 0, y: 0 }, { x: config.mapGeneration.HIGHWAY_SEGMENT_LENGTH, y: 0 }, 0, { highway: true });
-    const oppositeDirection = segmentFactory.fromExisting(rootSegment);
+    const oppositeDirection = rootSegment.clone();
     const newEnd = {
         x: rootSegment.r.start.x - config.mapGeneration.HIGHWAY_SEGMENT_LENGTH,
         y: oppositeDirection.r.end.y
@@ -423,21 +440,12 @@ export const generate = function* (seed: string): Iterator<GeneratorResult> {
     oppositeDirection.r.setEnd(newEnd);
     oppositeDirection.links.b.push(rootSegment);
     rootSegment.links.b.push(oppositeDirection);
-    priorityQ.push(rootSegment);
-    priorityQ.push(oppositeDirection);
+    priorityQ.enqueue(rootSegment);
+    priorityQ.enqueue(oppositeDirection);
     const segments = [] as Segment[];
     const qTree = new Quadtree<Segment>(config.mapGeneration.QUADTREE_PARAMS, config.mapGeneration.QUADTREE_MAX_OBJECTS, config.mapGeneration.QUADTREE_MAX_LEVELS);
-    while (priorityQ.length > 0 && segments.length < config.mapGeneration.SEGMENT_COUNT_LIMIT) {
-        //     # pop smallest r(ti, ri, qi) from Q (i.e., smallest 't')
-        let minT = Infinity;
-        let minT_i = 0;
-        priorityQ.forEach((segment, i) => {
-            if (segment.t < minT) {
-                minT = segment.t;
-                minT_i = i;
-            }
-        });
-        const minSegment = priorityQ.splice(minT_i, 1)[0];
+    while (!priorityQ.empty() && segments.length < config.mapGeneration.SEGMENT_COUNT_LIMIT) {
+        const minSegment = priorityQ.dequeue();
         const accepted = localConstraints(minSegment, segments, qTree, debugData as any);
         if (accepted) {
             if (minSegment.setupBranchLinks != null) minSegment.setupBranchLinks();
@@ -445,28 +453,28 @@ export const generate = function* (seed: string): Iterator<GeneratorResult> {
             qTree.insert(minSegment.limits(), minSegment);
             globalGoals.generate(minSegment).forEach(newSegment => {
                 newSegment.t = minSegment.t + 1 + newSegment.t;
-                priorityQ.push(newSegment);
+                priorityQ.enqueue(newSegment);
             });
-            yield { segments, priorityQ, qTree };
+            yield { segments, priorityQ: priorityQ.elements, qTree };
         }
     }
     let id = 0;
     for (const segment of segments) segment.id = id++;
     console.log(segments.length + " segments generated.");
-    return { segments, qTree, priorityQ };
+    yield { segments, qTree, priorityQ: priorityQ.elements };
 };
 const seed = Math.random() + "bla";
-const worldScale = 1/10;
+const worldScale = 1 / 10;
 console.log("generating with seed " + seed);
 const generator = generate(seed);
 let W = window.innerWidth, H = window.innerHeight;
 const dobounds = function(segs: Segment[], interpolate = 1) {
     const lim = segs.map(s => s.limits());
     const bounds = {
-        minx: Math.min(...lim.map(s => s.x*worldScale)),
-        miny: Math.min(...lim.map(s => s.y*worldScale)),
-        maxx: Math.max(...lim.map(s => s.x*worldScale)),
-        maxy: Math.max(...lim.map(s => s.y*worldScale)),
+        minx: Math.min(...lim.map(s => s.x * worldScale)),
+        miny: Math.min(...lim.map(s => s.y * worldScale)),
+        maxx: Math.max(...lim.map(s => s.x * worldScale)),
+        maxy: Math.max(...lim.map(s => s.y * worldScale)),
     }
     const scale = Math.min(W / (bounds.maxx - bounds.minx), H / (bounds.maxy - bounds.miny)) * 0.9;
     const npx = - (bounds.maxx + bounds.minx) / 2 * scale + W / 2;
@@ -485,10 +493,10 @@ stage.addChild(graphics);
 stage.interactive = true;
 stage.hitArea = new PIXI.Rectangle(-1e5, -1e5, 2e5, 2e5);
 function renderSegment(seg: Segment, color = 0x000000) {
-    if(!color) color = seg.q.color;
-    graphics.lineStyle(seg.width*10*worldScale, color, 1);
-    graphics.moveTo(seg.r.start.x*worldScale, seg.r.start.y*worldScale);
-    graphics.lineTo(seg.r.end.x*worldScale, seg.r.end.y*worldScale);
+    if (!color) color = seg.q.color;
+    graphics.lineStyle(seg.width * 10 * worldScale, color, 1);
+    graphics.moveTo(seg.r.start.x * worldScale, seg.r.start.y * worldScale);
+    graphics.lineTo(seg.r.end.x * worldScale, seg.r.end.y * worldScale);
 }
 stage.on('mousedown', onDragStart)
     .on('touchstart', onDragStart)
@@ -509,13 +517,13 @@ function onClick(event: PIXI.interaction.InteractionEvent) {
         x: p.x - 10, y: p.y - 10,
         width: 20, height: 20
     });
-    const dist = (a:Segment) => {
+    const dist = (a: Segment) => {
         const x = math.distanceToLine(p, a.r.start, a.r.end);
-        if(x.lineProj2 >= 0 && x.lineProj2 <= x.length2)
+        if (x.lineProj2 >= 0 && x.lineProj2 <= x.length2)
             return x.distance2;
         else return Infinity;
     };
-    poss.sort((a,b) => dist(a)-dist(b));
+    poss.sort((a, b) => dist(a) - dist(b));
     //for(poss[0].linksaa)
     poss[0].debugLinks();
     //poss[0].q.color = 0xff0000;
@@ -556,17 +564,17 @@ function animate() {
     }
     if (!done) dobounds(stuff.segments, iteration < 20 ? 1 : 0.02);
     graphics.clear();
-    for(let x = 0; x < W; x += 20) for(let y = 0; y < H; y+=20) {
+    for (let x = 0; x < W; x += 20) for (let y = 0; y < H; y += 20) {
         // (x-stage.position.x)/stage.scale.x, (y-stage.position.y)/stage.scale.y
-        const p = stage.toLocal(new PIXI.Point(x,y));
-        const v = 255 - (heatmap.populationAt(p.x, p.y)*127)|0;
+        const p = stage.toLocal(new PIXI.Point(x, y));
+        const v = 255 - (heatmap.populationAt(p.x, p.y) * 127) | 0;
         //const v = heatmap.populationAt(p.x, p.y) > config.mapGeneration.NORMAL_BRANCH_POPULATION_THRESHOLD ? 255 : config.mapGeneration.HIGHWAY_BRANCH_POPULATION_THRESHOLD ?
         // 180:90;
-        graphics.beginFill(v<<16|v<<8|v);
+        graphics.beginFill(v << 16 | v << 8 | v);
         graphics.drawRect(p.x,
-                p.y,
-                20/stage.scale.x,
-                20/stage.scale.y);
+            p.y,
+            20 / stage.scale.x,
+            20 / stage.scale.y);
         graphics.endFill();
     }
     for (const seg of stuff.segments) renderSegment(seg);
