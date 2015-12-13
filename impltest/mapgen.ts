@@ -403,8 +403,9 @@ const globalGoals = {
 class PriorityQueue<T> {
     public elements: T[] = [];
     constructor(private getPriority: (ele: T) => number) { }
-    enqueue(ele: T) { this.elements.push(ele); }
+    enqueue(...ele: T[]) { this.elements.push(...ele); }
     dequeue() {
+        // benchmarked - linear array as fast or faster than actual min-heap
         let minT = Infinity;
         let minT_i = 0;
         this.elements.forEach((segment, i) => {
@@ -421,12 +422,7 @@ class PriorityQueue<T> {
 export interface GeneratorResult {
     segments: Segment[]; priorityQ: Segment[]; qTree: Quadtree<Segment>;
 }
-export const generate = function* (seed: string): Iterator<GeneratorResult> {
-    const debugData = {};
-    Math.seedrandom(seed);
-    // NB: this perlin noise library only supports 65536 different seeds
-    noise.seed(Math.random());
-    const priorityQ = new PriorityQueue<Segment>(s => s.t);
+function makeInitialSegments() {
     // setup first segments in queue
     const rootSegment = new Segment({ x: 0, y: 0 }, { x: config.mapGeneration.HIGHWAY_SEGMENT_LENGTH, y: 0 }, 0, { highway: true });
     const oppositeDirection = rootSegment.clone();
@@ -437,8 +433,16 @@ export const generate = function* (seed: string): Iterator<GeneratorResult> {
     oppositeDirection.r.setEnd(newEnd);
     oppositeDirection.links.b.push(rootSegment);
     rootSegment.links.b.push(oppositeDirection);
-    priorityQ.enqueue(rootSegment);
-    priorityQ.enqueue(oppositeDirection);
+    return [rootSegment, oppositeDirection];
+}
+export const generate = function* (seed: string): Iterator<GeneratorResult> {
+    const debugData = {};
+    Math.seedrandom(seed);
+    // NB: this perlin noise library only supports 65536 different seeds
+    noise.seed(Math.random());
+    const priorityQ = new PriorityQueue<Segment>(s => s.t);
+
+    priorityQ.enqueue(...makeInitialSegments());
     const segments = [] as Segment[];
     const qTree = new Quadtree<Segment>(config.mapGeneration.QUADTREE_PARAMS, config.mapGeneration.QUADTREE_MAX_OBJECTS, config.mapGeneration.QUADTREE_MAX_LEVELS);
     while (!priorityQ.empty() && segments.length < config.mapGeneration.SEGMENT_COUNT_LIMIT) {
