@@ -55,7 +55,7 @@ export class Segment {
     setupBranchLinks: () => void = undefined;
     start: Point;
     end: Point;
-    constructor(start: Point, end: Point, t = 0, q: MetaInfo) {
+    constructor(start: Point, end: Point, t = 0, q?: MetaInfo) {
         const obj = this;
         this.start = { x: start.x, y: start.y };
         this.end = { x: end.x, y: end.y };
@@ -199,9 +199,7 @@ interface DebugData {
 }
 const localConstraints = function(segment: Segment, segments: Segment[], qTree: Quadtree<Segment>, debugData: DebugData) {
     const action = {
-        priority: 0,
-        func: undefined as () => boolean,
-        t: undefined as number
+        priority: 0, func: undefined as () => boolean, t: undefined as number
     };
     for (const other of qTree.retrieve(segment.limits())) {
         // intersection check
@@ -285,9 +283,8 @@ const localConstraints = function(segment: Segment, segments: Segment[], qTree: 
 function globalGoalsGenerate(previousSegment: Segment) {
     const newBranches = [] as Segment[];
     if (!previousSegment.q.severed) {
-        const template = function(direction: number, length: number, t: number, q: MetaInfo) {
-            return Segment.usingDirection(previousSegment.r.end, direction, length, t, q);
-        };
+        const template = (direction: number, length: number, t: number, q: MetaInfo) =>
+            Segment.usingDirection(previousSegment.r.end, previousSegment.dir() + direction, length, t, q);
         // used for highways or going straight on a normal branch
         const templateContinue = (direction: number) => template(direction, previousSegment.length(), 0, previousSegment.q);
         // not using q, i.e. not highways
@@ -307,11 +304,9 @@ function globalGoalsGenerate(previousSegment: Segment) {
             }
             if (roadPop > config.HIGHWAY_BRANCH_POPULATION_THRESHOLD) {
                 if (Math.random() < config.HIGHWAY_BRANCH_PROBABILITY) {
-                    const leftHighwayBranch = templateContinue(previousSegment.dir() - 90 + config.RANDOM_BRANCH_ANGLE());
-                    newBranches.push(leftHighwayBranch);
+                    newBranches.push(templateContinue(- 90 + config.RANDOM_BRANCH_ANGLE()));
                 } else if (Math.random() < config.HIGHWAY_BRANCH_PROBABILITY) {
-                    const rightHighwayBranch = templateContinue(previousSegment.dir() + 90 + config.RANDOM_BRANCH_ANGLE());
-                    newBranches.push(rightHighwayBranch);
+                    newBranches.push(templateContinue(+ 90 + config.RANDOM_BRANCH_ANGLE()));
                 }
             }
         } else if (straightPop > config.NORMAL_BRANCH_POPULATION_THRESHOLD) {
@@ -319,11 +314,9 @@ function globalGoalsGenerate(previousSegment: Segment) {
         }
         if (straightPop > config.NORMAL_BRANCH_POPULATION_THRESHOLD) {
             if (Math.random() < config.DEFAULT_BRANCH_PROBABILITY) {
-                const leftBranch = templateBranch(previousSegment.dir() - 90 + config.RANDOM_BRANCH_ANGLE());
-                newBranches.push(leftBranch);
+                newBranches.push(templateBranch(- 90 + config.RANDOM_BRANCH_ANGLE()));
             } else if (Math.random() < config.DEFAULT_BRANCH_PROBABILITY) {
-                const rightBranch = templateBranch(previousSegment.dir() + 90 + config.RANDOM_BRANCH_ANGLE());
-                newBranches.push(rightBranch);
+                newBranches.push(templateBranch(+ 90 + config.RANDOM_BRANCH_ANGLE()));
             }
         }
     }
