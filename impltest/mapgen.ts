@@ -18,10 +18,10 @@ interface DistanceInfo {
     length2: number;
 }
 
-const randomWat = function(b: number) {
+const randomNearCubic = function(b: number) {
     var d = Math.pow(Math.abs(b), 3);
     var c = 0;
-    while (0 === c || Math.random() < Math.pow(Math.abs(c), 3) / d) {
+    while (c === 0 || Math.random() < Math.pow(Math.abs(c), 3) / d) {
         c = math.randomRange(-b, b);
     }
     return c;
@@ -30,8 +30,8 @@ const config = {
     mapGeneration: {
         DEFAULT_SEGMENT_LENGTH: 300, HIGHWAY_SEGMENT_LENGTH: 400,
         DEFAULT_SEGMENT_WIDTH: 6, HIGHWAY_SEGMENT_WIDTH: 16,
-        RANDOM_BRANCH_ANGLE: function() { return randomWat(3) },
-        RANDOM_STRAIGHT_ANGLE: function() { return randomWat(15) },
+        RANDOM_BRANCH_ANGLE: function() { return randomNearCubic(3) },
+        RANDOM_STRAIGHT_ANGLE: function() { return randomNearCubic(15) },
         DEFAULT_BRANCH_PROBABILITY: .4, HIGHWAY_BRANCH_PROBABILITY: .05,
         HIGHWAY_BRANCH_POPULATION_THRESHOLD: .1, NORMAL_BRANCH_POPULATION_THRESHOLD: .1,
         NORMAL_BRANCH_TIME_DELAY_FROM_HIGHWAY: 5, MINIMUM_INTERSECTION_DEVIATION: 30,
@@ -62,7 +62,6 @@ export class Segment {
     limitsRevision: number = undefined;
     cachedDir: number = void 0;
     cachedLength: number = void 0;
-    cachedLimits: Bounds;
     limits(): Bounds {
         return {
             x: Math.min(this.start.x, this.end.x),
@@ -454,7 +453,7 @@ export const generate = function* (seed: string): Iterator<GeneratorResult> {
     let id = 0;
     for (const segment of segments) segment.id = id++;
     console.log(segments.length + " segments generated.");
-    return { segments, qTree, heatmap, debugData };
+    return { segments, qTree, priorityQ };
 };
 const seed = Math.random() + "bla";
 const worldScale = 1/10;

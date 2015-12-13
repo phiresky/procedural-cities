@@ -77,6 +77,16 @@ export class Quadtree<T> {
         this.bottomRight = new Quadtree<T>({
             x: x + width, y: y + height, width, height
         }, this.max_objects, this.max_levels, level);
+
+        //add all objects to there corresponding subnodes
+        for (let i = 0; i < this.objects.length; i++) {
+            const rect = this.objects[i];
+            const obj = this.objectsO[i];
+            for (const node of this.getRelevantNodes(rect))
+                node.insert(rect, obj);
+        }
+        this.objects = [];
+        this.objectsO = [];
     };
 
 
@@ -88,26 +98,17 @@ export class Quadtree<T> {
         const midX = this.bounds.x + (this.bounds.width / 2);
         const midY = this.bounds.y + (this.bounds.height / 2);
 
-        //pRect can completely fit within the top quadrants
-        const topQuadrant = (r.y < midY && r.y + r.height < midY);
-        //pRect can completely fit within the bottom quadrants
-        const bottomQuadrant = (r.y > midY);
-        //pRect can completely fit within the left quadrants
-        if (r.x < midX && r.x + r.width < midX) {
-            if (topQuadrant) {
-                return this.topLeft;
-            } else if (bottomQuadrant) {
-                return this.bottomLeft;
-            }
-            //pRect can completely fit within the right quadrants
-        } else if (r.x > midX) {
-            if (topQuadrant) {
-                return this.topRight;
-            } else if (bottomQuadrant) {
-                return this.bottomRight;
-            }
+        const qs: Quadtree<T>[] = [];
+        const isTop = r.y <= midY;
+        const isBottom = r.y + r.height > midY;
+        if (r.x <= midX) { // left
+            if (isTop) qs.push(this.topLeft);
+            if (isBottom) qs.push(this.bottomLeft);
+        } else if (r.x + r.width > midX) { // right
+            if (isTop) qs.push(this.topRight);
+            if (isBottom) qs.push(this.bottomRight);
         }
-        return undefined;
+        return qs;
     };
 
 
@@ -119,37 +120,16 @@ export class Quadtree<T> {
 	 */
     insert(pRect: Bounds, obj: T) {
         if (!this.isLeaf) {
-            const node = this.getRelevantNodes(pRect);
-
-            if (node) {
+            for (const node of this.getRelevantNodes(pRect))
                 node.insert(pRect, obj);
-                return;
-            }
+            return;
         }
 
         this.objects.push(pRect);
         this.objectsO.push(obj);
 
-        if (this.objects.length > this.max_objects && this.level < this.max_levels) {
-
-            //split if we don't already have subnodes
-            if (this.isLeaf) {
-                this.split();
-            }
-
-            var i = 0;
-            //add all objects to there corresponding subnodes
-            while (i < this.objects.length) {
-
-                const node = this.getRelevantNodes(this.objects[i]);
-
-                if (node) {
-                    node.insert(this.objects.splice(i, 1)[0], this.objectsO.splice(i, 1)[0]);
-                } else {
-                    i = i + 1;
-                }
-            }
-        }
+        if (this.objects.length > this.max_objects && this.level < this.max_levels)
+            this.split();
     };
 
 
@@ -159,23 +139,10 @@ export class Quadtree<T> {
 	 * @Return Array		array with all detected objects
 	 */
     retrieve(pRect: Bounds) {
-        var node = this.getRelevantNodes(pRect),
-            returnObjects = this.objectsO;
-
-        //if we have subnodes ...
-        if (!this.isLeaf) {
-            //if pRect fits into a subnode ..
-            if (node) {
-                returnObjects = returnObjects.concat(node.retrieve(pRect));
-
-                //if pRect does not fit into a subnode, check it against all subnodes
-            } else {
-                for (const node of [this.topLeft, this.topRight, this.bottomLeft, this.bottomRight]) {
-                    returnObjects = returnObjects.concat(node.retrieve(pRect));
-                }
-            }
-        }
-
-        return returnObjects;
+        if(this.isLeaf) return this.objectsO;
+        let relevant: T[] = [];
+        for (const node of this.getRelevantNodes(pRect))
+            relevant = relevant.concat(node.retrieve(pRect));
+        return relevant;
     };
 }
