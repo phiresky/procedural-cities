@@ -1,17 +1,14 @@
-_=$(shell echo hi)
-
-all: bin/index.html bin/mapgen.browser.js
-
+all: bin/index.html bin/render.browser.js
 bin/index.html: index.html bin
 	cat $< > $@
 
-bin/mapgen.babel.js: bin/mapgen.js
+bin/%.browser.js: $(patsubst %.ts, bin/%.js, $(wildcard *.ts))
+	browserify bin/$*.js >$@
+
+bin/%.js: tsc/%.js
 	babel --plugins transform-es2015-parameters,transform-es2015-destructuring $< > $@
 
-bin/mapgen.browser.js: bin/mapgen.babel.js
-	browserify $< > $@
-
-bin/mapgen.js: mapgen.ts
+tsc/%.js: %.ts
 	tsc
 
 bin:

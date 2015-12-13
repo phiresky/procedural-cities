@@ -10,7 +10,7 @@
         "noLib": false,
         "preserveConstEnums": true,
         "suppressImplicitAnyIndexErrors": true,
-        "outDir": "bin"
+        "outDir": "tsc"
     },
     "filesGlob": [
         "**/*.ts",
@@ -23,6 +23,7 @@
         "mapgen.ts",
         "math.ts",
         "Quadtree.ts",
+        "render.ts",
         "typings/lodash/lodash.d.ts",
         "typings/perlin.d.ts",
         "typings/pixi.js/pixi.js.d.ts",
