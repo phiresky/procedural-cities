@@ -406,7 +406,7 @@ const globalGoals = {
     }
 };
 interface GeneratorResult {
-    segments: Segment[]; priorityQ: Segment[];
+    segments: Segment[]; priorityQ: Segment[]; qTree: Quadtree<Segment>;
 }
 export const generate = function* (seed: string): Iterator<GeneratorResult> {
     const debugData = {};
@@ -448,7 +448,7 @@ export const generate = function* (seed: string): Iterator<GeneratorResult> {
                 newSegment.t = minSegment.t + 1 + newSegment.t;
                 priorityQ.push(newSegment);
             });
-            yield { segments, priorityQ };
+            yield { segments, priorityQ, qTree };
         }
     }
     let id = 0;
@@ -485,6 +485,7 @@ stage.addChild(graphics);
 stage.interactive = true;
 stage.hitArea = new PIXI.Rectangle(-1e5, -1e5, 2e5, 2e5);
 function renderSegment(seg: Segment, color = 0x000000) {
+    if(!color) color = seg.q.color;
     graphics.lineStyle(seg.width*10*worldScale, color, 1);
     graphics.moveTo(seg.r.start.x*worldScale, seg.r.start.y*worldScale);
     graphics.lineTo(seg.r.end.x*worldScale, seg.r.end.y*worldScale);
@@ -498,7 +499,20 @@ stage.on('mousedown', onDragStart)
     .on('touchendoutside', onDragEnd)
     // events for drag move
     .on('mousemove', onDragMove)
-    .on('touchmove', onDragMove);
+    .on('touchmove', onDragMove)
+    .on('click', onClick);
+function onClick(event: PIXI.interaction.InteractionEvent) {
+    const p = event.data.getLocalPosition(graphics);
+    p.x /= worldScale;
+    p.y /= worldScale;
+    const poss = stuff.qTree.retrieve({
+        x: p.x - 10, y: p.y - 10,
+        width: 20, height: 20
+    });
+    for(const seg of poss) {
+        seg.q.color = 0xff0000;
+    }
+}
 
 function onDragStart(event: PIXI.interaction.InteractionEvent) {
     this.dragstart = { x: event.data.global.x, y: event.data.global.y };
