@@ -112,9 +112,8 @@ exports.Quadtree = Quadtree;
 
 
 },{}],2:[function(require,module,exports){
-"use strict"
-// code adapted from http://www.tmwhere.com/city_generation.html
-;
+"use strict";
+
 var perlin_1 = require('perlin');
 var seedrandom_1 = require('seedrandom');
 seedrandom_1.default;
@@ -132,10 +131,22 @@ exports.config = {
     DEFAULT_BRANCH_PROBABILITY: .4, HIGHWAY_BRANCH_PROBABILITY: .02,
     HIGHWAY_BRANCH_POPULATION_THRESHOLD: .1, NORMAL_BRANCH_POPULATION_THRESHOLD: .1,
     NORMAL_BRANCH_TIME_DELAY_FROM_HIGHWAY: 10, MINIMUM_INTERSECTION_DEVIATION: 30,
-    SEGMENT_COUNT_LIMIT: 10000, ROAD_SNAP_DISTANCE: 50,
+    SEGMENT_COUNT_LIMIT: 5000, ROAD_SNAP_DISTANCE: 50,
     HEAT_MAP_PIXEL_DIM: 25, DRAW_HEATMAP: false,
     QUADTREE_PARAMS: { x: -2E4, y: -2E4, width: 4E4, height: 4E4 },
-    QUADTREE_MAX_OBJECTS: 10, QUADTREE_MAX_LEVELS: 10, DEBUG: !1
+    QUADTREE_MAX_OBJECTS: 10, QUADTREE_MAX_LEVELS: 10, DEBUG: false,
+    ONLY_HIGHWAYS: false,
+    ARROWHEAD_SIZE: 0,
+    DRAW_CIRCLE_ON_SEGMENT_BASE: 0,
+    IGNORE_CONFLICTS: false,
+    ITERATION_SPEEDUP: 0.01,
+    ITERATIONS_PER_SECOND: 100,
+    TARGET_ZOOM: 0.9,
+    RESTART_AFTER_SECONDS: -1,
+    RESEED_AFTER_RESTART: true,
+    TWO_SEGMENTS_INITIALLY: true,
+    TRANSPARENT: false, BACKGROUND_COLOR: 0xFFFFFF,
+    SEED: null
 };
 class Segment {
     constructor(start, end) {
@@ -144,18 +155,14 @@ class Segment {
 
         this.start = start;
         this.end = end;
-        /** meta-information relevant to global goals */
         this.q = {};
-        /** links backwards and forwards */
         this.links = { b: [], f: [] };
         this.setupBranchLinks = undefined;
         const obj = this;
         for (const t in q) this.q[t] = q[t];
         this.width = this.q.highway ? exports.config.HIGHWAY_SEGMENT_WIDTH : exports.config.DEFAULT_SEGMENT_WIDTH;
-        // representation of road
         this.t = t;
     }
-    // clockwise direction
     dir() {
         const vector = math_1.math.subtractPoints(this.end, this.start);
         return -1 * math_1.math.sign(math_1.math.crossProduct({ x: 0, y: 1 }, vector)) * math_1.math.angleBetween({ x: 0, y: 1 }, vector);
@@ -204,12 +211,9 @@ class Segment {
         qTree.insert(splitPart.limits(), splitPart);
         splitPart.end = point;
         this.start = point;
-        // links are not copied using the preceding factory method.
-        // copy link array for the split part, keeping references the same
         splitPart.links.b = this.links.b.slice(0);
         splitPart.links.f = this.links.f.slice(0);
         let firstSplit, fixLinks, secondSplit;
-        // determine which links correspond to which end of the split segment
         if (startIsBackwards) {
             firstSplit = splitPart;
             secondSplit = this;
@@ -278,11 +282,11 @@ class DebugData {
 }
 let debugData = new DebugData();
 const localConstraints = function (segment, segments, qTree) {
+    if (exports.config.IGNORE_CONFLICTS) return true;
     const action = {
         priority: 0, func: undefined, t: undefined
     };
     for (const other of qTree.retrieve(segment.limits())) {
-        // intersection check
         if (action.priority <= 4) {
             const intersection = segment.intersectWith(other);
             if (intersection) {
@@ -290,7 +294,6 @@ const localConstraints = function (segment, segments, qTree) {
                     action.t = intersection.t;
                     action.priority = 4;
                     action.func = function () {
-                        // if intersecting lines are too similar don't continue
                         if (math_1.math.minDegreeDifference(other.dir(), segment.dir()) < exports.config.MINIMUM_INTERSECTION_DEVIATION) {
                             return false;
                         }
@@ -303,27 +306,19 @@ const localConstraints = function (segment, segments, qTree) {
                 }
             }
         }
-        // snap to crossing within radius check
         if (action.priority <= 3) {
-            // current segment's start must have been checked to have been created.
-            // other segment's start must have a corresponding end.
             if (math_1.math.length(segment.end, other.end) <= exports.config.ROAD_SNAP_DISTANCE) {
                 const point = other.end;
                 action.priority = 3;
                 action.func = function () {
                     segment.end = point;
                     segment.q.severed = true;
-                    // update links of otherSegment corresponding to other.r.end
                     const links = other.startIsBackwards() ? other.links.f : other.links.b;
-                    // check for duplicate lines, don't add if it exists
-                    // this should be done before links are setup, to avoid having to undo that step
                     if (links.some(link => math_1.math.equalV(link.start, segment.end) && math_1.math.equalV(link.end, segment.start) || math_1.math.equalV(link.start, segment.start) && math_1.math.equalV(link.end, segment.end))) {
                         return false;
                     }
                     links.forEach(link => {
-                        // pick links of remaining segments at junction corresponding to other.r.end
                         link.linksForEndContaining(other).push(segment);
-                        // add junction segments to snapped segment
                         segment.links.f.push(link);
                     });
                     links.push(segment);
@@ -333,7 +328,6 @@ const localConstraints = function (segment, segments, qTree) {
                 };
             }
         }
-        //  intersection within radius check
         if (action.priority <= 2) {
             var _math_1$math$distance = math_1.math.distanceToLine(segment.end, other.start, other.end);
 
@@ -348,7 +342,6 @@ const localConstraints = function (segment, segments, qTree) {
                 action.func = function () {
                     segment.end = point;
                     segment.q.severed = true;
-                    // if intersecting lines are too closely aligned don't continue
                     if (math_1.math.minDegreeDifference(other.dir(), segment.dir()) < exports.config.MINIMUM_INTERSECTION_DEVIATION) {
                         return false;
                     }
@@ -366,9 +359,7 @@ function globalGoalsGenerate(previousSegment) {
     const newBranches = [];
     if (!previousSegment.q.severed) {
         const template = (direction, length, t, q) => Segment.usingDirection(previousSegment.end, previousSegment.dir() + direction, length, t, q);
-        // used for highways or going straight on a normal branch
         const templateContinue = direction => template(direction, previousSegment.length(), 0, previousSegment.q);
-        // not using q, i.e. not highways
         const templateBranch = direction => template(direction, exports.config.DEFAULT_SEGMENT_LENGTH, previousSegment.q.highway ? exports.config.NORMAL_BRANCH_TIME_DELAY_FROM_HIGHWAY : 0, null);
         const continueStraight = templateContinue(0);
         const straightPop = exports.heatmap.popOnRoad(continueStraight);
@@ -393,7 +384,7 @@ function globalGoalsGenerate(previousSegment) {
         } else if (straightPop > exports.config.NORMAL_BRANCH_POPULATION_THRESHOLD) {
             newBranches.push(continueStraight);
         }
-        if (straightPop > exports.config.NORMAL_BRANCH_POPULATION_THRESHOLD) {
+        if (!exports.config.ONLY_HIGHWAYS) if (straightPop > exports.config.NORMAL_BRANCH_POPULATION_THRESHOLD) {
             if (Math.random() < exports.config.DEFAULT_BRANCH_PROBABILITY) {
                 newBranches.push(templateBranch(-90 + exports.config.RANDOM_BRANCH_ANGLE()));
             } else if (Math.random() < exports.config.DEFAULT_BRANCH_PROBABILITY) {
@@ -402,7 +393,6 @@ function globalGoalsGenerate(previousSegment) {
         }
     }
     for (const branch of newBranches) {
-        // setup links between each current branch and each existing branch stemming from the previous segment
         branch.setupBranchLinks = function () {
             previousSegment.links.f.forEach(link => {
                 branch.links.b.push(link);
@@ -423,7 +413,6 @@ class PriorityQueue {
         this.elements.push(...arguments);
     }
     dequeue() {
-        // benchmarked - linear array as fast or faster than actual min-heap
         let minT = Infinity;
         let minT_i = 0;
         this.elements.forEach((segment, i) => {
@@ -440,8 +429,8 @@ class PriorityQueue {
     }
 }
 function makeInitialSegments() {
-    // setup first segments in queue
     const rootSegment = new Segment({ x: 0, y: 0 }, { x: exports.config.HIGHWAY_SEGMENT_LENGTH, y: 0 }, 0, { highway: true });
+    if (!exports.config.TWO_SEGMENTS_INITIALLY) return [rootSegment];
     const oppositeDirection = rootSegment.clone();
     const newEnd = {
         x: rootSegment.start.x - exports.config.HIGHWAY_SEGMENT_LENGTH,
@@ -580,6 +569,9 @@ exports.math = {
     lerp: function (a, b, x) {
         return a * (1 - x) + b * x;
     },
+    lerpV: function (a, b, x) {
+        return { x: exports.math.lerp(a.x, b.x, x), y: exports.math.lerp(a.y, b.y, x) };
+    },
     randomNearCubic: function (b) {
         var d = Math.pow(Math.abs(b), 3);
         var c = 0;
@@ -594,26 +586,48 @@ exports.math = {
 },{}],4:[function(require,module,exports){
 "use strict";
 
+var _slicedToArray = (function () { function sliceIterator(arr, i) { var _arr = []; var _n = true; var _d = false; var _e = undefined; try { for (var _i = arr[Symbol.iterator](), _s; !(_n = (_s = _i.next()).done); _n = true) { _arr.push(_s.value); if (i && _arr.length === i) break; } } catch (err) { _d = true; _e = err; } finally { try { if (!_n && _i["return"]) _i["return"](); } finally { if (_d) throw _e; } } return _arr; } return function (arr, i) { if (Array.isArray(arr)) { return arr; } else if (Symbol.iterator in Object(arr)) { return sliceIterator(arr, i); } else { throw new TypeError("Invalid attempt to destructure non-iterable instance"); } }; })();
+
 var math_1 = require("./math");
 var mapgen_1 = require("./mapgen");
 var PIXI = require('pixi.js');
-const seed = "blablabla" + Math.random();
-const worldScale = 1 / 10;
+const qd = {};
+location.search.substr(1).split(/[&;]/).forEach(item => {
+    var _item$split = item.split("=");
+
+    var _item$split2 = _slicedToArray(_item$split, 2);
+
+    const k = _item$split2[0];
+    const v = _item$split2[1];
+
+    if (k) qd[decodeURIComponent(k)] = v ? decodeURIComponent(v) : "";
+});
+for (let c of Object.keys(qd)) {
+    let val = qd[c].trim();
+    const list = c.toUpperCase().trim().split(".");
+    const attr = list.pop();
+    const targ = list.reduce((a, b, i, arr) => a[b], mapgen_1.config);
+    const origValue = targ[attr];
+    console.log(`config: ${ attr } = ${ val }`);
+    if (typeof origValue === "undefined") console.warn("unknown config: " + attr);
+    if (typeof origValue === "number" || typeof origValue === "boolean") val = +val;
+    targ[attr] = val;
+}
+let seed = mapgen_1.config.SEED || Math.random() + "";
 console.log("generating with seed " + seed);
-const generator = mapgen_1.generate(seed);
 let W = window.innerWidth,
     H = window.innerHeight;
-const dobounds = function (segs) {
+exports.dobounds = function (segs) {
     let interpolate = arguments.length <= 1 || arguments[1] === undefined ? 1 : arguments[1];
 
     const lim = segs.map(s => s.limits());
     const bounds = {
-        minx: Math.min(...lim.map(s => s.x * worldScale)),
-        miny: Math.min(...lim.map(s => s.y * worldScale)),
-        maxx: Math.max(...lim.map(s => s.x * worldScale)),
-        maxy: Math.max(...lim.map(s => s.y * worldScale))
+        minx: Math.min(...lim.map(s => s.x)),
+        miny: Math.min(...lim.map(s => s.y)),
+        maxx: Math.max(...lim.map(s => s.x + s.width)),
+        maxy: Math.max(...lim.map(s => s.y + s.height))
     };
-    const scale = Math.min(W / (bounds.maxx - bounds.minx), H / (bounds.maxy - bounds.miny)) * 0.9;
+    const scale = Math.min(W / (bounds.maxx - bounds.minx), H / (bounds.maxy - bounds.miny)) * mapgen_1.config.TARGET_ZOOM;
     const npx = -(bounds.maxx + bounds.minx) / 2 * scale + W / 2;
     const npy = -(bounds.maxy + bounds.miny) / 2 * scale + H / 2;
     exports.stage.position.x = math_1.math.lerp(exports.stage.position.x, npx, interpolate);
@@ -621,27 +635,67 @@ const dobounds = function (segs) {
     exports.stage.scale.x = math_1.math.lerp(exports.stage.scale.x, scale, interpolate);
     exports.stage.scale.y = math_1.math.lerp(exports.stage.scale.y, scale, interpolate);
 };
-exports.renderer = PIXI.autoDetectRenderer(W, H, { backgroundColor: 0xeeeeee, antialias: true });
+function restart() {
+    exports.generator = mapgen_1.generate(seed);
+    done = false;
+    iteration = 0;
+    iteration_wanted = 0;
+}
+exports.renderer = PIXI.autoDetectRenderer(W, H, { backgroundColor: mapgen_1.config.BACKGROUND_COLOR, antialias: true, transparent: mapgen_1.config.TRANSPARENT });
 document.body.appendChild(exports.renderer.view);
 exports.graphics = new PIXI.Graphics();
 exports.stage = new PIXI.Container();
-const makeSpeed = 1;
 exports.stage.addChild(exports.graphics);
 exports.stage.interactive = true;
 exports.stage.hitArea = new PIXI.Rectangle(-1e5, -1e5, 2e5, 2e5);
+let has_interacted = false;
 function renderSegment(seg) {
     let color = arguments.length <= 1 || arguments[1] === undefined ? 0x000000 : arguments[1];
 
     if (!color) color = seg.q.color;
-    exports.graphics.lineStyle(seg.width * 10 * worldScale, color, 1);
-    exports.graphics.moveTo(seg.start.x * worldScale, seg.start.y * worldScale);
-    exports.graphics.lineTo(seg.end.x * worldScale, seg.end.y * worldScale);
+    const x1 = seg.start.x;
+    const x2 = seg.end.x;
+    const y1 = seg.start.y;
+    const y2 = seg.end.y;
+    const len = seg.length();
+    const arrowLength = Math.min(len, mapgen_1.config.ARROWHEAD_SIZE);
+    if (mapgen_1.config.DRAW_CIRCLE_ON_SEGMENT_BASE) {
+        exports.graphics.beginFill(color);
+        exports.graphics.drawCircle(x1, y1, mapgen_1.config.DRAW_CIRCLE_ON_SEGMENT_BASE);
+        exports.graphics.endFill();
+    }
+    if (mapgen_1.config.ARROWHEAD_SIZE) {
+        exports.graphics.lineStyle(seg.width * 2, color, 1);
+        exports.graphics.moveTo(x1, y1);
+        exports.graphics.lineTo(math_1.math.lerp(x1, x2, 1 - arrowLength / len), math_1.math.lerp(y1, y2, 1 - arrowLength / len));
+    } else {
+        exports.graphics.lineStyle(seg.width * 10, color, 1);
+        exports.graphics.moveTo(x1, y1);
+        exports.graphics.lineTo(x2, y2);
+    }
+    if (mapgen_1.config.ARROWHEAD_SIZE) {
+        const angle = Math.PI / 8;
+        const h = Math.abs(arrowLength / Math.cos(angle));
+        const lineangle = Math.atan2(y2 - y1, x2 - x1);
+        const angle1 = lineangle + Math.PI + angle;
+        const topx = x2 + Math.cos(angle1) * h;
+        const topy = y2 + Math.sin(angle1) * h;
+        const angle2 = lineangle + Math.PI - angle;
+        const botx = x2 + Math.cos(angle2) * h;
+        const boty = y2 + Math.sin(angle2) * h;
+        exports.graphics.beginFill(color, 1);
+        exports.graphics.lineStyle(0, 0, 1);
+        exports.graphics.moveTo(x2, y2);
+        exports.graphics.lineTo(topx, topy);
+        exports.graphics.lineTo(botx, boty);
+        exports.graphics.lineTo(x2, y2);
+        exports.graphics.endFill();
+    }
 }
 exports.stage.on('mousedown', onDragStart).on('touchstart', onDragStart).on('mouseup', onDragEnd).on('mouseupoutside', onDragEnd).on('touchend', onDragEnd).on('touchendoutside', onDragEnd).on('mousemove', onDragMove).on('touchmove', onDragMove).on('click', onClick);
 function onClick(event) {
+    if (this.wasdragged || !mapgen_1.config.DEBUG) return;
     const p = event.data.getLocalPosition(exports.graphics);
-    p.x /= worldScale;
-    p.y /= worldScale;
     const poss = exports.stuff.qTree.retrieve({
         x: p.x - 10, y: p.y - 10,
         width: 20, height: 20
@@ -651,17 +705,18 @@ function onClick(event) {
         if (x.lineProj2 >= 0 && x.lineProj2 <= x.length2) return x.distance2;else return Infinity;
     };
     poss.sort((a, b) => dist(a) - dist(b));
-    //for(poss[0].linksaa)
     poss[0].debugLinks();
-    //poss[0].q.color = 0xff0000;
 }
 function onDragStart(event) {
     this.dragstart = { x: event.data.global.x, y: event.data.global.y };
+    this.wasdragged = false;
+    has_interacted = true;
 }
 function onDragEnd() {
     this.dragstart = null;
 }
 function onDragMove(event) {
+    this.wasdragged = true;
     if (this.dragstart) {
         this.position.x += event.data.global.x - this.dragstart.x;
         this.position.y += event.data.global.y - this.dragstart.y;
@@ -677,27 +732,53 @@ function zoom(x, y, direction) {
     exports.stage.position.x += (afterTransform.x - beforeTransform.x) * exports.stage.scale.x;
     exports.stage.position.y += (afterTransform.y - beforeTransform.y) * exports.stage.scale.y;
 }
-window.addEventListener('wheel', e => zoom(e.clientX, e.clientY, -math_1.math.sign(e.deltaY)));
+window.addEventListener('wheel', e => {
+    has_interacted = true;
+    zoom(e.clientX, e.clientY, -math_1.math.sign(e.deltaY));
+});
 let done = false;
-requestAnimationFrame(animate);
+let done_time = 0;
 let iteration = 0;
-function animate() {
-    for (let i = 0; i < iteration / 100 * makeSpeed + 1; i++) {
-        const iter = generator.next();
-        if (!iter.done) {
-            exports.stuff = iter.value;
-            exports.stuff = exports.stuff;
-            iteration++;
-        } else done = true;
+let iteration_wanted = 0;
+let last_timestamp = 0;
+restart();
+requestAnimationFrame(animate);
+function animate(timestamp) {
+    let delta = timestamp - last_timestamp;
+    last_timestamp = timestamp;
+    if (delta > 100) {
+        console.warn("delta = " + delta);
+        delta = 100;
     }
-    if (!done) dobounds(exports.stuff.segments, iteration < 20 ? 1 : 0.02);
+    if (!done) {
+        iteration_wanted += (iteration * mapgen_1.config.ITERATION_SPEEDUP + mapgen_1.config.ITERATIONS_PER_SECOND) * delta / 1000;
+        while (iteration < iteration_wanted) {
+            const iter = exports.generator.next();
+            if (iter.done) {
+                done = true;
+                done_time = timestamp;
+                break;
+            } else {
+                exports.stuff = iter.value;
+                exports.stuff = exports.stuff;
+                iteration++;
+            }
+        }
+        if (!has_interacted) exports.dobounds([...exports.stuff.segments, ...exports.stuff.priorityQ], iteration < 20 || done && !has_interacted ? 1 : 0.05);
+    } else {
+        if (mapgen_1.config.RESTART_AFTER_SECONDS >= 0 && done_time + mapgen_1.config.RESTART_AFTER_SECONDS * 1000 < timestamp) {
+            if (mapgen_1.config.RESEED_AFTER_RESTART) {
+                seed = Math.random() + "";
+            }
+            restart();
+        }
+    }
     exports.graphics.clear();
     if (mapgen_1.config.DRAW_HEATMAP) {
         const dim = mapgen_1.config.HEAT_MAP_PIXEL_DIM;
         for (let x = 0; x < W; x += dim) for (let y = 0; y < H; y += dim) {
             const p = exports.stage.toLocal(new PIXI.Point(x, y));
-            const pop = mapgen_1.heatmap.populationAt((p.x + dim / 2) / worldScale, (p.y + dim / 2) / worldScale);
-            //const v = 255 - (pop * 127) | 0;
+            const pop = mapgen_1.heatmap.populationAt(p.x + dim / 2, p.y + dim / 2);
             const v = pop > mapgen_1.config.NORMAL_BRANCH_POPULATION_THRESHOLD ? 255 : pop > mapgen_1.config.HIGHWAY_BRANCH_POPULATION_THRESHOLD ? 200 : 150;
             exports.graphics.beginFill(v << 16 | v << 8 | v);
             exports.graphics.drawRect(p.x, p.y, dim / exports.stage.scale.x, dim / exports.stage.scale.y);
@@ -708,7 +789,6 @@ function animate() {
     if (!done) for (const seg of exports.stuff.priorityQ) renderSegment(seg, 0xFF0000);
     requestAnimationFrame(animate);
     exports.renderer.render(exports.stage);
-    iteration++;
 }
 function onResize() {
     W = window.innerWidth;
