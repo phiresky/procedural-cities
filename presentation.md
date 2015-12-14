@@ -1,8 +1,8 @@
 ---
 history: true
 width: 1280
-height: 720
-margin: 0.1
+height: 960
+margin: 0.05
 theme: white
 slideNumber: true
 bibliography: prosem.bib
@@ -10,6 +10,10 @@ header-includes: |
     <style>
     img {max-height:400px ! important;}
     .reveal h1 { font-size: 1.5em; }
+    iframe {
+        width: 1024px;
+        height: 768px;
+    }
     /*p { text-align: left; }*/
     </style>
 ---
@@ -60,13 +64,20 @@ Need some type of contextual information
 - City type and road patterns
 - City zones (residential, industrial, etc.)
 
----
-
-### Primary and secondary street network
+## Street hierarchy
 
 Primary, secondary, tertiary streets are used in urban planning
 
 → Simplified distinction between "highways" and normal streets
+
+## Initialization
+
+Begin with two opposite highway segments:
+
+<iframe data-src="implementation/bin/index.html?
+    segment_count_limit = 2 &
+    arrowhead_size = 80
+"></iframe>
 
 ## Street growth
 
@@ -75,13 +86,12 @@ Primary, secondary, tertiary streets are used in urban planning
 - branch with some probability at about 90 degrees
 - label fully connected street segments as done
 
----
 
 ## Conflict resolution (intersections, obstacles)
 
-> - If the new segment ends in an obstacle (e.g. water, park):<br>
+> - If the new segment ends in an obstacle (e.g. water, park):  
 Shorten or rotate segment to fit
-> - If new segment intersects with existing street: Shorten and create intersection
+> - If new segment intersects with existing street:  Shorten and create intersection
 > - If existing street / intersection is near: Join road to intersection
 
 . . .
@@ -135,7 +145,9 @@ function generate() {
 ```
 (*globalGoalsGenerate* increases delay)
 
+---
 
+<iframe data-src="implementation/bin/index.html?"></iframe>
 
 ## Street patterns
 

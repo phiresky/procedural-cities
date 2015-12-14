@@ -22,6 +22,7 @@ export const config = {
     IGNORE_CONFLICTS: false,
     ITERATION_SPEEDUP: 0.01,
     ITERATIONS_PER_FRAME: 1,
+    TRANSPARENT: false, BACKGROUND_COLOR: 0xFFFFFF,
     SEED: null as string
 };
 interface MetaInfo {

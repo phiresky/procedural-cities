@@ -2,20 +2,21 @@ import {math} from "./math";
 import {config, Segment, generate, GeneratorResult, heatmap} from "./mapgen";
 import * as PIXI from 'pixi.js';
 
-var qd: { [key: string]: string } = {};
+const qd: { [key: string]: (string) } = {};
 location.search.substr(1).split("&").forEach(item => {
-    let [k, v] = item.split("=");
-    qd[k] = v && decodeURIComponent(v);
+    const [k, v] = item.split("=");
+    if(k) qd[decodeURIComponent(k)] = v ? decodeURIComponent(v) : "";
 });
 for (let c of Object.keys(qd)) {
-    const list = c.toUpperCase().split(".");
+    let val:any = qd[c].trim();
+    const list = c.toUpperCase().trim().split(".");
     const attr = list.pop();
     const targ = list.reduce((a, b, i, arr) => a[b], config as any);
     const origValue = targ[attr];
-    console.log(targ, attr);
-    targ[attr] = typeof origValue === "number" ? +qd[c] :
-        typeof origValue === "boolean" ? +qd[c] :
-            qd[c];
+    console.log(attr, val);
+    if(typeof origValue === "number" || typeof origValue === "boolean")
+        val = +val;
+    targ[attr] = val;
 }
 
 const seed = config.SEED || Math.random() + "";
@@ -39,7 +40,7 @@ export const dobounds = function(segs: Segment[], interpolate = 1) {
     stage.scale.x = math.lerp(stage.scale.x, scale, interpolate);
     stage.scale.y = math.lerp(stage.scale.y, scale, interpolate);
 };
-export const renderer = PIXI.autoDetectRenderer(W, H, { backgroundColor: 0xeeeeee, antialias: true });
+export const renderer = PIXI.autoDetectRenderer(W, H, { backgroundColor: config.BACKGROUND_COLOR, antialias: true, transparent: config.TRANSPARENT });
 document.body.appendChild(renderer.view);
 export const graphics = new PIXI.Graphics();
 export const stage = new PIXI.Container();
