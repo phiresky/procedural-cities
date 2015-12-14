@@ -129,18 +129,26 @@ exports.config = {
         return math_1.math.randomNearCubic(15);
     },
     DEFAULT_BRANCH_PROBABILITY: .4, HIGHWAY_BRANCH_PROBABILITY: .02,
-    HIGHWAY_BRANCH_POPULATION_THRESHOLD: .1, NORMAL_BRANCH_POPULATION_THRESHOLD: .1,
-    NORMAL_BRANCH_TIME_DELAY_FROM_HIGHWAY: 10, MINIMUM_INTERSECTION_DEVIATION: 30,
-    SEGMENT_COUNT_LIMIT: 5000, ROAD_SNAP_DISTANCE: 50,
+    HIGHWAY_BRANCH_POPULATION_THRESHOLD: .1,
+    NORMAL_BRANCH_POPULATION_THRESHOLD: .1,
+    NORMAL_BRANCH_TIME_DELAY_FROM_HIGHWAY: 10,
+    MINIMUM_INTERSECTION_DEVIATION: 30,
+    SEGMENT_COUNT_LIMIT: 5000,
+    ROAD_SNAP_DISTANCE: 50,
     HEAT_MAP_PIXEL_DIM: 25, DRAW_HEATMAP: false,
     QUADTREE_PARAMS: { x: -2E4, y: -2E4, width: 4E4, height: 4E4 },
-    QUADTREE_MAX_OBJECTS: 10, QUADTREE_MAX_LEVELS: 10, DEBUG: false,
+    QUADTREE_MAX_OBJECTS: 10, QUADTREE_MAX_LEVELS: 10,
+    DEBUG: false,
     ONLY_HIGHWAYS: false,
     ARROWHEAD_SIZE: 0,
     DRAW_CIRCLE_ON_SEGMENT_BASE: 0,
     IGNORE_CONFLICTS: false,
     ITERATION_SPEEDUP: 0.01,
     ITERATIONS_PER_SECOND: 100,
+    PRIORITY_FUTURE_COLORS: false,
+    SMOOTH_ZOOM_START: 20,
+    SKIP_ITERATIONS: 0,
+    DELAY_BETWEEN_TIME_STEPS: 0,
     TARGET_ZOOM: 0.9,
     RESTART_AFTER_SECONDS: -1,
     RESEED_AFTER_RESTART: true,
@@ -610,12 +618,11 @@ for (let c of Object.keys(qd)) {
     const targ = list.reduce((a, b, i, arr) => a[b], mapgen_1.config);
     const origValue = targ[attr];
     console.log(`config: ${ attr } = ${ val }`);
-    if (typeof origValue === "undefined") console.warn("unknown config: " + attr);
+    if (typeof origValue === "undefined" && attr.substr(0, 2) !== "//") console.warn("unknown config: " + attr);
     if (typeof origValue === "number" || typeof origValue === "boolean") val = +val;
     targ[attr] = val;
 }
 let seed = mapgen_1.config.SEED || Math.random() + "";
-console.log("generating with seed " + seed);
 let W = window.innerWidth,
     H = window.innerHeight;
 exports.dobounds = function (segs) {
@@ -637,7 +644,9 @@ exports.dobounds = function (segs) {
     exports.stage.scale.y = math_1.math.lerp(exports.stage.scale.y, scale, interpolate);
 };
 function restart() {
+    console.log("generating with seed " + seed);
     exports.generator = mapgen_1.generate(seed);
+    for (let i = 0; i < mapgen_1.config.SKIP_ITERATIONS; i++) exports.generator.next();
     done = false;
     iteration = 0;
     iteration_wanted = 0;
@@ -742,6 +751,7 @@ let done_time = 0;
 let iteration = 0;
 let iteration_wanted = 0;
 let last_timestamp = 0;
+let last_t_found = -1;
 restart();
 requestAnimationFrame(animate);
 function animate(timestamp) {
@@ -765,7 +775,6 @@ function animate(timestamp) {
                 iteration++;
             }
         }
-        if (!has_interacted) exports.dobounds([...exports.stuff.segments, ...exports.stuff.priorityQ], iteration < 20 || done && !has_interacted ? 1 : 0.05);
     } else {
         if (mapgen_1.config.RESTART_AFTER_SECONDS >= 0 && done_time + mapgen_1.config.RESTART_AFTER_SECONDS * 1000 < timestamp) {
             if (mapgen_1.config.RESEED_AFTER_RESTART) {
@@ -774,6 +783,7 @@ function animate(timestamp) {
             restart();
         }
     }
+    if (!has_interacted) exports.dobounds([...exports.stuff.segments, ...exports.stuff.priorityQ], iteration <= mapgen_1.config.SMOOTH_ZOOM_START ? 1 : 0.05);
     exports.graphics.clear();
     if (mapgen_1.config.DRAW_HEATMAP) {
         const dim = mapgen_1.config.HEAT_MAP_PIXEL_DIM;
@@ -787,7 +797,22 @@ function animate(timestamp) {
         }
     }
     for (const seg of exports.stuff.segments) renderSegment(seg);
-    if (!done) for (const seg of exports.stuff.priorityQ) renderSegment(seg, 0xFF0000);
+    if (!done) {
+        if (mapgen_1.config.PRIORITY_FUTURE_COLORS) {
+            const minT = exports.stuff.priorityQ.reduce((min, seg) => Math.min(min, seg.t), Infinity);
+            const future_colors = [0xFF0000, 0x44ff44, 0x6666ff];
+            for (const seg of exports.stuff.priorityQ) renderSegment(seg, future_colors[Math.min(seg.t - minT, future_colors.length - 1)]);
+        } else {
+            for (const seg of exports.stuff.priorityQ) renderSegment(seg, 0xFF0000);
+        }
+        if (mapgen_1.config.DELAY_BETWEEN_TIME_STEPS) {
+            const first_t = exports.stuff.priorityQ[0].t;
+            if (first_t !== last_t_found && exports.stuff.priorityQ.every(seg => seg.t === first_t)) {
+                iteration_wanted -= mapgen_1.config.DELAY_BETWEEN_TIME_STEPS * mapgen_1.config.ITERATIONS_PER_SECOND;
+                last_t_found = first_t;
+            }
+        }
+    }
     requestAnimationFrame(animate);
     exports.renderer.render(exports.stage);
 }

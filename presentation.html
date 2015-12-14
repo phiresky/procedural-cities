@@ -160,6 +160,7 @@ code > span.in { color: #60a0b0; font-weight: bold; font-style: italic; } /* Inf
     highway_segment_width = 24;
     two_segments_initially = 0;
     only_highways = 1;
+    smooth_zoom_start = 1;
     seed = 0.1;
     restart_after_seconds = 3;
 ">
@@ -171,6 +172,7 @@ code > span.in { color: #60a0b0; font-weight: bold; font-style: italic; } /* Inf
     target_zoom = 0.8;
     two_segments_initially = 0;
     only_highways = 0;
+    smooth_zoom_start = 1;
     seed = 0.1;
     restart_after_seconds = 3;
     start_with_normal_streets = 1;
@@ -179,8 +181,41 @@ code > span.in { color: #60a0b0; font-weight: bold; font-style: italic; } /* Inf
 </div>
 </section><section id="parallel-growth" class="slide level2">
 <h1>Parallel growth</h1>
+<p>New potential segments are evaluated after existing ones</p>
+<iframe style="height:500px;" data-src="demo.html?
+    segment_count_limit = 40;
+    //arrowhead_size = 80;
+    smooth_zoom_start = 1;
+    iterations_per_second = 2;
+    skip_iterations = 10;
+    delay_between_time_steps = 2;
+    seed = 0.1;
+    restart_after_seconds = 3;
+    start_with_normal_streets = 1;
+    priority_future_colors = 1;
+">
+</iframe>
+<p><em>red</em> = current step</p>
+<p><em>green</em> = next step</p>
+</section><section id="highway-branching" class="slide level2">
+<h1>Highway branching</h1>
+<p>Normal streets branching from highways have an additional delay (<em>blue</em>)</p>
+<iframe style="height:500px;" data-src="demo.html?
+    segment_count_limit = 400;
+    smooth_zoom_start = 1;
+    iterations_per_second = 1.5;
+    iteration_speedup = 0.2;
+    two_segments_initially = 0;
+    skip_iterations = 0;
+    normal_branch_time_delay_from_highway = 8;
+    seed = 0.018001661728973477;
+    restart_after_seconds = 3;
+    priority_future_colors = 1;
+">
+</iframe>
+<p>This prevents highways being cut off by normal streets</p>
 </section><section id="conflict-resolution-intersections-obstacles" class="slide level2">
-<h1>Conflict resolution (intersections, obstacles)</h1>
+<h1>Conflict resolution <br> (intersections, obstacles)</h1>
 <ul>
 <li class="fragment">If the new segment ends in an obstacle (e.g. water, park):<br />
 Shorten or rotate segment to fit</li>
@@ -225,7 +260,7 @@ p9: ?I(roadAttr,state) : state!=UNASSIGNED -&gt; e</code></pre>
     <span class="cf">while</span> (<span class="op">!</span><span class="va">Q</span>.<span class="at">empty</span>() <span class="op">&amp;&amp;</span> <span class="va">segments</span>.<span class="at">length</span> <span class="op">&lt;</span> SEG_LIMIT) <span class="op">{</span>
         <span class="kw">let</span> minSegment <span class="op">=</span> <span class="va">Q</span>.<span class="at">dequeue</span>()<span class="op">;</span>
         <span class="co">// resolve conflicts</span>
-        <span class="kw">let</span> accepted <span class="op">=</span> <span class="at">localConstraints</span>(minSegment<span class="op">,</span> segments)<span class="op">;</span>
+        <span class="kw">let</span> accepted <span class="op">=</span> <span class="at">applyLocalConstraints</span>(minSegment<span class="op">,</span> segments)<span class="op">;</span>
         <span class="cf">if</span> (accepted) <span class="op">{</span>
             <span class="va">segments</span>.<span class="at">push</span>(minSegment)<span class="op">;</span>
             <span class="co">// create new segments</span>
@@ -233,7 +268,6 @@ p9: ?I(roadAttr,state) : state!=UNASSIGNED -&gt; e</code></pre>
         <span class="op">}</span>
     <span class="op">}</span>
 <span class="op">}</span></code></pre></div>
-<p>(<em>globalGoalsGenerate</em> increases delay)</p>
 </section><section id="complete-demo" class="slide level2">
 <h1>Complete demo</h1>
 <iframe data-src="demo.html?">
