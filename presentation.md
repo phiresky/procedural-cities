@@ -112,6 +112,7 @@ p8: ?I(roadAttr,state) : state==UNASSIGNED
     -> ?I(roadAttr, state)
 p9: ?I(roadAttr,state) : state!=UNASSIGNED -> e
 ```
+→ unnecessarily complicated
 
 ## Implementation with priority queue
 
@@ -119,7 +120,7 @@ Implementation by @harmful
 
 ```javascript
 function generate() {
-    let Q = new PriorityQueue<Segment>(s => s.t);
+    let Q = new PriorityQueue<Segment>();
     Q.enqueueAll(makeInitialSegments());
     let segments = [];
     while (!Q.empty() && segments.length < SEG_LIMIT) {
@@ -132,6 +133,7 @@ function generate() {
     }
 }
 ```
+(*globalGoalsGenerate* increases delay)
 
 
 
