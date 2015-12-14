@@ -27,6 +27,7 @@ export const config = {
     RESTART_AFTER_SECONDS: -1,
     RESEED_AFTER_RESTART: true,
     TWO_SEGMENTS_INITIALLY: true,
+    START_WITH_NORMAL_STREETS: false,
     TRANSPARENT: false, BACKGROUND_COLOR: 0xFFFFFF,
     SEED: null as string
 };
@@ -277,7 +278,7 @@ function globalGoalsGenerate(previousSegment: Segment) {
         } else if (straightPop > config.NORMAL_BRANCH_POPULATION_THRESHOLD) {
             newBranches.push(continueStraight);
         }
-        if(!config.ONLY_HIGHWAYS) if (straightPop > config.NORMAL_BRANCH_POPULATION_THRESHOLD) {
+        if (!config.ONLY_HIGHWAYS) if (straightPop > config.NORMAL_BRANCH_POPULATION_THRESHOLD) {
             if (Math.random() < config.DEFAULT_BRANCH_PROBABILITY) {
                 newBranches.push(templateBranch(- 90 + config.RANDOM_BRANCH_ANGLE()));
             } else if (Math.random() < config.DEFAULT_BRANCH_PROBABILITY) {
@@ -322,8 +323,8 @@ export interface GeneratorResult {
 }
 function makeInitialSegments() {
     // setup first segments in queue
-    const rootSegment = new Segment({ x: 0, y: 0 }, { x: config.HIGHWAY_SEGMENT_LENGTH, y: 0 }, 0, { highway: true });
-    if(!config.TWO_SEGMENTS_INITIALLY)  return [rootSegment];
+    const rootSegment = new Segment({ x: 0, y: 0 }, { x: config.HIGHWAY_SEGMENT_LENGTH, y: 0 }, 0, { highway: !config.START_WITH_NORMAL_STREETS });
+    if (!config.TWO_SEGMENTS_INITIALLY) return [rootSegment];
     const oppositeDirection = rootSegment.clone();
     const newEnd = {
         x: rootSegment.start.x - config.HIGHWAY_SEGMENT_LENGTH,

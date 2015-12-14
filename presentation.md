@@ -64,15 +64,9 @@ Need some type of contextual information
 - City type and road patterns
 - City zones (residential, industrial, etc.)
 
-## Street hierarchy
-
-Primary, secondary, tertiary streets are used in urban planning
-
-→ Simplified distinction between "highways" and normal streets
-
 ## Initialization
 
-Begin with two opposite highway segments:
+Begin with two opposite street segments:
 
 <iframe data-src="demo.html?
     segment_count_limit = 2;
@@ -83,12 +77,12 @@ Begin with two opposite highway segments:
 
 ## Street growth
 
-- create new street segments greedily, in parallel.
-- mostly straight from existing segment
-- branch with some probability at about 90 degrees
+- create new street segments greedily
+- continue straight from existing end segments
+- branch with some probability at ≈ 90 degrees
 - label fully connected street segments as done
 
-<iframe data-src="demo.html?
+<iframe style="height:600px" data-src="demo.html?
     segment_count_limit = 20;
     arrowhead_size = 80;
     draw_circle_on_segment_base = 30;
@@ -100,6 +94,41 @@ Begin with two opposite highway segments:
     restart_after_seconds = 3;
     highway_branch_probability = 0.08;
 "></iframe>
+
+## Street hierarchy
+
+Primary, secondary, tertiary streets are used in urban planning
+
+→ Simplified distinction between "highways" and normal streets
+
+. . .
+
+- highway segments are longer and branch less
+- normal streets can only branch into normal streets
+
+<iframe style="height:400px;width:500px;" data-src="demo.html?
+    segment_count_limit = 20;
+    arrowhead_size = 100;
+    iterations_per_second = 1;
+    target_zoom = 0.8;
+    highway_segment_width = 24;
+    two_segments_initially = 0;
+    only_highways = 1;
+    seed = 0.1;
+    restart_after_seconds = 3;
+"></iframe>
+<iframe style="height:400px;width:500px;" data-src="demo.html?
+    segment_count_limit = 40;
+    arrowhead_size = 80;
+    iterations_per_second = 2;
+    target_zoom = 0.8;
+    two_segments_initially = 0;
+    only_highways = 0;
+    seed = 0.1;
+    restart_after_seconds = 3;
+    start_with_normal_streets = 1;
+"></iframe>
+
 
 ## Conflict resolution (intersections, obstacles)
 
