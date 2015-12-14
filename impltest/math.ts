@@ -95,6 +95,9 @@ export const math = {
     lerp: function(a: number, b: number, x: number) {
         return a * (1 - x) + b * x;
     },
+    lerpV: function(a: Point, b: Point, x: number) {
+        return {x: math.lerp(a.x, b.x, x), y: math.lerp(a.y, b.y, x)};
+    },
     randomNearCubic: function(b: number) {
         var d = Math.pow(Math.abs(b), 3);
         var c = 0;

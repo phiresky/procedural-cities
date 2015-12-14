@@ -13,10 +13,16 @@ export const config = {
     DEFAULT_BRANCH_PROBABILITY: .4, HIGHWAY_BRANCH_PROBABILITY: .02,
     HIGHWAY_BRANCH_POPULATION_THRESHOLD: .1, NORMAL_BRANCH_POPULATION_THRESHOLD: .1,
     NORMAL_BRANCH_TIME_DELAY_FROM_HIGHWAY: 10, MINIMUM_INTERSECTION_DEVIATION: 30,
-    SEGMENT_COUNT_LIMIT: 10000, ROAD_SNAP_DISTANCE: 50,
-    HEAT_MAP_PIXEL_DIM: 25, DRAW_HEATMAP: true,
+    SEGMENT_COUNT_LIMIT: 5000, ROAD_SNAP_DISTANCE: 50,
+    HEAT_MAP_PIXEL_DIM: 25, DRAW_HEATMAP: false,
     QUADTREE_PARAMS: { x: -2E4, y: -2E4, width: 4E4, height: 4E4 },
-    QUADTREE_MAX_OBJECTS: 10, QUADTREE_MAX_LEVELS: 10, DEBUG: !1
+    QUADTREE_MAX_OBJECTS: 10, QUADTREE_MAX_LEVELS: 10, DEBUG: false,
+    ARROWHEAD_SIZE: 0,
+    DRAW_CIRCLE_ON_SEGMENT_BASE: 0,
+    IGNORE_CONFLICTS: false,
+    ITERATION_SPEEDUP: 0.01,
+    ITERATIONS_PER_FRAME: 1,
+    SEED: null as string
 };
 interface MetaInfo {
     highway?: boolean, color?: number, severed?: boolean
@@ -150,6 +156,7 @@ class DebugData {
 let debugData = new DebugData();
 
 const localConstraints = function(segment: Segment, segments: Segment[], qTree: Quadtree<Segment>) {
+    if (config.IGNORE_CONFLICTS) return true;
     const action = {
         priority: 0, func: undefined as () => boolean, t: undefined as number
     };
