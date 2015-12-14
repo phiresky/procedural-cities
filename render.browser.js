@@ -7,6 +7,7 @@
  * https://github.com/timohausmann/quadtree-js/
  */
 "use strict";
+
 class Quadtree {
     /*
      * Quadtree Constructor
@@ -23,29 +24,28 @@ class Quadtree {
         this.objects = [];
         this.objectsO = [];
         this.isLeaf = true;
-        if (this.level === undefined)
-            this.level = 0;
+        if (this.level === undefined) this.level = 0;
     }
-    ;
+
     /**
      * Split the node into 4 subnodes
      */
     split() {
         this.isLeaf = false;
-        const level = this.level + 1, width = this.bounds.width / 2, height = this.bounds.height / 2, x = this.bounds.x, y = this.bounds.y;
-        //top right node
+        const level = this.level + 1,
+              width = this.bounds.width / 2,
+              height = this.bounds.height / 2,
+              x = this.bounds.x,
+              y = this.bounds.y;
         this.topRight = new Quadtree({
             x: x + width, y: y, width: width, height: height
         }, this.max_objects, this.max_levels, level);
-        //top left node
         this.topLeft = new Quadtree({
             x: x, y: y, width: width, height: height
         }, this.max_objects, this.max_levels, level);
-        //bottom left node
         this.bottomLeft = new Quadtree({
             x: x, y: y + height, width: width, height: height
         }, this.max_objects, this.max_levels, level);
-        //bottom right node
         this.bottomRight = new Quadtree({
             x: x + width, y: y + height, width: width, height: height
         }, this.max_objects, this.max_levels, level);
@@ -53,38 +53,33 @@ class Quadtree {
         for (let i = 0; i < this.objects.length; i++) {
             const rect = this.objects[i];
             const obj = this.objectsO[i];
-            for (const node of this.getRelevantNodes(rect))
-                node.insert(rect, obj);
+            for (const node of this.getRelevantNodes(rect)) node.insert(rect, obj);
         }
         this.objects = [];
         this.objectsO = [];
     }
-    ;
+
     /**
      * Determine which nodes the object belongs to
      * @param r the AABB to check
      */
     getRelevantNodes(r) {
-        const midX = this.bounds.x + (this.bounds.width / 2);
-        const midY = this.bounds.y + (this.bounds.height / 2);
+        const midX = this.bounds.x + this.bounds.width / 2;
+        const midY = this.bounds.y + this.bounds.height / 2;
         const qs = [];
         const isTop = r.y <= midY;
         const isBottom = r.y + r.height > midY;
         if (r.x <= midX) {
-            if (isTop)
-                qs.push(this.topLeft);
-            if (isBottom)
-                qs.push(this.bottomLeft);
+            if (isTop) qs.push(this.topLeft);
+            if (isBottom) qs.push(this.bottomLeft);
         }
         if (r.x + r.width > midX) {
-            if (isTop)
-                qs.push(this.topRight);
-            if (isBottom)
-                qs.push(this.bottomRight);
+            if (isTop) qs.push(this.topRight);
+            if (isBottom) qs.push(this.bottomRight);
         }
         return qs;
     }
-    ;
+
     /**
      * Insert the object into the node. If the node
      * exceeds the capacity, it will split and add all
@@ -93,125 +88,83 @@ class Quadtree {
      */
     insert(pRect, obj) {
         if (!this.isLeaf) {
-            for (const node of this.getRelevantNodes(pRect))
-                node.insert(pRect, obj);
+            for (const node of this.getRelevantNodes(pRect)) node.insert(pRect, obj);
             return;
         }
         this.objects.push(pRect);
         this.objectsO.push(obj);
-        if (this.objects.length > this.max_objects && this.level < this.max_levels)
-            this.split();
+        if (this.objects.length > this.max_objects && this.level < this.max_levels) this.split();
     }
-    ;
+
     /**
      * Return all objects that could collide with the given object
      * @param Object pRect		bounds of the object to be checked, with x, y, width, height
      * @Return Array		array with all detected objects
      */
     retrieve(pRect) {
-        if (this.isLeaf)
-            return this.objectsO;
+        if (this.isLeaf) return this.objectsO;
         let relevant = [];
-        for (const node of this.getRelevantNodes(pRect))
-            relevant = relevant.concat(node.retrieve(pRect));
+        for (const node of this.getRelevantNodes(pRect)) relevant = relevant.concat(node.retrieve(pRect));
         return relevant;
     }
-    ;
 }
 exports.Quadtree = Quadtree;
 
+
 },{}],2:[function(require,module,exports){
+"use strict"
 // code adapted from http://www.tmwhere.com/city_generation.html
-"use strict";
-
-var _slicedToArray = (function () { function sliceIterator(arr, i) { var _arr = []; var _n = true; var _d = false; var _e = undefined; try { for (var _i = arr[Symbol.iterator](), _s; !(_n = (_s = _i.next()).done); _n = true) { _arr.push(_s.value); if (i && _arr.length === i) break; } } catch (err) { _d = true; _e = err; } finally { try { if (!_n && _i["return"]) _i["return"](); } finally { if (_d) throw _e; } } return _arr; } return function (arr, i) { if (Array.isArray(arr)) { return arr; } else if (Symbol.iterator in Object(arr)) { return sliceIterator(arr, i); } else { throw new TypeError("Invalid attempt to destructure non-iterable instance"); } }; })();
-
-var PIXI = require('pixi.js');
-var perlin = require('perlin');
-const noise = perlin.noise;
-var Quadtree_1 = require("./Quadtree");
+;
+var perlin_1 = require('perlin');
 var seedrandom_1 = require('seedrandom');
-var math_1 = require('./math');
 seedrandom_1.default;
-const randomNearCubic = function (b) {
-    var d = Math.pow(Math.abs(b), 3);
-    var c = 0;
-    while (c === 0 || Math.random() < Math.pow(Math.abs(c), 3) / d) {
-        c = math_1.math.randomRange(-b, b);
-    }
-    return c;
-};
-const config = {
-    mapGeneration: {
-        DEFAULT_SEGMENT_LENGTH: 300, HIGHWAY_SEGMENT_LENGTH: 400,
-        DEFAULT_SEGMENT_WIDTH: 6, HIGHWAY_SEGMENT_WIDTH: 16,
-        RANDOM_BRANCH_ANGLE: function () {
-            return randomNearCubic(3);
-        },
-        RANDOM_STRAIGHT_ANGLE: function () {
-            return randomNearCubic(15);
-        },
-        DEFAULT_BRANCH_PROBABILITY: .4, HIGHWAY_BRANCH_PROBABILITY: .05,
-        HIGHWAY_BRANCH_POPULATION_THRESHOLD: .1, NORMAL_BRANCH_POPULATION_THRESHOLD: .1,
-        NORMAL_BRANCH_TIME_DELAY_FROM_HIGHWAY: 5, MINIMUM_INTERSECTION_DEVIATION: 30,
-        SEGMENT_COUNT_LIMIT: 10000, DEBUG_DELAY: 0, ROAD_SNAP_DISTANCE: 50,
-        HEAT_MAP_PIXEL_DIM: 50, DRAW_HEATMAP: !1,
-        QUADTREE_PARAMS: { x: -2E4, y: -2E4, width: 4E4, height: 4E4 },
-        QUADTREE_MAX_OBJECTS: 10, QUADTREE_MAX_LEVELS: 10, DEBUG: !1
+var Quadtree_1 = require("./Quadtree");
+var math_1 = require('./math');
+exports.config = {
+    DEFAULT_SEGMENT_LENGTH: 300, HIGHWAY_SEGMENT_LENGTH: 400,
+    DEFAULT_SEGMENT_WIDTH: 6, HIGHWAY_SEGMENT_WIDTH: 16,
+    RANDOM_BRANCH_ANGLE: function () {
+        return math_1.math.randomNearCubic(3);
     },
-    gameLogic: {
-        SELECT_PAN_THRESHOLD: 50, SELECTION_RANGE: 50, DEFAULT_PICKUP_RANGE: 150,
-        DEFAULT_BOOST_FACTOR: 2, DEFAULT_BOOST_DURATION: 2,
-        MIN_LENGTH_FOR_VEHICLE_ARRIVAL: .1, DEFAULT_CARGO_CAPACITY: 1, MIN_SPEED_PROPORTION: .1
-    }
+    RANDOM_STRAIGHT_ANGLE: function () {
+        return math_1.math.randomNearCubic(15);
+    },
+    DEFAULT_BRANCH_PROBABILITY: .4, HIGHWAY_BRANCH_PROBABILITY: .02,
+    HIGHWAY_BRANCH_POPULATION_THRESHOLD: .1, NORMAL_BRANCH_POPULATION_THRESHOLD: .1,
+    NORMAL_BRANCH_TIME_DELAY_FROM_HIGHWAY: 10, MINIMUM_INTERSECTION_DEVIATION: 30,
+    SEGMENT_COUNT_LIMIT: 10000, ROAD_SNAP_DISTANCE: 50,
+    HEAT_MAP_PIXEL_DIM: 25, DRAW_HEATMAP: false,
+    QUADTREE_PARAMS: { x: -2E4, y: -2E4, width: 4E4, height: 4E4 },
+    QUADTREE_MAX_OBJECTS: 10, QUADTREE_MAX_LEVELS: 10, DEBUG: !1
 };
 class Segment {
     constructor(start, end) {
         let t = arguments.length <= 2 || arguments[2] === undefined ? 0 : arguments[2];
         let q = arguments[3];
 
-        this.limitsRevision = undefined;
-        this.cachedDir = void 0;
-        this.cachedLength = void 0;
-        this.roadRevision = 0;
-        this.dirRevision = undefined;
-        this.lengthRevision = void 0;
+        this.start = start;
+        this.end = end;
         /** meta-information relevant to global goals */
         this.q = {};
         /** links backwards and forwards */
         this.links = { b: [], f: [] };
-        this.users = [];
-        this.id = undefined;
         this.setupBranchLinks = undefined;
         const obj = this;
-        this.start = { x: start.x, y: start.y };
-        this.end = { x: end.x, y: end.y };
         for (const t in q) this.q[t] = q[t];
-        this.width = this.q.highway ? config.mapGeneration.HIGHWAY_SEGMENT_WIDTH : config.mapGeneration.DEFAULT_SEGMENT_WIDTH;
+        this.width = this.q.highway ? exports.config.HIGHWAY_SEGMENT_WIDTH : exports.config.DEFAULT_SEGMENT_WIDTH;
         // representation of road
-        this.r = {
-            start: start,
-            end: end,
-            setStart: function (val) {
-                this.start = val;
-                obj.start = this.start;
-                return obj.roadRevision++;
-            },
-            setEnd: function (val) {
-                this.end = val;
-                obj.end = this.end;
-                return obj.roadRevision++;
-            }
-        };
         this.t = t;
-
-        var _ref = this.q.highway ? [1200, 12] : [800, 6];
-
-        var _ref2 = _slicedToArray(_ref, 2);
-
-        this.maxSpeed = _ref2[0];
-        this.capacity = _ref2[1];
     }
+    // clockwise direction
+    dir() {
+        const vector = math_1.math.subtractPoints(this.end, this.start);
+        return -1 * math_1.math.sign(math_1.math.crossProduct({ x: 0, y: 1 }, vector)) * math_1.math.angleBetween({ x: 0, y: 1 }, vector);
+    }
+
+    length() {
+        return math_1.math.length(this.start, this.end);
+    }
+
     limits() {
         return {
             x: Math.min(this.start.x, this.end.x),
@@ -220,29 +173,6 @@ class Segment {
             height: Math.abs(this.start.y - this.end.y)
         };
     }
-    currentSpeed() {
-        // subtract 1 from user's length so that a single user can go full speed
-        return Math.min(config.gameLogic.MIN_SPEED_PROPORTION, 1 - Math.max(0, this.users.length - 1) / this.capacity) * this.maxSpeed;
-    }
-
-    // clockwise direction
-    dir() {
-        if (this.dirRevision !== this.roadRevision) {
-            this.dirRevision = this.roadRevision;
-            const vector = math_1.math.subtractPoints(this.r.end, this.r.start);
-            this.cachedDir = -1 * math_1.math.sign(math_1.math.crossProduct({ x: 0, y: 1 }, vector)) * math_1.math.angleBetween({ x: 0, y: 1 }, vector);
-        }
-        return this.cachedDir;
-    }
-
-    length() {
-        if (this.lengthRevision !== this.roadRevision) {
-            this.lengthRevision = this.roadRevision;
-            this.cachedLength = math_1.math.length(this.r.start, this.r.end);
-        }
-        return this.cachedLength;
-    }
-
     debugLinks() {
         this.q.color = 0x00FF00;
         this.links.b.forEach(backwards => backwards.q.color = 0xFF0000);
@@ -251,37 +181,9 @@ class Segment {
 
     startIsBackwards() {
         if (this.links.b.length > 0) {
-            return math_1.math.equalV(this.links.b[0].r.start, this.r.start) || math_1.math.equalV(this.links.b[0].r.end, this.r.start);
+            return math_1.math.equalV(this.links.b[0].start, this.start) || math_1.math.equalV(this.links.b[0].end, this.start);
         } else {
-            return math_1.math.equalV(this.links.f[0].r.start, this.r.end) || math_1.math.equalV(this.links.f[0].r.end, this.r.end);
-        }
-    }
-
-    cost() {
-        return this.length() / this.currentSpeed();
-    }
-
-    costTo(other, fromFraction) {
-        const segmentEnd = this.endContaining(other);
-        let res = 0.5;
-        if (fromFraction != null) {
-            if (segmentEnd === Segment.End.START) res = fromFraction;else res = 1 - fromFraction;
-        }
-        return this.cost() * res;
-    }
-
-    neighbours() {
-        return this.links.f.concat(this.links.b);
-    }
-
-    endContaining(segment) {
-        var startBackwards = this.startIsBackwards();
-        if (this.links.b.indexOf(segment) !== -1) {
-            return startBackwards ? Segment.End.START : Segment.End.END;
-        } else if (this.links.f.indexOf(segment) !== -1) {
-            return startBackwards ? Segment.End.END : Segment.End.START;
-        } else {
-            return undefined;
+            return math_1.math.equalV(this.links.f[0].start, this.end) || math_1.math.equalV(this.links.f[0].end, this.end);
         }
     }
 
@@ -296,18 +198,18 @@ class Segment {
     }
 
     split(point, segment, segmentList, qTree) {
-        const splitPart = segmentFactory.fromExisting(this);
+        const splitPart = this.clone();
         const startIsBackwards = this.startIsBackwards();
         segmentList.push(splitPart);
         qTree.insert(splitPart.limits(), splitPart);
-        splitPart.r.setEnd(point);
-        this.r.setStart(point);
-        //# links are not copied using the preceding factory method.
-        //# copy link array for the split part, keeping references the same
+        splitPart.end = point;
+        this.start = point;
+        // links are not copied using the preceding factory method.
+        // copy link array for the split part, keeping references the same
         splitPart.links.b = this.links.b.slice(0);
         splitPart.links.f = this.links.f.slice(0);
         let firstSplit, fixLinks, secondSplit;
-        // # determine which links correspond to which end of the split segment
+        // determine which links correspond to which end of the split segment
         if (startIsBackwards) {
             firstSplit = splitPart;
             secondSplit = this;
@@ -331,20 +233,16 @@ class Segment {
         segment.links.f.push(firstSplit);
         segment.links.f.push(secondSplit);
     }
-}
-Segment.End = { START: "start", END: "end" };
-exports.Segment = Segment;
-const segmentFactory = {
-    fromExisting: function (segment) {
-        let t = arguments.length <= 1 || arguments[1] === undefined ? segment.t : arguments[1];
-        let r = arguments.length <= 2 || arguments[2] === undefined ? segment.r : arguments[2];
-        let q = arguments.length <= 3 || arguments[3] === undefined ? segment.q : arguments[3];
 
-        return new Segment(r.start, r.end, t, q);
-    },
-    usingDirection: function (start) {
+    clone() {
+        let t = arguments.length <= 0 || arguments[0] === undefined ? this.t : arguments[0];
+        let q = arguments.length <= 1 || arguments[1] === undefined ? this.q : arguments[1];
+
+        return new Segment(this.start, this.end, t, q);
+    }
+    static usingDirection(start) {
         let dir = arguments.length <= 1 || arguments[1] === undefined ? 90 : arguments[1];
-        let length = arguments.length <= 2 || arguments[2] === undefined ? config.mapGeneration.DEFAULT_SEGMENT_LENGTH : arguments[2];
+        let length = arguments.length <= 2 || arguments[2] === undefined ? exports.config.DEFAULT_SEGMENT_LENGTH : arguments[2];
         let t = arguments[3];
         let q = arguments[4];
 
@@ -354,77 +252,82 @@ const segmentFactory = {
         };
         return new Segment(start, end, t, q);
     }
-};
-const heatmap = {
+    intersectWith(s) {
+        return math_1.math.doLineSegmentsIntersect(this.start, this.end, s.start, s.end, true);
+    }
+}
+exports.Segment = Segment;
+;
+exports.heatmap = {
     popOnRoad: function (r) {
         return (this.populationAt(r.start.x, r.start.y) + this.populationAt(r.end.x, r.end.y)) / 2;
     },
     populationAt: function (x, y) {
-        const value1 = (noise.simplex2(x / 10000, y / 10000) + 1) / 2;
-        const value2 = (noise.simplex2(x / 20000 + 500, y / 20000 + 500) + 1) / 2;
-        const value3 = (noise.simplex2(x / 20000 + 1000, y / 20000 + 1000) + 1) / 2;
+        const value1 = (perlin_1.noise.simplex2(x / 10000, y / 10000) + 1) / 2;
+        const value2 = (perlin_1.noise.simplex2(x / 20000 + 500, y / 20000 + 500) + 1) / 2;
+        const value3 = (perlin_1.noise.simplex2(x / 20000 + 1000, y / 20000 + 1000) + 1) / 2;
         return Math.pow((value1 * value2 + value3) / 2, 2);
     }
 };
-function doRoadSegmentsIntersect(r1, r2) {
-    return math_1.math.doLineSegmentsIntersect(r1.start, r1.end, r2.start, r2.end, true);
+class DebugData {
+    constructor() {
+        this.snaps = [];
+        this.intersectionsRadius = [];
+        this.intersections = [];
+    }
 }
-;
-const localConstraints = function (segment, segments, qTree, debugData) {
+let debugData = new DebugData();
+const localConstraints = function (segment, segments, qTree) {
     const action = {
-        priority: 0,
-        func: undefined,
-        t: undefined
+        priority: 0, func: undefined, t: undefined
     };
     for (const other of qTree.retrieve(segment.limits())) {
         // intersection check
         if (action.priority <= 4) {
-            const intersection = doRoadSegmentsIntersect(segment.r, other.r);
+            const intersection = segment.intersectWith(other);
             if (intersection) {
                 if (action.t == null || intersection.t < action.t) {
                     action.t = intersection.t;
                     action.priority = 4;
                     action.func = function () {
                         // if intersecting lines are too similar don't continue
-                        if (math_1.math.minDegreeDifference(other.dir(), segment.dir()) < config.mapGeneration.MINIMUM_INTERSECTION_DEVIATION) {
+                        if (math_1.math.minDegreeDifference(other.dir(), segment.dir()) < exports.config.MINIMUM_INTERSECTION_DEVIATION) {
                             return false;
                         }
                         other.split(intersection, segment, segments, qTree);
-                        segment.r.end = intersection;
+                        segment.end = intersection;
                         segment.q.severed = true;
-                        if (debugData.intersections == null) debugData.intersections = [];
                         debugData.intersections.push(intersection);
                         return true;
                     };
                 }
             }
         }
-        //     # snap to crossing within radius check
+        // snap to crossing within radius check
         if (action.priority <= 3) {
-            //# current segment's start must have been checked to have been created.
-            //# other segment's start must have a corresponding end.
-            if (math_1.math.length(segment.r.end, other.r.end) <= config.mapGeneration.ROAD_SNAP_DISTANCE) {
-                const point = other.r.end;
+            // current segment's start must have been checked to have been created.
+            // other segment's start must have a corresponding end.
+            if (math_1.math.length(segment.end, other.end) <= exports.config.ROAD_SNAP_DISTANCE) {
+                const point = other.end;
                 action.priority = 3;
                 action.func = function () {
-                    segment.r.end = point;
+                    segment.end = point;
                     segment.q.severed = true;
-                    //  # update links of otherSegment corresponding to other.r.end
+                    // update links of otherSegment corresponding to other.r.end
                     const links = other.startIsBackwards() ? other.links.f : other.links.b;
-                    // # check for duplicate lines, don't add if it exists
-                    // # this should be done before links are setup, to avoid having to undo that step
-                    if (links.some(link => math_1.math.equalV(link.r.start, segment.r.end) && math_1.math.equalV(link.r.end, segment.r.start) || math_1.math.equalV(link.r.start, segment.r.start) && math_1.math.equalV(link.r.end, segment.r.end))) {
+                    // check for duplicate lines, don't add if it exists
+                    // this should be done before links are setup, to avoid having to undo that step
+                    if (links.some(link => math_1.math.equalV(link.start, segment.end) && math_1.math.equalV(link.end, segment.start) || math_1.math.equalV(link.start, segment.start) && math_1.math.equalV(link.end, segment.end))) {
                         return false;
                     }
                     links.forEach(link => {
-                        //# pick links of remaining segments at junction corresponding to other.r.end
+                        // pick links of remaining segments at junction corresponding to other.r.end
                         link.linksForEndContaining(other).push(segment);
-                        // # add junction segments to snapped segment
+                        // add junction segments to snapped segment
                         segment.links.f.push(link);
                     });
                     links.push(segment);
                     segment.links.f.push(other);
-                    if (debugData.snaps == null) debugData.snaps = [];
                     debugData.snaps.push({ x: point.x, y: point.y });
                     return true;
                 };
@@ -432,25 +335,24 @@ const localConstraints = function (segment, segments, qTree, debugData) {
         }
         //  intersection within radius check
         if (action.priority <= 2) {
-            var _math_1$math$distance = math_1.math.distanceToLine(segment.r.end, other.r.start, other.r.end);
+            var _math_1$math$distance = math_1.math.distanceToLine(segment.end, other.start, other.end);
 
             const distance2 = _math_1$math$distance.distance2;
             const pointOnLine = _math_1$math$distance.pointOnLine;
             const lineProj2 = _math_1$math$distance.lineProj2;
             const length2 = _math_1$math$distance.length2;
 
-            if (distance2 < config.mapGeneration.ROAD_SNAP_DISTANCE * config.mapGeneration.ROAD_SNAP_DISTANCE && lineProj2 >= 0 && lineProj2 <= length2) {
+            if (distance2 < exports.config.ROAD_SNAP_DISTANCE * exports.config.ROAD_SNAP_DISTANCE && lineProj2 >= 0 && lineProj2 <= length2) {
                 const point = pointOnLine;
                 action.priority = 2;
                 action.func = function () {
-                    segment.r.end = point;
+                    segment.end = point;
                     segment.q.severed = true;
-                    // # if intersecting lines are too closely aligned don't continue
-                    if (math_1.math.minDegreeDifference(other.dir(), segment.dir()) < config.mapGeneration.MINIMUM_INTERSECTION_DEVIATION) {
+                    // if intersecting lines are too closely aligned don't continue
+                    if (math_1.math.minDegreeDifference(other.dir(), segment.dir()) < exports.config.MINIMUM_INTERSECTION_DEVIATION) {
                         return false;
                     }
                     other.split(point, segment, segments, qTree);
-                    if (debugData.intersectionsRadius == null) debugData.intersectionsRadius = [];
                     debugData.intersectionsRadius.push({ x: point.x, y: point.y });
                     return true;
                 };
@@ -460,235 +362,131 @@ const localConstraints = function (segment, segments, qTree, debugData) {
     if (action.func) return action.func();
     return true;
 };
-const globalGoals = {
-    generate: function (previousSegment) {
-        const newBranches = [];
-        if (!previousSegment.q.severed) {
-            const template = function (direction, length, t, q) {
-                return segmentFactory.usingDirection(previousSegment.r.end, direction, length, t, q);
-            };
-            // # used for highways or going straight on a normal branch
-            const templateContinue = direction => template(direction, previousSegment.length(), 0, previousSegment.q);
-            // # not using q, i.e. not highways
-            const templateBranch = direction => template(direction, config.mapGeneration.DEFAULT_SEGMENT_LENGTH, previousSegment.q.highway ? config.mapGeneration.NORMAL_BRANCH_TIME_DELAY_FROM_HIGHWAY : 0, null);
-            const continueStraight = templateContinue(previousSegment.dir());
-            const straightPop = heatmap.popOnRoad(continueStraight.r);
-            if (previousSegment.q.highway) {
-                const randomStraight = templateContinue(previousSegment.dir() + config.mapGeneration.RANDOM_STRAIGHT_ANGLE());
-                const randomPop = heatmap.popOnRoad(randomStraight.r);
-                let roadPop;
-                if (randomPop > straightPop) {
-                    newBranches.push(randomStraight);
-                    roadPop = randomPop;
-                } else {
-                    newBranches.push(continueStraight);
-                    roadPop = straightPop;
-                }
-                if (roadPop > config.mapGeneration.HIGHWAY_BRANCH_POPULATION_THRESHOLD) {
-                    if (Math.random() < config.mapGeneration.HIGHWAY_BRANCH_PROBABILITY) {
-                        const leftHighwayBranch = templateContinue(previousSegment.dir() - 90 + config.mapGeneration.RANDOM_BRANCH_ANGLE());
-                        newBranches.push(leftHighwayBranch);
-                    } else if (Math.random() < config.mapGeneration.HIGHWAY_BRANCH_PROBABILITY) {
-                        const rightHighwayBranch = templateContinue(previousSegment.dir() + 90 + config.mapGeneration.RANDOM_BRANCH_ANGLE());
-                        newBranches.push(rightHighwayBranch);
-                    }
-                }
-            } else if (straightPop > config.mapGeneration.NORMAL_BRANCH_POPULATION_THRESHOLD) {
+function globalGoalsGenerate(previousSegment) {
+    const newBranches = [];
+    if (!previousSegment.q.severed) {
+        const template = (direction, length, t, q) => Segment.usingDirection(previousSegment.end, previousSegment.dir() + direction, length, t, q);
+        // used for highways or going straight on a normal branch
+        const templateContinue = direction => template(direction, previousSegment.length(), 0, previousSegment.q);
+        // not using q, i.e. not highways
+        const templateBranch = direction => template(direction, exports.config.DEFAULT_SEGMENT_LENGTH, previousSegment.q.highway ? exports.config.NORMAL_BRANCH_TIME_DELAY_FROM_HIGHWAY : 0, null);
+        const continueStraight = templateContinue(0);
+        const straightPop = exports.heatmap.popOnRoad(continueStraight);
+        if (previousSegment.q.highway) {
+            const randomStraight = templateContinue(exports.config.RANDOM_STRAIGHT_ANGLE());
+            const randomPop = exports.heatmap.popOnRoad(randomStraight);
+            let roadPop;
+            if (randomPop > straightPop) {
+                newBranches.push(randomStraight);
+                roadPop = randomPop;
+            } else {
                 newBranches.push(continueStraight);
+                roadPop = straightPop;
             }
-            if (straightPop > config.mapGeneration.NORMAL_BRANCH_POPULATION_THRESHOLD) {
-                if (Math.random() < config.mapGeneration.DEFAULT_BRANCH_PROBABILITY) {
-                    const leftBranch = templateBranch(previousSegment.dir() - 90 + config.mapGeneration.RANDOM_BRANCH_ANGLE());
-                    newBranches.push(leftBranch);
-                } else if (Math.random() < config.mapGeneration.DEFAULT_BRANCH_PROBABILITY) {
-                    const rightBranch = templateBranch(previousSegment.dir() + 90 + config.mapGeneration.RANDOM_BRANCH_ANGLE());
-                    newBranches.push(rightBranch);
+            if (roadPop > exports.config.HIGHWAY_BRANCH_POPULATION_THRESHOLD) {
+                if (Math.random() < exports.config.HIGHWAY_BRANCH_PROBABILITY) {
+                    newBranches.push(templateContinue(-90 + exports.config.RANDOM_BRANCH_ANGLE()));
+                } else if (Math.random() < exports.config.HIGHWAY_BRANCH_PROBABILITY) {
+                    newBranches.push(templateContinue(+90 + exports.config.RANDOM_BRANCH_ANGLE()));
                 }
             }
+        } else if (straightPop > exports.config.NORMAL_BRANCH_POPULATION_THRESHOLD) {
+            newBranches.push(continueStraight);
         }
-        for (const branch of newBranches) {
-            // # setup links between each current branch and each existing branch stemming from the previous segment
-            branch.setupBranchLinks = function () {
-                previousSegment.links.f.forEach(link => {
-                    branch.links.b.push(link);
-                    link.linksForEndContaining(previousSegment).push(branch);
-                });
-                previousSegment.links.f.push(branch);
-                return branch.links.b.push(previousSegment);
-            };
+        if (straightPop > exports.config.NORMAL_BRANCH_POPULATION_THRESHOLD) {
+            if (Math.random() < exports.config.DEFAULT_BRANCH_PROBABILITY) {
+                newBranches.push(templateBranch(-90 + exports.config.RANDOM_BRANCH_ANGLE()));
+            } else if (Math.random() < exports.config.DEFAULT_BRANCH_PROBABILITY) {
+                newBranches.push(templateBranch(+90 + exports.config.RANDOM_BRANCH_ANGLE()));
+            }
         }
-        return newBranches;
     }
-};
-exports.generate = function* (seed) {
-    const debugData = {};
-    Math.seedrandom(seed);
-    // # NB: this perlin noise library only supports 65536 different seeds
-    noise.seed(Math.random());
-    const priorityQ = [];
-    // # setup first segments in queue
-    const rootSegment = new Segment({ x: 0, y: 0 }, { x: config.mapGeneration.HIGHWAY_SEGMENT_LENGTH, y: 0 }, 0, { highway: true });
-    const oppositeDirection = segmentFactory.fromExisting(rootSegment);
-    const newEnd = {
-        x: rootSegment.r.start.x - config.mapGeneration.HIGHWAY_SEGMENT_LENGTH,
-        y: oppositeDirection.r.end.y
-    };
-    oppositeDirection.r.setEnd(newEnd);
-    oppositeDirection.links.b.push(rootSegment);
-    rootSegment.links.b.push(oppositeDirection);
-    priorityQ.push(rootSegment);
-    priorityQ.push(oppositeDirection);
-    const segments = [];
-    const qTree = new Quadtree_1.Quadtree(config.mapGeneration.QUADTREE_PARAMS, config.mapGeneration.QUADTREE_MAX_OBJECTS, config.mapGeneration.QUADTREE_MAX_LEVELS);
-    while (priorityQ.length > 0 && segments.length < config.mapGeneration.SEGMENT_COUNT_LIMIT) {
-        //     # pop smallest r(ti, ri, qi) from Q (i.e., smallest 't')
+    for (const branch of newBranches) {
+        // setup links between each current branch and each existing branch stemming from the previous segment
+        branch.setupBranchLinks = function () {
+            previousSegment.links.f.forEach(link => {
+                branch.links.b.push(link);
+                link.linksForEndContaining(previousSegment).push(branch);
+            });
+            previousSegment.links.f.push(branch);
+            return branch.links.b.push(previousSegment);
+        };
+    }
+    return newBranches;
+}
+class PriorityQueue {
+    constructor(getPriority) {
+        this.getPriority = getPriority;
+        this.elements = [];
+    }
+    enqueue() {
+        this.elements.push(...arguments);
+    }
+    dequeue() {
+        // benchmarked - linear array as fast or faster than actual min-heap
         let minT = Infinity;
         let minT_i = 0;
-        priorityQ.forEach((segment, i) => {
-            if (segment.t < minT) {
-                minT = segment.t;
+        this.elements.forEach((segment, i) => {
+            const t = this.getPriority(segment);
+            if (t < minT) {
+                minT = t;
                 minT_i = i;
             }
         });
-        const minSegment = priorityQ.splice(minT_i, 1)[0];
-        const accepted = localConstraints(minSegment, segments, qTree, debugData);
-        if (accepted) {
-            if (minSegment.setupBranchLinks != null) minSegment.setupBranchLinks();
-            segments.push(minSegment);
-            qTree.insert(minSegment.limits(), minSegment);
-            globalGoals.generate(minSegment).forEach(newSegment => {
-                newSegment.t = minSegment.t + 1 + newSegment.t;
-                priorityQ.push(newSegment);
-            });
-            yield { segments: segments, priorityQ: priorityQ, qTree: qTree };
-        }
+        return this.elements.splice(minT_i, 1)[0];
     }
-    let id = 0;
-    for (const segment of segments) segment.id = id++;
-    console.log(segments.length + " segments generated.");
-    return { segments: segments, qTree: qTree, priorityQ: priorityQ };
-};
-const seed = Math.random() + "bla";
-const worldScale = 1 / 10;
-console.log("generating with seed " + seed);
-const generator = exports.generate(seed);
-let W = window.innerWidth,
-    H = window.innerHeight;
-const dobounds = function (segs) {
-    let interpolate = arguments.length <= 1 || arguments[1] === undefined ? 1 : arguments[1];
-
-    const lim = segs.map(s => s.limits());
-    const bounds = {
-        minx: Math.min(...lim.map(s => s.x * worldScale)),
-        miny: Math.min(...lim.map(s => s.y * worldScale)),
-        maxx: Math.max(...lim.map(s => s.x * worldScale)),
-        maxy: Math.max(...lim.map(s => s.y * worldScale))
+    empty() {
+        return this.elements.length === 0;
+    }
+}
+function makeInitialSegments() {
+    // setup first segments in queue
+    const rootSegment = new Segment({ x: 0, y: 0 }, { x: exports.config.HIGHWAY_SEGMENT_LENGTH, y: 0 }, 0, { highway: true });
+    const oppositeDirection = rootSegment.clone();
+    const newEnd = {
+        x: rootSegment.start.x - exports.config.HIGHWAY_SEGMENT_LENGTH,
+        y: oppositeDirection.end.y
     };
-    const scale = Math.min(W / (bounds.maxx - bounds.minx), H / (bounds.maxy - bounds.miny)) * 0.9;
-    const npx = -(bounds.maxx + bounds.minx) / 2 * scale + W / 2;
-    const npy = -(bounds.maxy + bounds.miny) / 2 * scale + H / 2;
-    stage.position.x = math_1.math.lerp(stage.position.x, npx, interpolate);
-    stage.position.y = math_1.math.lerp(stage.position.y, npy, interpolate);
-    stage.scale.x = math_1.math.lerp(stage.scale.x, scale, interpolate);
-    stage.scale.y = math_1.math.lerp(stage.scale.y, scale, interpolate);
-};
-const renderer = PIXI.autoDetectRenderer(W, H, { backgroundColor: 0xeeeeee, antialias: true });
-document.body.appendChild(renderer.view);
-const graphics = new PIXI.Graphics();
-const stage = new PIXI.Container();
-const makeSpeed = 2;
-stage.addChild(graphics);
-stage.interactive = true;
-stage.hitArea = new PIXI.Rectangle(-1e5, -1e5, 2e5, 2e5);
-function renderSegment(seg) {
-    let color = arguments.length <= 1 || arguments[1] === undefined ? 0x000000 : arguments[1];
-
-    if (!color) color = seg.q.color;
-    graphics.lineStyle(seg.width * 10 * worldScale, color, 1);
-    graphics.moveTo(seg.r.start.x * worldScale, seg.r.start.y * worldScale);
-    graphics.lineTo(seg.r.end.x * worldScale, seg.r.end.y * worldScale);
+    oppositeDirection.end = newEnd;
+    oppositeDirection.links.b.push(rootSegment);
+    rootSegment.links.b.push(oppositeDirection);
+    return [rootSegment, oppositeDirection];
 }
-stage.on('mousedown', onDragStart).on('touchstart', onDragStart).on('mouseup', onDragEnd).on('mouseupoutside', onDragEnd).on('touchend', onDragEnd).on('touchendoutside', onDragEnd).on('mousemove', onDragMove).on('touchmove', onDragMove).on('click', onClick);
-function onClick(event) {
-    const p = event.data.getLocalPosition(graphics);
-    p.x /= worldScale;
-    p.y /= worldScale;
-    const poss = stuff.qTree.retrieve({
-        x: p.x - 10, y: p.y - 10,
-        width: 20, height: 20
-    });
-    for (const seg of poss) {
-        seg.q.color = 0xff0000;
+function generationStep(priorityQ, segments, qTree) {
+    const minSegment = priorityQ.dequeue();
+    const accepted = localConstraints(minSegment, segments, qTree);
+    if (accepted) {
+        if (minSegment.setupBranchLinks != null) minSegment.setupBranchLinks();
+        segments.push(minSegment);
+        qTree.insert(minSegment.limits(), minSegment);
+        globalGoalsGenerate(minSegment).forEach(newSegment => {
+            newSegment.t = minSegment.t + 1 + newSegment.t;
+            priorityQ.enqueue(newSegment);
+        });
     }
 }
-function onDragStart(event) {
-    this.dragstart = { x: event.data.global.x, y: event.data.global.y };
-}
-function onDragEnd() {
-    this.dragstart = null;
-}
-function onDragMove(event) {
-    if (this.dragstart) {
-        this.position.x += event.data.global.x - this.dragstart.x;
-        this.position.y += event.data.global.y - this.dragstart.y;
-        this.dragstart = { x: event.data.global.x, y: event.data.global.y };
+function* generate(seed) {
+    Math.seedrandom(seed);
+    perlin_1.noise.seed(Math.random());
+    const priorityQ = new PriorityQueue(s => s.t);
+    priorityQ.enqueue(...makeInitialSegments());
+    const segments = [];
+    const qTree = new Quadtree_1.Quadtree(exports.config.QUADTREE_PARAMS, exports.config.QUADTREE_MAX_OBJECTS, exports.config.QUADTREE_MAX_LEVELS);
+    while (!priorityQ.empty() && segments.length < exports.config.SEGMENT_COUNT_LIMIT) {
+        generationStep(priorityQ, segments, qTree);
+        yield { segments: segments, priorityQ: priorityQ.elements, qTree: qTree };
     }
+    console.log(segments.length + " segments generated.");
+    yield { segments: segments, qTree: qTree, priorityQ: priorityQ.elements };
 }
-function zoom(x, y, direction) {
-    const beforeTransform = stage.toLocal(new PIXI.Point(x, y));
-    var factor = 1 + direction * 0.1;
-    stage.scale.x *= factor;
-    stage.scale.y *= factor;
-    const afterTransform = stage.toLocal(new PIXI.Point(x, y));
-    stage.position.x += (afterTransform.x - beforeTransform.x) * stage.scale.x;
-    stage.position.y += (afterTransform.y - beforeTransform.y) * stage.scale.y;
-}
-window.addEventListener('wheel', e => zoom(e.clientX, e.clientY, -math_1.math.sign(e.deltaY)));
-let stuff;
-let done = false;
-requestAnimationFrame(animate);
-let iteration = 0;
-function animate() {
-    for (let i = 0; i < iteration / 100 * makeSpeed + 1; i++) {
-        const iter = generator.next();
-        if (!iter.done) {
-            stuff = iter.value;
-            iteration++;
-        } else done = true;
-    }
-    if (!done) dobounds(stuff.segments, iteration < 20 ? 1 : 0.02);
-    graphics.clear();
-    for (let x = 0; x < W; x += 20) for (let y = 0; y < H; y += 20) {
-        // (x-stage.position.x)/stage.scale.x, (y-stage.position.y)/stage.scale.y
-        const p = stage.toLocal(new PIXI.Point(x, y));
-        const v = 255 - heatmap.populationAt(p.x, p.y) * 127 | 0;
-        //const v = heatmap.populationAt(p.x, p.y) > config.mapGeneration.NORMAL_BRANCH_POPULATION_THRESHOLD ? 255 : config.mapGeneration.HIGHWAY_BRANCH_POPULATION_THRESHOLD ?
-        // 180:90;
-        graphics.beginFill(v << 16 | v << 8 | v);
-        graphics.drawRect(p.x, p.y, 20 / stage.scale.x, 20 / stage.scale.y);
-        graphics.endFill();
-    }
-    for (const seg of stuff.segments) renderSegment(seg);
-    if (!done) for (const seg of stuff.priorityQ) renderSegment(seg, 0xFF0000);
-    requestAnimationFrame(animate);
-    renderer.render(stage);
-    iteration++;
-}
-const glbl = window;
-glbl.renderer = renderer;
-glbl.graphics = graphics;
-glbl.stage = stage;
-glbl.bounds = dobounds;
-function onResize() {
-    W = window.innerWidth;
-    H = window.innerHeight;
-    renderer.resize(W, H);
-}
-window.addEventListener("resize", onResize);
+exports.generate = generate;
+;
+window._mapgen = this;
 
 
-},{"./Quadtree":1,"./math":3,"perlin":8,"pixi.js":102,"seedrandom":128}],3:[function(require,module,exports){
+},{"./Quadtree":1,"./math":3,"perlin":9,"seedrandom":129}],3:[function(require,module,exports){
 "use strict";
+
 exports.math = {
     subtractPoints: (p1, p2) => ({ x: p1.x - p2.x, y: p1.y - p2.y }),
     crossProduct: (a, b) => a.x * b.y - a.y * b.x,
@@ -698,11 +496,10 @@ exports.math = {
         d = exports.math.subtractPoints(d, p);
         var f = exports.math.crossProduct(exports.math.subtractPoints(p, a), b);
         var k = exports.math.crossProduct(b, d);
-        if (0 == f && 0 == k || 0 == k)
-            return null;
+        if (0 == f && 0 == k || 0 == k) return null;
         f /= k;
         let e = exports.math.crossProduct(exports.math.subtractPoints(p, a), d) / k;
-        const intersect = c ? 0.001 < e && (0.999 > e && (0.001 < f && 0.999 > f)) : 0 <= e && (1 >= e && (0 <= f && 1 >= f));
+        const intersect = c ? 0.001 < e && 0.999 > e && 0.001 < f && 0.999 > f : 0 <= e && 1 >= e && 0 <= f && 1 >= f;
         return intersect ? { x: a.x + e * b.x, y: a.y + e * b.y, t: e } : null;
     },
     minDegreeDifference: (val1, val2) => {
@@ -782,10 +579,147 @@ exports.math = {
     },
     lerp: function (a, b, x) {
         return a * (1 - x) + b * x;
+    },
+    randomNearCubic: function (b) {
+        var d = Math.pow(Math.abs(b), 3);
+        var c = 0;
+        while (c === 0 || Math.random() < Math.pow(Math.abs(c), 3) / d) {
+            c = exports.math.randomRange(-b, b);
+        }
+        return c;
     }
 };
 
+
 },{}],4:[function(require,module,exports){
+"use strict";
+
+var math_1 = require("./math");
+var mapgen_1 = require("./mapgen");
+var PIXI = require('pixi.js');
+const seed = "blablabla" + Math.random();
+const worldScale = 1 / 10;
+console.log("generating with seed " + seed);
+const generator = mapgen_1.generate(seed);
+let W = window.innerWidth,
+    H = window.innerHeight;
+const dobounds = function (segs) {
+    let interpolate = arguments.length <= 1 || arguments[1] === undefined ? 1 : arguments[1];
+
+    const lim = segs.map(s => s.limits());
+    const bounds = {
+        minx: Math.min(...lim.map(s => s.x * worldScale)),
+        miny: Math.min(...lim.map(s => s.y * worldScale)),
+        maxx: Math.max(...lim.map(s => s.x * worldScale)),
+        maxy: Math.max(...lim.map(s => s.y * worldScale))
+    };
+    const scale = Math.min(W / (bounds.maxx - bounds.minx), H / (bounds.maxy - bounds.miny)) * 0.9;
+    const npx = -(bounds.maxx + bounds.minx) / 2 * scale + W / 2;
+    const npy = -(bounds.maxy + bounds.miny) / 2 * scale + H / 2;
+    exports.stage.position.x = math_1.math.lerp(exports.stage.position.x, npx, interpolate);
+    exports.stage.position.y = math_1.math.lerp(exports.stage.position.y, npy, interpolate);
+    exports.stage.scale.x = math_1.math.lerp(exports.stage.scale.x, scale, interpolate);
+    exports.stage.scale.y = math_1.math.lerp(exports.stage.scale.y, scale, interpolate);
+};
+exports.renderer = PIXI.autoDetectRenderer(W, H, { backgroundColor: 0xeeeeee, antialias: true });
+document.body.appendChild(exports.renderer.view);
+exports.graphics = new PIXI.Graphics();
+exports.stage = new PIXI.Container();
+const makeSpeed = 1;
+exports.stage.addChild(exports.graphics);
+exports.stage.interactive = true;
+exports.stage.hitArea = new PIXI.Rectangle(-1e5, -1e5, 2e5, 2e5);
+function renderSegment(seg) {
+    let color = arguments.length <= 1 || arguments[1] === undefined ? 0x000000 : arguments[1];
+
+    if (!color) color = seg.q.color;
+    exports.graphics.lineStyle(seg.width * 10 * worldScale, color, 1);
+    exports.graphics.moveTo(seg.start.x * worldScale, seg.start.y * worldScale);
+    exports.graphics.lineTo(seg.end.x * worldScale, seg.end.y * worldScale);
+}
+exports.stage.on('mousedown', onDragStart).on('touchstart', onDragStart).on('mouseup', onDragEnd).on('mouseupoutside', onDragEnd).on('touchend', onDragEnd).on('touchendoutside', onDragEnd).on('mousemove', onDragMove).on('touchmove', onDragMove).on('click', onClick);
+function onClick(event) {
+    const p = event.data.getLocalPosition(exports.graphics);
+    p.x /= worldScale;
+    p.y /= worldScale;
+    const poss = exports.stuff.qTree.retrieve({
+        x: p.x - 10, y: p.y - 10,
+        width: 20, height: 20
+    });
+    const dist = a => {
+        const x = math_1.math.distanceToLine(p, a.start, a.end);
+        if (x.lineProj2 >= 0 && x.lineProj2 <= x.length2) return x.distance2;else return Infinity;
+    };
+    poss.sort((a, b) => dist(a) - dist(b));
+    //for(poss[0].linksaa)
+    poss[0].debugLinks();
+    //poss[0].q.color = 0xff0000;
+}
+function onDragStart(event) {
+    this.dragstart = { x: event.data.global.x, y: event.data.global.y };
+}
+function onDragEnd() {
+    this.dragstart = null;
+}
+function onDragMove(event) {
+    if (this.dragstart) {
+        this.position.x += event.data.global.x - this.dragstart.x;
+        this.position.y += event.data.global.y - this.dragstart.y;
+        this.dragstart = { x: event.data.global.x, y: event.data.global.y };
+    }
+}
+function zoom(x, y, direction) {
+    const beforeTransform = exports.stage.toLocal(new PIXI.Point(x, y));
+    var factor = 1 + direction * 0.1;
+    exports.stage.scale.x *= factor;
+    exports.stage.scale.y *= factor;
+    const afterTransform = exports.stage.toLocal(new PIXI.Point(x, y));
+    exports.stage.position.x += (afterTransform.x - beforeTransform.x) * exports.stage.scale.x;
+    exports.stage.position.y += (afterTransform.y - beforeTransform.y) * exports.stage.scale.y;
+}
+window.addEventListener('wheel', e => zoom(e.clientX, e.clientY, -math_1.math.sign(e.deltaY)));
+let done = false;
+requestAnimationFrame(animate);
+let iteration = 0;
+function animate() {
+    for (let i = 0; i < iteration / 100 * makeSpeed + 1; i++) {
+        const iter = generator.next();
+        if (!iter.done) {
+            exports.stuff = iter.value;
+            exports.stuff = exports.stuff;
+            iteration++;
+        } else done = true;
+    }
+    if (!done) dobounds(exports.stuff.segments, iteration < 20 ? 1 : 0.02);
+    exports.graphics.clear();
+    if (mapgen_1.config.DRAW_HEATMAP) {
+        const dim = mapgen_1.config.HEAT_MAP_PIXEL_DIM;
+        for (let x = 0; x < W; x += dim) for (let y = 0; y < H; y += dim) {
+            const p = exports.stage.toLocal(new PIXI.Point(x, y));
+            const pop = mapgen_1.heatmap.populationAt((p.x + dim / 2) / worldScale, (p.y + dim / 2) / worldScale);
+            //const v = 255 - (pop * 127) | 0;
+            const v = pop > mapgen_1.config.NORMAL_BRANCH_POPULATION_THRESHOLD ? 255 : pop > mapgen_1.config.HIGHWAY_BRANCH_POPULATION_THRESHOLD ? 200 : 150;
+            exports.graphics.beginFill(v << 16 | v << 8 | v);
+            exports.graphics.drawRect(p.x, p.y, dim / exports.stage.scale.x, dim / exports.stage.scale.y);
+            exports.graphics.endFill();
+        }
+    }
+    for (const seg of exports.stuff.segments) renderSegment(seg);
+    if (!done) for (const seg of exports.stuff.priorityQ) renderSegment(seg, 0xFF0000);
+    requestAnimationFrame(animate);
+    exports.renderer.render(exports.stage);
+    iteration++;
+}
+function onResize() {
+    W = window.innerWidth;
+    H = window.innerHeight;
+    exports.renderer.resize(W, H);
+}
+window.addEventListener("resize", onResize);
+window._render = this;
+
+
+},{"./mapgen":2,"./math":3,"pixi.js":103}],5:[function(require,module,exports){
 (function (process,global){
 /*!
  * async
@@ -2049,7 +1983,7 @@ exports.math = {
 }());
 
 }).call(this,require('_process'),typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
-},{"_process":238}],5:[function(require,module,exports){
+},{"_process":239}],6:[function(require,module,exports){
 'use strict';
 
 module.exports = earcut;
@@ -2633,7 +2567,7 @@ function Node(i, x, y) {
     this.steiner = false;
 }
 
-},{}],6:[function(require,module,exports){
+},{}],7:[function(require,module,exports){
 'use strict';
 
 //
@@ -2897,7 +2831,7 @@ if ('undefined' !== typeof module) {
   module.exports = EventEmitter;
 }
 
-},{}],7:[function(require,module,exports){
+},{}],8:[function(require,module,exports){
 /* eslint-disable no-unused-vars */
 'use strict';
 var hasOwnProperty = Object.prototype.hasOwnProperty;
@@ -2938,7 +2872,7 @@ module.exports = Object.assign || function (target, source) {
 	return to;
 };
 
-},{}],8:[function(require,module,exports){
+},{}],9:[function(require,module,exports){
 /*
  * A speed-improved perlin and simplex noise algorithms for 2D.
  *
@@ -3249,7 +3183,7 @@ module.exports = Object.assign || function (target, source) {
   };
 
 })(typeof module === "undefined" ? this : module.exports);
-},{}],9:[function(require,module,exports){
+},{}],10:[function(require,module,exports){
 module.exports={
   "_args": [
     [
@@ -3382,7 +3316,7 @@ module.exports={
   "version": "3.0.8"
 }
 
-},{}],10:[function(require,module,exports){
+},{}],11:[function(require,module,exports){
 /**
  * Constant values used in pixi
  *
@@ -3605,7 +3539,7 @@ var CONST = {
 
 module.exports = CONST;
 
-},{"../../package.json":9}],11:[function(require,module,exports){
+},{"../../package.json":10}],12:[function(require,module,exports){
 var math = require('../math'),
     DisplayObject = require('./DisplayObject'),
     RenderTexture = require('../textures/RenderTexture'),
@@ -4200,7 +4134,7 @@ Container.prototype.destroy = function (destroyChildren)
     this.children = null;
 };
 
-},{"../math":20,"../textures/RenderTexture":58,"./DisplayObject":12}],12:[function(require,module,exports){
+},{"../math":21,"../textures/RenderTexture":59,"./DisplayObject":13}],13:[function(require,module,exports){
 var math = require('../math'),
     RenderTexture = require('../textures/RenderTexture'),
     EventEmitter = require('eventemitter3'),
@@ -4699,7 +4633,7 @@ DisplayObject.prototype.destroy = function ()
     this.filterArea = null;
 };
 
-},{"../const":10,"../math":20,"../textures/RenderTexture":58,"eventemitter3":6}],13:[function(require,module,exports){
+},{"../const":11,"../math":21,"../textures/RenderTexture":59,"eventemitter3":7}],14:[function(require,module,exports){
 var Container = require('../display/Container'),
     Texture = require('../textures/Texture'),
     CanvasBuffer = require('../renderers/canvas/utils/CanvasBuffer'),
@@ -5884,7 +5818,7 @@ Graphics.prototype.destroy = function () {
     this._localBounds = null;
 };
 
-},{"../const":10,"../display/Container":11,"../math":20,"../renderers/canvas/utils/CanvasBuffer":32,"../renderers/canvas/utils/CanvasGraphics":33,"../textures/Texture":59,"./GraphicsData":14}],14:[function(require,module,exports){
+},{"../const":11,"../display/Container":12,"../math":21,"../renderers/canvas/utils/CanvasBuffer":33,"../renderers/canvas/utils/CanvasGraphics":34,"../textures/Texture":60,"./GraphicsData":15}],15:[function(require,module,exports){
 /**
  * A GraphicsData object.
  *
@@ -5977,7 +5911,7 @@ GraphicsData.prototype.destroy = function () {
     this.shape = null;
 };
 
-},{}],15:[function(require,module,exports){
+},{}],16:[function(require,module,exports){
 var utils = require('../../utils'),
     math = require('../../math'),
     CONST = require('../../const'),
@@ -6882,7 +6816,7 @@ GraphicsRenderer.prototype.buildPoly = function (graphicsData, webGLData)
     return true;
 };
 
-},{"../../const":10,"../../math":20,"../../renderers/webgl/WebGLRenderer":36,"../../renderers/webgl/utils/ObjectRenderer":50,"../../utils":64,"./WebGLGraphicsData":16,"earcut":5}],16:[function(require,module,exports){
+},{"../../const":11,"../../math":21,"../../renderers/webgl/WebGLRenderer":37,"../../renderers/webgl/utils/ObjectRenderer":51,"../../utils":65,"./WebGLGraphicsData":17,"earcut":6}],17:[function(require,module,exports){
 /**
  * An object containing WebGL specific properties to be used by the WebGL renderer
  *
@@ -7000,7 +6934,7 @@ WebGLGraphicsData.prototype.destroy = function () {
     this.glIndices = null;
 };
 
-},{}],17:[function(require,module,exports){
+},{}],18:[function(require,module,exports){
 /**
  * @file        Main export of the PIXI core library
  * @author      Mat Groves <mat@goodboydigital.com>
@@ -7092,7 +7026,7 @@ var core = module.exports = Object.assign(require('./const'), require('./math'),
     }
 });
 
-},{"./const":10,"./display/Container":11,"./display/DisplayObject":12,"./graphics/Graphics":13,"./graphics/GraphicsData":14,"./graphics/webgl/GraphicsRenderer":15,"./math":20,"./particles/ParticleContainer":26,"./particles/webgl/ParticleRenderer":28,"./renderers/canvas/CanvasRenderer":31,"./renderers/canvas/utils/CanvasBuffer":32,"./renderers/canvas/utils/CanvasGraphics":33,"./renderers/webgl/WebGLRenderer":36,"./renderers/webgl/filters/AbstractFilter":37,"./renderers/webgl/filters/FXAAFilter":38,"./renderers/webgl/filters/SpriteMaskFilter":39,"./renderers/webgl/managers/ShaderManager":43,"./renderers/webgl/shaders/Shader":48,"./renderers/webgl/utils/ObjectRenderer":50,"./renderers/webgl/utils/RenderTarget":52,"./sprites/Sprite":54,"./sprites/webgl/SpriteRenderer":55,"./text/Text":56,"./textures/BaseTexture":57,"./textures/RenderTexture":58,"./textures/Texture":59,"./textures/TextureUvs":60,"./textures/VideoBaseTexture":61,"./ticker":63,"./utils":64}],18:[function(require,module,exports){
+},{"./const":11,"./display/Container":12,"./display/DisplayObject":13,"./graphics/Graphics":14,"./graphics/GraphicsData":15,"./graphics/webgl/GraphicsRenderer":16,"./math":21,"./particles/ParticleContainer":27,"./particles/webgl/ParticleRenderer":29,"./renderers/canvas/CanvasRenderer":32,"./renderers/canvas/utils/CanvasBuffer":33,"./renderers/canvas/utils/CanvasGraphics":34,"./renderers/webgl/WebGLRenderer":37,"./renderers/webgl/filters/AbstractFilter":38,"./renderers/webgl/filters/FXAAFilter":39,"./renderers/webgl/filters/SpriteMaskFilter":40,"./renderers/webgl/managers/ShaderManager":44,"./renderers/webgl/shaders/Shader":49,"./renderers/webgl/utils/ObjectRenderer":51,"./renderers/webgl/utils/RenderTarget":53,"./sprites/Sprite":55,"./sprites/webgl/SpriteRenderer":56,"./text/Text":57,"./textures/BaseTexture":58,"./textures/RenderTexture":59,"./textures/Texture":60,"./textures/TextureUvs":61,"./textures/VideoBaseTexture":62,"./ticker":64,"./utils":65}],19:[function(require,module,exports){
 var Point = require('./Point');
 
 /**
@@ -7459,7 +7393,7 @@ Matrix.IDENTITY = new Matrix();
  */
 Matrix.TEMP_MATRIX = new Matrix();
 
-},{"./Point":19}],19:[function(require,module,exports){
+},{"./Point":20}],20:[function(require,module,exports){
 /**
  * The Point object represents a location in a two-dimensional coordinate system, where x represents
  * the horizontal axis and y represents the vertical axis.
@@ -7529,7 +7463,7 @@ Point.prototype.set = function (x, y)
     this.y = y || ( (y !== 0) ? this.x : 0 ) ;
 };
 
-},{}],20:[function(require,module,exports){
+},{}],21:[function(require,module,exports){
 /**
  * Math classes and utilities mixed into PIXI namespace.
  *
@@ -7551,7 +7485,7 @@ module.exports = {
     RoundedRectangle: require('./shapes/RoundedRectangle')
 };
 
-},{"./Matrix":18,"./Point":19,"./shapes/Circle":21,"./shapes/Ellipse":22,"./shapes/Polygon":23,"./shapes/Rectangle":24,"./shapes/RoundedRectangle":25}],21:[function(require,module,exports){
+},{"./Matrix":19,"./Point":20,"./shapes/Circle":22,"./shapes/Ellipse":23,"./shapes/Polygon":24,"./shapes/Rectangle":25,"./shapes/RoundedRectangle":26}],22:[function(require,module,exports){
 var Rectangle = require('./Rectangle'),
     CONST = require('../../const');
 
@@ -7639,7 +7573,7 @@ Circle.prototype.getBounds = function ()
     return new Rectangle(this.x - this.radius, this.y - this.radius, this.radius * 2, this.radius * 2);
 };
 
-},{"../../const":10,"./Rectangle":24}],22:[function(require,module,exports){
+},{"../../const":11,"./Rectangle":25}],23:[function(require,module,exports){
 var Rectangle = require('./Rectangle'),
     CONST = require('../../const');
 
@@ -7734,7 +7668,7 @@ Ellipse.prototype.getBounds = function ()
     return new Rectangle(this.x - this.width, this.y - this.height, this.width, this.height);
 };
 
-},{"../../const":10,"./Rectangle":24}],23:[function(require,module,exports){
+},{"../../const":11,"./Rectangle":25}],24:[function(require,module,exports){
 var Point = require('../Point'),
     CONST = require('../../const');
 
@@ -7837,7 +7771,7 @@ Polygon.prototype.contains = function (x, y)
     return inside;
 };
 
-},{"../../const":10,"../Point":19}],24:[function(require,module,exports){
+},{"../../const":11,"../Point":20}],25:[function(require,module,exports){
 var CONST = require('../../const');
 
 /**
@@ -7931,7 +7865,7 @@ Rectangle.prototype.contains = function (x, y)
     return false;
 };
 
-},{"../../const":10}],25:[function(require,module,exports){
+},{"../../const":11}],26:[function(require,module,exports){
 var CONST = require('../../const');
 
 /**
@@ -8023,7 +7957,7 @@ RoundedRectangle.prototype.contains = function (x, y)
     return false;
 };
 
-},{"../../const":10}],26:[function(require,module,exports){
+},{"../../const":11}],27:[function(require,module,exports){
 var Container = require('../display/Container'),
     CONST = require('../const');
 
@@ -8336,7 +8270,7 @@ ParticleContainer.prototype.destroy = function () {
     this._buffers = null;
 };
 
-},{"../const":10,"../display/Container":11}],27:[function(require,module,exports){
+},{"../const":11,"../display/Container":12}],28:[function(require,module,exports){
 
 /**
  * @author Mat Groves
@@ -8556,7 +8490,7 @@ ParticleBuffer.prototype.destroy = function ()
     this.gl.deleteBuffer(this.staticBuffer);
 };
 
-},{}],28:[function(require,module,exports){
+},{}],29:[function(require,module,exports){
 var ObjectRenderer = require('../../renderers/webgl/utils/ObjectRenderer'),
     WebGLRenderer = require('../../renderers/webgl/WebGLRenderer'),
     ParticleShader = require('./ParticleShader'),
@@ -9032,7 +8966,7 @@ ParticleRenderer.prototype.destroy = function ()
     this.tempMatrix = null;
 };
 
-},{"../../math":20,"../../renderers/webgl/WebGLRenderer":36,"../../renderers/webgl/utils/ObjectRenderer":50,"./ParticleBuffer":27,"./ParticleShader":29}],29:[function(require,module,exports){
+},{"../../math":21,"../../renderers/webgl/WebGLRenderer":37,"../../renderers/webgl/utils/ObjectRenderer":51,"./ParticleBuffer":28,"./ParticleShader":30}],30:[function(require,module,exports){
 var TextureShader = require('../../renderers/webgl/shaders/TextureShader');
 
 /**
@@ -9110,7 +9044,7 @@ ParticleShader.prototype.constructor = ParticleShader;
 
 module.exports = ParticleShader;
 
-},{"../../renderers/webgl/shaders/TextureShader":49}],30:[function(require,module,exports){
+},{"../../renderers/webgl/shaders/TextureShader":50}],31:[function(require,module,exports){
 var utils = require('../utils'),
     math = require('../math'),
     CONST = require('../const'),
@@ -9371,7 +9305,7 @@ SystemRenderer.prototype.destroy = function (removeView) {
     this._backgroundColorString = null;
 };
 
-},{"../const":10,"../math":20,"../utils":64,"eventemitter3":6}],31:[function(require,module,exports){
+},{"../const":11,"../math":21,"../utils":65,"eventemitter3":7}],32:[function(require,module,exports){
 var SystemRenderer = require('../SystemRenderer'),
     CanvasMaskManager = require('./utils/CanvasMaskManager'),
     utils = require('../../utils'),
@@ -9635,7 +9569,7 @@ CanvasRenderer.prototype._mapBlendModes = function ()
     }
 };
 
-},{"../../const":10,"../../math":20,"../../utils":64,"../SystemRenderer":30,"./utils/CanvasMaskManager":34}],32:[function(require,module,exports){
+},{"../../const":11,"../../math":21,"../../utils":65,"../SystemRenderer":31,"./utils/CanvasMaskManager":35}],33:[function(require,module,exports){
 /**
  * Creates a Canvas element of the given size.
  *
@@ -9735,7 +9669,7 @@ CanvasBuffer.prototype.destroy = function ()
     this.canvas = null;
 };
 
-},{}],33:[function(require,module,exports){
+},{}],34:[function(require,module,exports){
 var CONST = require('../../../const');
 
 /**
@@ -10089,7 +10023,7 @@ CanvasGraphics.updateGraphicsTint = function (graphics)
 };
 
 
-},{"../../../const":10}],34:[function(require,module,exports){
+},{"../../../const":11}],35:[function(require,module,exports){
 var CanvasGraphics = require('./CanvasGraphics');
 
 /**
@@ -10151,7 +10085,7 @@ CanvasMaskManager.prototype.popMask = function (renderer)
 
 CanvasMaskManager.prototype.destroy = function () {};
 
-},{"./CanvasGraphics":33}],35:[function(require,module,exports){
+},{"./CanvasGraphics":34}],36:[function(require,module,exports){
 var utils = require('../../../utils');
 
 /**
@@ -10403,7 +10337,7 @@ CanvasTinter.canUseMultiply = utils.canUseNewCanvasBlendModes();
  */
 CanvasTinter.tintMethod = CanvasTinter.canUseMultiply ? CanvasTinter.tintWithMultiply :  CanvasTinter.tintWithPerPixel;
 
-},{"../../../utils":64}],36:[function(require,module,exports){
+},{"../../../utils":65}],37:[function(require,module,exports){
 var SystemRenderer = require('../SystemRenderer'),
     ShaderManager = require('./managers/ShaderManager'),
     MaskManager = require('./managers/MaskManager'),
@@ -10964,7 +10898,7 @@ WebGLRenderer.prototype._mapGlModes = function ()
     }
 };
 
-},{"../../const":10,"../../utils":64,"../SystemRenderer":30,"./filters/FXAAFilter":38,"./managers/BlendModeManager":40,"./managers/FilterManager":41,"./managers/MaskManager":42,"./managers/ShaderManager":43,"./managers/StencilManager":44,"./utils/ObjectRenderer":50,"./utils/RenderTarget":52}],37:[function(require,module,exports){
+},{"../../const":11,"../../utils":65,"../SystemRenderer":31,"./filters/FXAAFilter":39,"./managers/BlendModeManager":41,"./managers/FilterManager":42,"./managers/MaskManager":43,"./managers/ShaderManager":44,"./managers/StencilManager":45,"./utils/ObjectRenderer":51,"./utils/RenderTarget":53}],38:[function(require,module,exports){
 var DefaultShader = require('../shaders/TextureShader');
 
 /**
@@ -11076,7 +11010,7 @@ AbstractFilter.prototype.syncUniform = function (uniform)
     }
 };
 
-},{"../shaders/TextureShader":49}],38:[function(require,module,exports){
+},{"../shaders/TextureShader":50}],39:[function(require,module,exports){
 var AbstractFilter = require('./AbstractFilter');
 // @see https://github.com/substack/brfs/issues/25
 
@@ -11131,7 +11065,7 @@ FXAAFilter.prototype.applyFilter = function (renderer, input, output)
     filterManager.applyFilter(shader, input, output);
 };
 
-},{"./AbstractFilter":37}],39:[function(require,module,exports){
+},{"./AbstractFilter":38}],40:[function(require,module,exports){
 var AbstractFilter = require('./AbstractFilter'),
     math =  require('../../../math');
 
@@ -11228,7 +11162,7 @@ Object.defineProperties(SpriteMaskFilter.prototype, {
     }
 });
 
-},{"../../../math":20,"./AbstractFilter":37}],40:[function(require,module,exports){
+},{"../../../math":21,"./AbstractFilter":38}],41:[function(require,module,exports){
 var WebGLManager = require('./WebGLManager');
 
 /**
@@ -11272,7 +11206,7 @@ BlendModeManager.prototype.setBlendMode = function (blendMode)
     return true;
 };
 
-},{"./WebGLManager":45}],41:[function(require,module,exports){
+},{"./WebGLManager":46}],42:[function(require,module,exports){
 var WebGLManager = require('./WebGLManager'),
     RenderTarget = require('../utils/RenderTarget'),
     CONST = require('../../../const'),
@@ -11724,7 +11658,7 @@ FilterManager.prototype.destroy = function ()
     this.texturePool = null;
 };
 
-},{"../../../const":10,"../../../math":20,"../utils/Quad":51,"../utils/RenderTarget":52,"./WebGLManager":45}],42:[function(require,module,exports){
+},{"../../../const":11,"../../../math":21,"../utils/Quad":52,"../utils/RenderTarget":53,"./WebGLManager":46}],43:[function(require,module,exports){
 var WebGLManager = require('./WebGLManager'),
     AlphaMaskFilter = require('../filters/SpriteMaskFilter');
 
@@ -11839,7 +11773,7 @@ MaskManager.prototype.popStencilMask = function (target, maskData)
 };
 
 
-},{"../filters/SpriteMaskFilter":39,"./WebGLManager":45}],43:[function(require,module,exports){
+},{"../filters/SpriteMaskFilter":40,"./WebGLManager":46}],44:[function(require,module,exports){
 var WebGLManager = require('./WebGLManager'),
     TextureShader = require('../shaders/TextureShader'),
     ComplexPrimitiveShader = require('../shaders/ComplexPrimitiveShader'),
@@ -12008,7 +11942,7 @@ ShaderManager.prototype.destroy = function ()
     this.tempAttribState = null;
 };
 
-},{"../../../utils":64,"../shaders/ComplexPrimitiveShader":46,"../shaders/PrimitiveShader":47,"../shaders/TextureShader":49,"./WebGLManager":45}],44:[function(require,module,exports){
+},{"../../../utils":65,"../shaders/ComplexPrimitiveShader":47,"../shaders/PrimitiveShader":48,"../shaders/TextureShader":50,"./WebGLManager":46}],45:[function(require,module,exports){
 var WebGLManager = require('./WebGLManager'),
     utils = require('../../../utils');
 
@@ -12354,7 +12288,7 @@ WebGLMaskManager.prototype.popMask = function (maskData)
 };
 
 
-},{"../../../utils":64,"./WebGLManager":45}],45:[function(require,module,exports){
+},{"../../../utils":65,"./WebGLManager":46}],46:[function(require,module,exports){
 /**
  * @class
  * @memberof PIXI
@@ -12395,7 +12329,7 @@ WebGLManager.prototype.destroy = function ()
     this.renderer = null;
 };
 
-},{}],46:[function(require,module,exports){
+},{}],47:[function(require,module,exports){
 var Shader = require('./Shader');
 
 /**
@@ -12457,7 +12391,7 @@ ComplexPrimitiveShader.prototype = Object.create(Shader.prototype);
 ComplexPrimitiveShader.prototype.constructor = ComplexPrimitiveShader;
 module.exports = ComplexPrimitiveShader;
 
-},{"./Shader":48}],47:[function(require,module,exports){
+},{"./Shader":49}],48:[function(require,module,exports){
 var Shader = require('./Shader');
 
 /**
@@ -12520,7 +12454,7 @@ PrimitiveShader.prototype = Object.create(Shader.prototype);
 PrimitiveShader.prototype.constructor = PrimitiveShader;
 module.exports = PrimitiveShader;
 
-},{"./Shader":48}],48:[function(require,module,exports){
+},{"./Shader":49}],49:[function(require,module,exports){
 /*global console */
 var utils = require('../../../utils');
 
@@ -13084,7 +13018,7 @@ Shader.prototype._glCompile = function (type, src)
     return shader;
 };
 
-},{"../../../utils":64}],49:[function(require,module,exports){
+},{"../../../utils":65}],50:[function(require,module,exports){
 var Shader = require('./Shader');
 
 /**
@@ -13195,7 +13129,7 @@ TextureShader.defaultFragmentSrc = [
     '}'
 ].join('\n');
 
-},{"./Shader":48}],50:[function(require,module,exports){
+},{"./Shader":49}],51:[function(require,module,exports){
 var WebGLManager = require('../managers/WebGLManager');
 
 /**
@@ -13253,7 +13187,7 @@ ObjectRenderer.prototype.render = function (object) // jshint unused:false
     // render the object
 };
 
-},{"../managers/WebGLManager":45}],51:[function(require,module,exports){
+},{"../managers/WebGLManager":46}],52:[function(require,module,exports){
 /**
  * Helper class to create a quad
  *
@@ -13408,7 +13342,7 @@ module.exports = Quad;
 
 
 
-},{}],52:[function(require,module,exports){
+},{}],53:[function(require,module,exports){
 var math = require('../../../math'),
     utils = require('../../../utils'),
     CONST = require('../../../const'),
@@ -13730,7 +13664,7 @@ RenderTarget.prototype.destroy = function ()
     this.texture = null;
 };
 
-},{"../../../const":10,"../../../math":20,"../../../utils":64,"./StencilMaskStack":53}],53:[function(require,module,exports){
+},{"../../../const":11,"../../../math":21,"../../../utils":65,"./StencilMaskStack":54}],54:[function(require,module,exports){
 /**
  * Generic Mask Stack data structure
  * @class
@@ -13763,7 +13697,7 @@ function StencilMaskStack()
 StencilMaskStack.prototype.constructor = StencilMaskStack;
 module.exports = StencilMaskStack;
 
-},{}],54:[function(require,module,exports){
+},{}],55:[function(require,module,exports){
 var math = require('../math'),
     Texture = require('../textures/Texture'),
     Container = require('../display/Container'),
@@ -14332,7 +14266,7 @@ Sprite.fromImage = function (imageId, crossorigin, scaleMode)
     return new Sprite(Texture.fromImage(imageId, crossorigin, scaleMode));
 };
 
-},{"../const":10,"../display/Container":11,"../math":20,"../renderers/canvas/utils/CanvasTinter":35,"../textures/Texture":59,"../utils":64}],55:[function(require,module,exports){
+},{"../const":11,"../display/Container":12,"../math":21,"../renderers/canvas/utils/CanvasTinter":36,"../textures/Texture":60,"../utils":65}],56:[function(require,module,exports){
 var ObjectRenderer = require('../../renderers/webgl/utils/ObjectRenderer'),
     WebGLRenderer = require('../../renderers/webgl/WebGLRenderer'),
     CONST = require('../../const');
@@ -14802,7 +14736,7 @@ SpriteRenderer.prototype.destroy = function ()
     this.shader = null;
 };
 
-},{"../../const":10,"../../renderers/webgl/WebGLRenderer":36,"../../renderers/webgl/utils/ObjectRenderer":50}],56:[function(require,module,exports){
+},{"../../const":11,"../../renderers/webgl/WebGLRenderer":37,"../../renderers/webgl/utils/ObjectRenderer":51}],57:[function(require,module,exports){
 var Sprite = require('../sprites/Sprite'),
     Texture = require('../textures/Texture'),
     math = require('../math'),
@@ -15415,7 +15349,7 @@ Text.prototype.destroy = function (destroyBaseTexture)
     this._texture.destroy(destroyBaseTexture === undefined ? true : destroyBaseTexture);
 };
 
-},{"../const":10,"../math":20,"../sprites/Sprite":54,"../textures/Texture":59,"../utils":64}],57:[function(require,module,exports){
+},{"../const":11,"../math":21,"../sprites/Sprite":55,"../textures/Texture":60,"../utils":65}],58:[function(require,module,exports){
 var utils = require('../utils'),
     CONST = require('../const'),
     EventEmitter = require('eventemitter3');
@@ -15849,7 +15783,7 @@ BaseTexture.fromCanvas = function (canvas, scaleMode)
     return baseTexture;
 };
 
-},{"../const":10,"../utils":64,"eventemitter3":6}],58:[function(require,module,exports){
+},{"../const":11,"../utils":65,"eventemitter3":7}],59:[function(require,module,exports){
 var BaseTexture = require('./BaseTexture'),
     Texture = require('./Texture'),
     RenderTarget = require('../renderers/webgl/utils/RenderTarget'),
@@ -16328,7 +16262,7 @@ RenderTexture.prototype.getPixel = function (x, y)
     }
 };
 
-},{"../const":10,"../math":20,"../renderers/canvas/utils/CanvasBuffer":32,"../renderers/webgl/managers/FilterManager":41,"../renderers/webgl/utils/RenderTarget":52,"./BaseTexture":57,"./Texture":59}],59:[function(require,module,exports){
+},{"../const":11,"../math":21,"../renderers/canvas/utils/CanvasBuffer":33,"../renderers/webgl/managers/FilterManager":42,"../renderers/webgl/utils/RenderTarget":53,"./BaseTexture":58,"./Texture":60}],60:[function(require,module,exports){
 var BaseTexture = require('./BaseTexture'),
     VideoBaseTexture = require('./VideoBaseTexture'),
     TextureUvs = require('./TextureUvs'),
@@ -16754,7 +16688,7 @@ Texture.removeTextureFromCache = function (id)
  */
 Texture.EMPTY = new Texture(new BaseTexture());
 
-},{"../math":20,"../utils":64,"./BaseTexture":57,"./TextureUvs":60,"./VideoBaseTexture":61,"eventemitter3":6}],60:[function(require,module,exports){
+},{"../math":21,"../utils":65,"./BaseTexture":58,"./TextureUvs":61,"./VideoBaseTexture":62,"eventemitter3":7}],61:[function(require,module,exports){
 
 /**
  * A standard object to store the Uvs of a texture
@@ -16823,7 +16757,7 @@ TextureUvs.prototype.set = function (frame, baseFrame, rotate)
     }
 };
 
-},{}],61:[function(require,module,exports){
+},{}],62:[function(require,module,exports){
 var BaseTexture = require('./BaseTexture'),
     utils = require('../utils');
 
@@ -17060,7 +16994,7 @@ function createSource(path, type)
     return source;
 }
 
-},{"../utils":64,"./BaseTexture":57}],62:[function(require,module,exports){
+},{"../utils":65,"./BaseTexture":58}],63:[function(require,module,exports){
 var CONST = require('../const'),
     EventEmitter = require('eventemitter3'),
     // Internal event used by composed emitter
@@ -17415,7 +17349,7 @@ Ticker.prototype.update = function update(currentTime)
 
 module.exports = Ticker;
 
-},{"../const":10,"eventemitter3":6}],63:[function(require,module,exports){
+},{"../const":11,"eventemitter3":7}],64:[function(require,module,exports){
 var Ticker = require('./Ticker');
 
 /**
@@ -17471,7 +17405,7 @@ module.exports = {
     Ticker: Ticker
 };
 
-},{"./Ticker":62}],64:[function(require,module,exports){
+},{"./Ticker":63}],65:[function(require,module,exports){
 var CONST = require('../const');
 
 /**
@@ -17722,7 +17656,7 @@ var utils = module.exports = {
     BaseTextureCache: {}
 };
 
-},{"../const":10,"./pluginTarget":65,"async":4,"eventemitter3":6}],65:[function(require,module,exports){
+},{"../const":11,"./pluginTarget":66,"async":5,"eventemitter3":7}],66:[function(require,module,exports){
 /**
  * Mixins functionality to make an object have "plugins".
  *
@@ -17792,7 +17726,7 @@ module.exports = {
     }
 };
 
-},{}],66:[function(require,module,exports){
+},{}],67:[function(require,module,exports){
 /*global console */
 var core = require('./core'),
     mesh = require('./mesh'),
@@ -18143,7 +18077,7 @@ core.utils.uuid = function ()
     return core.utils.uid();
 };
 
-},{"./core":17,"./extras":73,"./filters":90,"./mesh":114}],67:[function(require,module,exports){
+},{"./core":18,"./extras":74,"./filters":91,"./mesh":115}],68:[function(require,module,exports){
 var core = require('../core');
 
 /**
@@ -18531,7 +18465,7 @@ BitmapText.prototype.validate = function()
 
 BitmapText.fonts = {};
 
-},{"../core":17}],68:[function(require,module,exports){
+},{"../core":18}],69:[function(require,module,exports){
 var core = require('../core');
 
 /**
@@ -18851,7 +18785,7 @@ MovieClip.fromImages = function (images)
 
     return new MovieClip(textures);
 };
-},{"../core":17}],69:[function(require,module,exports){
+},{"../core":18}],70:[function(require,module,exports){
 var core = require('../core'),
     // a sprite use dfor rendering textures..
     tempPoint = new core.Point(),
@@ -19303,7 +19237,7 @@ TilingSprite.fromImage = function (imageId, width, height, crossorigin, scaleMod
     return new TilingSprite(core.Texture.fromImage(imageId, crossorigin, scaleMode),width,height);
 };
 
-},{"../core":17,"../core/renderers/canvas/utils/CanvasTinter":35}],70:[function(require,module,exports){
+},{"../core":18,"../core/renderers/canvas/utils/CanvasTinter":36}],71:[function(require,module,exports){
 var core = require('../core'),
     DisplayObject = core.DisplayObject,
     _tempMatrix = new core.Matrix();
@@ -19575,7 +19509,7 @@ DisplayObject.prototype._cacheAsBitmapDestroy = function ()
     this._originalDestroy();
 };
 
-},{"../core":17}],71:[function(require,module,exports){
+},{"../core":18}],72:[function(require,module,exports){
 var core = require('../core');
 
 /**
@@ -19605,7 +19539,7 @@ core.Container.prototype.getChildByName = function (name)
     return null;
 };
 
-},{"../core":17}],72:[function(require,module,exports){
+},{"../core":18}],73:[function(require,module,exports){
 var core = require('../core');
 
 /**
@@ -19635,7 +19569,7 @@ core.DisplayObject.prototype.getGlobalPosition = function (point)
     return point;
 };
 
-},{"../core":17}],73:[function(require,module,exports){
+},{"../core":18}],74:[function(require,module,exports){
 /**
  * @file        Main export of the PIXI extras library
  * @author      Mat Groves <mat@goodboydigital.com>
@@ -19656,7 +19590,7 @@ module.exports = {
     BitmapText:     require('./BitmapText')
 };
 
-},{"./BitmapText":67,"./MovieClip":68,"./TilingSprite":69,"./cacheAsBitmap":70,"./getChildByName":71,"./getGlobalPosition":72}],74:[function(require,module,exports){
+},{"./BitmapText":68,"./MovieClip":69,"./TilingSprite":70,"./cacheAsBitmap":71,"./getChildByName":72,"./getGlobalPosition":73}],75:[function(require,module,exports){
 var core = require('../../core');
 // @see https://github.com/substack/brfs/issues/25
 
@@ -19713,7 +19647,7 @@ Object.defineProperties(AsciiFilter.prototype, {
     }
 });
 
-},{"../../core":17}],75:[function(require,module,exports){
+},{"../../core":18}],76:[function(require,module,exports){
 var core = require('../../core'),
     BlurXFilter = require('../blur/BlurXFilter'),
     BlurYFilter = require('../blur/BlurYFilter');
@@ -19814,7 +19748,7 @@ Object.defineProperties(BloomFilter.prototype, {
     }
 });
 
-},{"../../core":17,"../blur/BlurXFilter":78,"../blur/BlurYFilter":79}],76:[function(require,module,exports){
+},{"../../core":18,"../blur/BlurXFilter":79,"../blur/BlurYFilter":80}],77:[function(require,module,exports){
 var core = require('../../core');
 
 
@@ -19956,7 +19890,7 @@ Object.defineProperties(BlurDirFilter.prototype, {
     }
 });
 
-},{"../../core":17}],77:[function(require,module,exports){
+},{"../../core":18}],78:[function(require,module,exports){
 var core = require('../../core'),
     BlurXFilter = require('./BlurXFilter'),
     BlurYFilter = require('./BlurYFilter');
@@ -20066,7 +20000,7 @@ Object.defineProperties(BlurFilter.prototype, {
     }
 });
 
-},{"../../core":17,"./BlurXFilter":78,"./BlurYFilter":79}],78:[function(require,module,exports){
+},{"../../core":18,"./BlurXFilter":79,"./BlurYFilter":80}],79:[function(require,module,exports){
 var core = require('../../core');
 // @see https://github.com/substack/brfs/issues/25
 
@@ -20159,7 +20093,7 @@ Object.defineProperties(BlurXFilter.prototype, {
     }
 });
 
-},{"../../core":17}],79:[function(require,module,exports){
+},{"../../core":18}],80:[function(require,module,exports){
 var core = require('../../core');
 // @see https://github.com/substack/brfs/issues/25
 
@@ -20245,7 +20179,7 @@ Object.defineProperties(BlurYFilter.prototype, {
     }
 });
 
-},{"../../core":17}],80:[function(require,module,exports){
+},{"../../core":18}],81:[function(require,module,exports){
 var core = require('../../core');
 // @see https://github.com/substack/brfs/issues/25
 
@@ -20275,7 +20209,7 @@ SmartBlurFilter.prototype = Object.create(core.AbstractFilter.prototype);
 SmartBlurFilter.prototype.constructor = SmartBlurFilter;
 module.exports = SmartBlurFilter;
 
-},{"../../core":17}],81:[function(require,module,exports){
+},{"../../core":18}],82:[function(require,module,exports){
 var core = require('../../core');
 // @see https://github.com/substack/brfs/issues/25
 
@@ -20811,7 +20745,7 @@ Object.defineProperties(ColorMatrixFilter.prototype, {
     }
 });
 
-},{"../../core":17}],82:[function(require,module,exports){
+},{"../../core":18}],83:[function(require,module,exports){
 var core = require('../../core');
 // @see https://github.com/substack/brfs/issues/25
 
@@ -20860,7 +20794,7 @@ Object.defineProperties(ColorStepFilter.prototype, {
     }
 });
 
-},{"../../core":17}],83:[function(require,module,exports){
+},{"../../core":18}],84:[function(require,module,exports){
 var core = require('../../core');
 // @see https://github.com/substack/brfs/issues/25
 
@@ -20951,7 +20885,7 @@ Object.defineProperties(ConvolutionFilter.prototype, {
     }
 });
 
-},{"../../core":17}],84:[function(require,module,exports){
+},{"../../core":18}],85:[function(require,module,exports){
 var core = require('../../core');
 // @see https://github.com/substack/brfs/issues/25
 
@@ -20977,7 +20911,7 @@ CrossHatchFilter.prototype = Object.create(core.AbstractFilter.prototype);
 CrossHatchFilter.prototype.constructor = CrossHatchFilter;
 module.exports = CrossHatchFilter;
 
-},{"../../core":17}],85:[function(require,module,exports){
+},{"../../core":18}],86:[function(require,module,exports){
 var core = require('../../core');
 // @see https://github.com/substack/brfs/issues/25
 
@@ -21061,7 +20995,7 @@ Object.defineProperties(DisplacementFilter.prototype, {
     }
 });
 
-},{"../../core":17}],86:[function(require,module,exports){
+},{"../../core":18}],87:[function(require,module,exports){
 var core = require('../../core');
 // @see https://github.com/substack/brfs/issues/25
 
@@ -21133,7 +21067,7 @@ Object.defineProperties(DotScreenFilter.prototype, {
     }
 });
 
-},{"../../core":17}],87:[function(require,module,exports){
+},{"../../core":18}],88:[function(require,module,exports){
 var core = require('../../core');
 
 // @see https://github.com/substack/brfs/issues/25
@@ -21224,7 +21158,7 @@ Object.defineProperties(BlurYTintFilter.prototype, {
     }
 });
 
-},{"../../core":17}],88:[function(require,module,exports){
+},{"../../core":18}],89:[function(require,module,exports){
 var core = require('../../core'),
     BlurXFilter = require('../blur/BlurXFilter'),
     BlurYTintFilter = require('./BlurYTintFilter');
@@ -21417,7 +21351,7 @@ Object.defineProperties(DropShadowFilter.prototype, {
     }
 });
 
-},{"../../core":17,"../blur/BlurXFilter":78,"./BlurYTintFilter":87}],89:[function(require,module,exports){
+},{"../../core":18,"../blur/BlurXFilter":79,"./BlurYTintFilter":88}],90:[function(require,module,exports){
 var core = require('../../core');
 // @see https://github.com/substack/brfs/issues/25
 
@@ -21466,7 +21400,7 @@ Object.defineProperties(GrayFilter.prototype, {
     }
 });
 
-},{"../../core":17}],90:[function(require,module,exports){
+},{"../../core":18}],91:[function(require,module,exports){
 /**
  * @file        Main export of the PIXI filters library
  * @author      Mat Groves <mat@goodboydigital.com>
@@ -21505,7 +21439,7 @@ module.exports = {
     TwistFilter:        require('./twist/TwistFilter')
 };
 
-},{"./ascii/AsciiFilter":74,"./bloom/BloomFilter":75,"./blur/BlurDirFilter":76,"./blur/BlurFilter":77,"./blur/BlurXFilter":78,"./blur/BlurYFilter":79,"./blur/SmartBlurFilter":80,"./color/ColorMatrixFilter":81,"./color/ColorStepFilter":82,"./convolution/ConvolutionFilter":83,"./crosshatch/CrossHatchFilter":84,"./displacement/DisplacementFilter":85,"./dot/DotScreenFilter":86,"./dropshadow/DropShadowFilter":88,"./gray/GrayFilter":89,"./invert/InvertFilter":91,"./noise/NoiseFilter":92,"./pixelate/PixelateFilter":93,"./rgb/RGBSplitFilter":94,"./sepia/SepiaFilter":95,"./shockwave/ShockwaveFilter":96,"./tiltshift/TiltShiftFilter":98,"./tiltshift/TiltShiftXFilter":99,"./tiltshift/TiltShiftYFilter":100,"./twist/TwistFilter":101}],91:[function(require,module,exports){
+},{"./ascii/AsciiFilter":75,"./bloom/BloomFilter":76,"./blur/BlurDirFilter":77,"./blur/BlurFilter":78,"./blur/BlurXFilter":79,"./blur/BlurYFilter":80,"./blur/SmartBlurFilter":81,"./color/ColorMatrixFilter":82,"./color/ColorStepFilter":83,"./convolution/ConvolutionFilter":84,"./crosshatch/CrossHatchFilter":85,"./displacement/DisplacementFilter":86,"./dot/DotScreenFilter":87,"./dropshadow/DropShadowFilter":89,"./gray/GrayFilter":90,"./invert/InvertFilter":92,"./noise/NoiseFilter":93,"./pixelate/PixelateFilter":94,"./rgb/RGBSplitFilter":95,"./sepia/SepiaFilter":96,"./shockwave/ShockwaveFilter":97,"./tiltshift/TiltShiftFilter":99,"./tiltshift/TiltShiftXFilter":100,"./tiltshift/TiltShiftYFilter":101,"./twist/TwistFilter":102}],92:[function(require,module,exports){
 var core = require('../../core');
 // @see https://github.com/substack/brfs/issues/25
 
@@ -21555,7 +21489,7 @@ Object.defineProperties(InvertFilter.prototype, {
     }
 });
 
-},{"../../core":17}],92:[function(require,module,exports){
+},{"../../core":18}],93:[function(require,module,exports){
 var core = require('../../core');
 // @see https://github.com/substack/brfs/issues/25
 
@@ -21610,7 +21544,7 @@ Object.defineProperties(NoiseFilter.prototype, {
     }
 });
 
-},{"../../core":17}],93:[function(require,module,exports){
+},{"../../core":18}],94:[function(require,module,exports){
 var core = require('../../core');
 // @see https://github.com/substack/brfs/issues/25
 
@@ -21661,7 +21595,7 @@ Object.defineProperties(PixelateFilter.prototype, {
     }
 });
 
-},{"../../core":17}],94:[function(require,module,exports){
+},{"../../core":18}],95:[function(require,module,exports){
 var core = require('../../core');
 // @see https://github.com/substack/brfs/issues/25
 
@@ -21747,7 +21681,7 @@ Object.defineProperties(RGBSplitFilter.prototype, {
     }
 });
 
-},{"../../core":17}],95:[function(require,module,exports){
+},{"../../core":18}],96:[function(require,module,exports){
 var core = require('../../core');
 // @see https://github.com/substack/brfs/issues/25
 
@@ -21797,7 +21731,7 @@ Object.defineProperties(SepiaFilter.prototype, {
     }
 });
 
-},{"../../core":17}],96:[function(require,module,exports){
+},{"../../core":18}],97:[function(require,module,exports){
 var core = require('../../core');
 // @see https://github.com/substack/brfs/issues/25
 
@@ -21885,7 +21819,7 @@ Object.defineProperties(ShockwaveFilter.prototype, {
     }
 });
 
-},{"../../core":17}],97:[function(require,module,exports){
+},{"../../core":18}],98:[function(require,module,exports){
 var core = require('../../core');
 // @see https://github.com/substack/brfs/issues/25
 
@@ -22010,7 +21944,7 @@ Object.defineProperties(TiltShiftAxisFilter.prototype, {
     }
 });
 
-},{"../../core":17}],98:[function(require,module,exports){
+},{"../../core":18}],99:[function(require,module,exports){
 var core = require('../../core'),
     TiltShiftXFilter = require('./TiltShiftXFilter'),
     TiltShiftYFilter = require('./TiltShiftYFilter');
@@ -22120,7 +22054,7 @@ Object.defineProperties(TiltShiftFilter.prototype, {
     }
 });
 
-},{"../../core":17,"./TiltShiftXFilter":99,"./TiltShiftYFilter":100}],99:[function(require,module,exports){
+},{"../../core":18,"./TiltShiftXFilter":100,"./TiltShiftYFilter":101}],100:[function(require,module,exports){
 var TiltShiftAxisFilter = require('./TiltShiftAxisFilter');
 
 /**
@@ -22158,7 +22092,7 @@ TiltShiftXFilter.prototype.updateDelta = function ()
     this.uniforms.delta.value.y = dy / d;
 };
 
-},{"./TiltShiftAxisFilter":97}],100:[function(require,module,exports){
+},{"./TiltShiftAxisFilter":98}],101:[function(require,module,exports){
 var TiltShiftAxisFilter = require('./TiltShiftAxisFilter');
 
 /**
@@ -22196,7 +22130,7 @@ TiltShiftYFilter.prototype.updateDelta = function ()
     this.uniforms.delta.value.y = dx / d;
 };
 
-},{"./TiltShiftAxisFilter":97}],101:[function(require,module,exports){
+},{"./TiltShiftAxisFilter":98}],102:[function(require,module,exports){
 var core = require('../../core');
 // @see https://github.com/substack/brfs/issues/25
 
@@ -22281,7 +22215,7 @@ Object.defineProperties(TwistFilter.prototype, {
     }
 });
 
-},{"../../core":17}],102:[function(require,module,exports){
+},{"../../core":18}],103:[function(require,module,exports){
 (function (global){
 // run the polyfills
 require('./polyfill');
@@ -22312,7 +22246,7 @@ Object.assign(core, require('./deprecation'));
 global.PIXI = core;
 
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
-},{"./core":17,"./deprecation":66,"./extras":73,"./filters":90,"./interaction":105,"./loaders":108,"./mesh":114,"./polyfill":119}],103:[function(require,module,exports){
+},{"./core":18,"./deprecation":67,"./extras":74,"./filters":91,"./interaction":106,"./loaders":109,"./mesh":115,"./polyfill":120}],104:[function(require,module,exports){
 var core = require('../core');
 
 /**
@@ -22361,7 +22295,7 @@ InteractionData.prototype.getLocalPosition = function (displayObject, point, glo
     return displayObject.toLocal(globalPos ? globalPos : this.global, point);
 };
 
-},{"../core":17}],104:[function(require,module,exports){
+},{"../core":18}],105:[function(require,module,exports){
 var core = require('../core'),
     InteractionData = require('./InteractionData');
 
@@ -23216,7 +23150,7 @@ InteractionManager.prototype.destroy = function () {
 core.WebGLRenderer.registerPlugin('interaction', InteractionManager);
 core.CanvasRenderer.registerPlugin('interaction', InteractionManager);
 
-},{"../core":17,"./InteractionData":103,"./interactiveTarget":106}],105:[function(require,module,exports){
+},{"../core":18,"./InteractionData":104,"./interactiveTarget":107}],106:[function(require,module,exports){
 /**
  * @file        Main export of the PIXI interactions library
  * @author      Mat Groves <mat@goodboydigital.com>
@@ -23233,7 +23167,7 @@ module.exports = {
     interactiveTarget:  require('./interactiveTarget')
 };
 
-},{"./InteractionData":103,"./InteractionManager":104,"./interactiveTarget":106}],106:[function(require,module,exports){
+},{"./InteractionData":104,"./InteractionManager":105,"./interactiveTarget":107}],107:[function(require,module,exports){
 /**
  * Default property values of interactive objects
  * used by {@link PIXI.interaction.InteractionManager}.
@@ -23282,7 +23216,7 @@ var interactiveTarget = {
 
 module.exports = interactiveTarget;
 
-},{}],107:[function(require,module,exports){
+},{}],108:[function(require,module,exports){
 var Resource = require('resource-loader').Resource,
     core = require('../core'),
     extras = require('../extras'),
@@ -23402,7 +23336,7 @@ module.exports = function ()
     };
 };
 
-},{"../core":17,"../extras":73,"path":235,"resource-loader":125}],108:[function(require,module,exports){
+},{"../core":18,"../extras":74,"path":236,"resource-loader":126}],109:[function(require,module,exports){
 /**
  * @file        Main export of the PIXI loaders library
  * @author      Mat Groves <mat@goodboydigital.com>
@@ -23423,7 +23357,7 @@ module.exports = {
     Resource:           require('resource-loader').Resource
 };
 
-},{"./bitmapFontParser":107,"./loader":109,"./spritesheetParser":110,"./textureParser":111,"resource-loader":125}],109:[function(require,module,exports){
+},{"./bitmapFontParser":108,"./loader":110,"./spritesheetParser":111,"./textureParser":112,"resource-loader":126}],110:[function(require,module,exports){
 var ResourceLoader = require('resource-loader'),
     textureParser = require('./textureParser'),
     spritesheetParser = require('./spritesheetParser'),
@@ -23485,7 +23419,7 @@ var Resource = ResourceLoader.Resource;
 
 Resource.setExtensionXhrType('fnt', Resource.XHR_RESPONSE_TYPE.DOCUMENT);
 
-},{"./bitmapFontParser":107,"./spritesheetParser":110,"./textureParser":111,"resource-loader":125}],110:[function(require,module,exports){
+},{"./bitmapFontParser":108,"./spritesheetParser":111,"./textureParser":112,"resource-loader":126}],111:[function(require,module,exports){
 var Resource = require('resource-loader').Resource,
     path = require('path'),
     core = require('../core');
@@ -23568,7 +23502,7 @@ module.exports = function ()
     };
 };
 
-},{"../core":17,"path":235,"resource-loader":125}],111:[function(require,module,exports){
+},{"../core":18,"path":236,"resource-loader":126}],112:[function(require,module,exports){
 var core = require('../core');
 
 module.exports = function ()
@@ -23590,7 +23524,7 @@ module.exports = function ()
     };
 };
 
-},{"../core":17}],112:[function(require,module,exports){
+},{"../core":18}],113:[function(require,module,exports){
 var core = require('../core'),
     tempPoint = new core.Point(),
     tempPolygon = new core.Polygon();
@@ -24059,7 +23993,7 @@ Mesh.DRAW_MODES = {
     TRIANGLES: 1
 };
 
-},{"../core":17}],113:[function(require,module,exports){
+},{"../core":18}],114:[function(require,module,exports){
 var Mesh = require('./Mesh');
 var core = require('../core');
 
@@ -24272,7 +24206,7 @@ Rope.prototype.updateTransform = function ()
     this.containerUpdateTransform();
 };
 
-},{"../core":17,"./Mesh":112}],114:[function(require,module,exports){
+},{"../core":18,"./Mesh":113}],115:[function(require,module,exports){
 /**
  * @file        Main export of the PIXI extras library
  * @author      Mat Groves <mat@goodboydigital.com>
@@ -24290,7 +24224,7 @@ module.exports = {
     MeshShader:     require('./webgl/MeshShader')
 };
 
-},{"./Mesh":112,"./Rope":113,"./webgl/MeshRenderer":115,"./webgl/MeshShader":116}],115:[function(require,module,exports){
+},{"./Mesh":113,"./Rope":114,"./webgl/MeshRenderer":116,"./webgl/MeshShader":117}],116:[function(require,module,exports){
 var core = require('../../core'),
     Mesh = require('../Mesh');
 
@@ -24505,7 +24439,7 @@ MeshRenderer.prototype.destroy = function ()
     core.ObjectRenderer.prototype.destroy.call(this);
 };
 
-},{"../../core":17,"../Mesh":112}],116:[function(require,module,exports){
+},{"../../core":18,"../Mesh":113}],117:[function(require,module,exports){
 var core = require('../../core');
 
 /**
@@ -24566,7 +24500,7 @@ module.exports = MeshShader;
 
 core.ShaderManager.registerPlugin('meshShader', MeshShader);
 
-},{"../../core":17}],117:[function(require,module,exports){
+},{"../../core":18}],118:[function(require,module,exports){
 // References:
 // https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Math/sign
 
@@ -24582,7 +24516,7 @@ if (!Math.sign)
     };
 }
 
-},{}],118:[function(require,module,exports){
+},{}],119:[function(require,module,exports){
 // References:
 // https://github.com/sindresorhus/object-assign
 // https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Object/assign
@@ -24592,12 +24526,12 @@ if (!Object.assign)
     Object.assign = require('object-assign');
 }
 
-},{"object-assign":7}],119:[function(require,module,exports){
+},{"object-assign":8}],120:[function(require,module,exports){
 require('./Object.assign');
 require('./requestAnimationFrame');
 require('./Math.sign');
 
-},{"./Math.sign":117,"./Object.assign":118,"./requestAnimationFrame":120}],120:[function(require,module,exports){
+},{"./Math.sign":118,"./Object.assign":119,"./requestAnimationFrame":121}],121:[function(require,module,exports){
 (function (global){
 // References:
 // http://paulirish.com/2011/requestanimationframe-for-smart-animating/
@@ -24667,7 +24601,7 @@ if (!global.cancelAnimationFrame) {
 }
 
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
-},{}],121:[function(require,module,exports){
+},{}],122:[function(require,module,exports){
 (function (process){
 /*!
  * async
@@ -25794,7 +25728,7 @@ if (!global.cancelAnimationFrame) {
 }());
 
 }).call(this,require('_process'))
-},{"_process":238}],122:[function(require,module,exports){
+},{"_process":239}],123:[function(require,module,exports){
 var async       = require('async'),
     urlParser   = require('url'),
     Resource    = require('./Resource'),
@@ -26252,7 +26186,7 @@ Loader.LOAD_TYPE = Resource.LOAD_TYPE;
 Loader.XHR_READY_STATE = Resource.XHR_READY_STATE;
 Loader.XHR_RESPONSE_TYPE = Resource.XHR_RESPONSE_TYPE;
 
-},{"./Resource":123,"async":121,"eventemitter3":6,"url":271}],123:[function(require,module,exports){
+},{"./Resource":124,"async":122,"eventemitter3":7,"url":272}],124:[function(require,module,exports){
 var EventEmitter = require('eventemitter3'),
     _url = require('url'),
     // tests is CORS is supported in XHR, if not we need to use XDR
@@ -27046,7 +26980,7 @@ function setExtMap(map, extname, val) {
     map[extname] = val;
 }
 
-},{"eventemitter3":6,"url":271}],124:[function(require,module,exports){
+},{"eventemitter3":7,"url":272}],125:[function(require,module,exports){
 module.exports = {
 
     // private property
@@ -27112,7 +27046,7 @@ module.exports = {
     }
 };
 
-},{}],125:[function(require,module,exports){
+},{}],126:[function(require,module,exports){
 module.exports = require('./Loader');
 
 module.exports.Resource = require('./Resource');
@@ -27126,7 +27060,7 @@ module.exports.middleware = {
     }
 };
 
-},{"./Loader":122,"./Resource":123,"./middlewares/caching/memory":126,"./middlewares/parsing/blob":127}],126:[function(require,module,exports){
+},{"./Loader":123,"./Resource":124,"./middlewares/caching/memory":127,"./middlewares/parsing/blob":128}],127:[function(require,module,exports){
 // a simple in-memory cache for resources
 var cache = {};
 
@@ -27148,7 +27082,7 @@ module.exports = function () {
     };
 };
 
-},{}],127:[function(require,module,exports){
+},{}],128:[function(require,module,exports){
 var Resource = require('../../Resource'),
     b64 = require('../../b64');
 
@@ -27208,7 +27142,7 @@ module.exports = function () {
     };
 };
 
-},{"../../Resource":123,"../../b64":124}],128:[function(require,module,exports){
+},{"../../Resource":124,"../../b64":125}],129:[function(require,module,exports){
 // A library of seedable RNGs implemented in Javascript.
 //
 // Usage:
@@ -27270,7 +27204,7 @@ sr.tychei = tychei;
 
 module.exports = sr;
 
-},{"./lib/alea":129,"./lib/tychei":130,"./lib/xor128":131,"./lib/xor4096":132,"./lib/xorshift7":133,"./lib/xorwow":134,"./seedrandom":135}],129:[function(require,module,exports){
+},{"./lib/alea":130,"./lib/tychei":131,"./lib/xor128":132,"./lib/xor4096":133,"./lib/xorshift7":134,"./lib/xorwow":135,"./seedrandom":136}],130:[function(require,module,exports){
 // A port of an algorithm by Johannes Baagøe <baagoe@baagoe.com>, 2010
 // http://baagoe.com/en/RandomMusings/javascript/
 // https://github.com/nquinlan/better-random-numbers-for-javascript-mirror
@@ -27386,7 +27320,7 @@ if (module && module.exports) {
 
 
 
-},{}],130:[function(require,module,exports){
+},{}],131:[function(require,module,exports){
 // A Javascript implementaion of the "Tyche-i" prng algorithm by
 // Samuel Neves and Filipe Araujo.
 // See https://eden.dei.uc.pt/~sneves/pubs/2011-snfa2.pdf
@@ -27491,7 +27425,7 @@ if (module && module.exports) {
 
 
 
-},{}],131:[function(require,module,exports){
+},{}],132:[function(require,module,exports){
 // A Javascript implementaion of the "xor128" prng algorithm by
 // George Marsaglia.  See http://www.jstatsoft.org/v08/i14/paper
 
@@ -27574,7 +27508,7 @@ if (module && module.exports) {
 
 
 
-},{}],132:[function(require,module,exports){
+},{}],133:[function(require,module,exports){
 // A Javascript implementaion of Richard Brent's Xorgens xor4096 algorithm.
 //
 // This fast non-cryptographic random number generator is designed for
@@ -27722,7 +27656,7 @@ if (module && module.exports) {
   (typeof define) == 'function' && define   // present with an AMD loader
 );
 
-},{}],133:[function(require,module,exports){
+},{}],134:[function(require,module,exports){
 // A Javascript implementaion of the "xorshift7" algorithm by
 // François Panneton and Pierre L'ecuyer:
 // "On the Xorgshift Random Number Generators"
@@ -27821,7 +27755,7 @@ if (module && module.exports) {
 );
 
 
-},{}],134:[function(require,module,exports){
+},{}],135:[function(require,module,exports){
 // A Javascript implementaion of the "xorwow" prng algorithm by
 // George Marsaglia.  See http://www.jstatsoft.org/v08/i14/paper
 
@@ -27909,7 +27843,7 @@ if (module && module.exports) {
 
 
 
-},{}],135:[function(require,module,exports){
+},{}],136:[function(require,module,exports){
 /*
 Copyright 2014 David Bau.
 
@@ -28153,7 +28087,7 @@ if ((typeof module) == 'object' && module.exports) {
   Math    // math: package containing random, pow, and seedrandom
 );
 
-},{"crypto":188}],136:[function(require,module,exports){
+},{"crypto":189}],137:[function(require,module,exports){
 var asn1 = exports;
 
 asn1.bignum = require('bn.js');
@@ -28164,7 +28098,7 @@ asn1.constants = require('./asn1/constants');
 asn1.decoders = require('./asn1/decoders');
 asn1.encoders = require('./asn1/encoders');
 
-},{"./asn1/api":137,"./asn1/base":139,"./asn1/constants":143,"./asn1/decoders":145,"./asn1/encoders":148,"bn.js":151}],137:[function(require,module,exports){
+},{"./asn1/api":138,"./asn1/base":140,"./asn1/constants":144,"./asn1/decoders":146,"./asn1/encoders":149,"bn.js":152}],138:[function(require,module,exports){
 var asn1 = require('../asn1');
 var inherits = require('inherits');
 
@@ -28225,7 +28159,7 @@ Entity.prototype.encode = function encode(data, enc, /* internal */ reporter) {
   return this._getEncoder(enc).encode(data, reporter);
 };
 
-},{"../asn1":136,"inherits":226,"vm":274}],138:[function(require,module,exports){
+},{"../asn1":137,"inherits":227,"vm":275}],139:[function(require,module,exports){
 var inherits = require('inherits');
 var Reporter = require('../base').Reporter;
 var Buffer = require('buffer').Buffer;
@@ -28343,7 +28277,7 @@ EncoderBuffer.prototype.join = function join(out, offset) {
   return out;
 };
 
-},{"../base":139,"buffer":179,"inherits":226}],139:[function(require,module,exports){
+},{"../base":140,"buffer":180,"inherits":227}],140:[function(require,module,exports){
 var base = exports;
 
 base.Reporter = require('./reporter').Reporter;
@@ -28351,7 +28285,7 @@ base.DecoderBuffer = require('./buffer').DecoderBuffer;
 base.EncoderBuffer = require('./buffer').EncoderBuffer;
 base.Node = require('./node');
 
-},{"./buffer":138,"./node":140,"./reporter":141}],140:[function(require,module,exports){
+},{"./buffer":139,"./node":141,"./reporter":142}],141:[function(require,module,exports){
 var Reporter = require('../base').Reporter;
 var EncoderBuffer = require('../base').EncoderBuffer;
 var assert = require('minimalistic-assert');
@@ -28963,7 +28897,7 @@ Node.prototype._isNumstr = function isNumstr(str) {
 Node.prototype._isPrintstr = function isPrintstr(str) {
   return /^[A-Za-z0-9 '\(\)\+,\-\.\/:=\?]*$/.test(str);
 };
-},{"../base":139,"minimalistic-assert":230}],141:[function(require,module,exports){
+},{"../base":140,"minimalistic-assert":231}],142:[function(require,module,exports){
 var inherits = require('inherits');
 
 function Reporter(options) {
@@ -29067,7 +29001,7 @@ ReporterError.prototype.rethrow = function rethrow(msg) {
   return this;
 };
 
-},{"inherits":226}],142:[function(require,module,exports){
+},{"inherits":227}],143:[function(require,module,exports){
 var constants = require('../constants');
 
 exports.tagClass = {
@@ -29111,7 +29045,7 @@ exports.tag = {
 };
 exports.tagByName = constants._reverse(exports.tag);
 
-},{"../constants":143}],143:[function(require,module,exports){
+},{"../constants":144}],144:[function(require,module,exports){
 var constants = exports;
 
 // Helper
@@ -29132,7 +29066,7 @@ constants._reverse = function reverse(map) {
 
 constants.der = require('./der');
 
-},{"./der":142}],144:[function(require,module,exports){
+},{"./der":143}],145:[function(require,module,exports){
 var inherits = require('inherits');
 
 var asn1 = require('../../asn1');
@@ -29451,13 +29385,13 @@ function derDecodeLen(buf, primitive, fail) {
   return len;
 }
 
-},{"../../asn1":136,"inherits":226}],145:[function(require,module,exports){
+},{"../../asn1":137,"inherits":227}],146:[function(require,module,exports){
 var decoders = exports;
 
 decoders.der = require('./der');
 decoders.pem = require('./pem');
 
-},{"./der":144,"./pem":146}],146:[function(require,module,exports){
+},{"./der":145,"./pem":147}],147:[function(require,module,exports){
 var inherits = require('inherits');
 var Buffer = require('buffer').Buffer;
 
@@ -29509,7 +29443,7 @@ PEMDecoder.prototype.decode = function decode(data, options) {
   return DERDecoder.prototype.decode.call(this, input, options);
 };
 
-},{"../../asn1":136,"./der":144,"buffer":179,"inherits":226}],147:[function(require,module,exports){
+},{"../../asn1":137,"./der":145,"buffer":180,"inherits":227}],148:[function(require,module,exports){
 var inherits = require('inherits');
 var Buffer = require('buffer').Buffer;
 
@@ -29809,13 +29743,13 @@ function encodeTag(tag, primitive, cls, reporter) {
   return res;
 }
 
-},{"../../asn1":136,"buffer":179,"inherits":226}],148:[function(require,module,exports){
+},{"../../asn1":137,"buffer":180,"inherits":227}],149:[function(require,module,exports){
 var encoders = exports;
 
 encoders.der = require('./der');
 encoders.pem = require('./pem');
 
-},{"./der":147,"./pem":149}],149:[function(require,module,exports){
+},{"./der":148,"./pem":150}],150:[function(require,module,exports){
 var inherits = require('inherits');
 var Buffer = require('buffer').Buffer;
 
@@ -29840,7 +29774,7 @@ PEMEncoder.prototype.encode = function encode(data, options) {
   return out.join('\n');
 };
 
-},{"../../asn1":136,"./der":147,"buffer":179,"inherits":226}],150:[function(require,module,exports){
+},{"../../asn1":137,"./der":148,"buffer":180,"inherits":227}],151:[function(require,module,exports){
 var lookup = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/';
 
 ;(function (exports) {
@@ -29966,7 +29900,7 @@ var lookup = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/';
 	exports.fromByteArray = uint8ToBase64
 }(typeof exports === 'undefined' ? (this.base64js = {}) : exports))
 
-},{}],151:[function(require,module,exports){
+},{}],152:[function(require,module,exports){
 (function (module, exports) {
 
 'use strict';
@@ -33830,7 +33764,7 @@ Mont.prototype.invm = function invm(a) {
 
 })(typeof module === 'undefined' || module, this);
 
-},{}],152:[function(require,module,exports){
+},{}],153:[function(require,module,exports){
 var r;
 
 module.exports = function rand(len) {
@@ -33889,9 +33823,9 @@ if (typeof window === 'object') {
   }
 }
 
-},{}],153:[function(require,module,exports){
-
 },{}],154:[function(require,module,exports){
+
+},{}],155:[function(require,module,exports){
 (function (Buffer){
 // based on the aes implimentation in triple sec
 // https://github.com/keybase/triplesec
@@ -34072,7 +34006,7 @@ AES.prototype._doCryptBlock = function (M, keySchedule, SUB_MIX, SBOX) {
 exports.AES = AES
 
 }).call(this,require("buffer").Buffer)
-},{"buffer":179}],155:[function(require,module,exports){
+},{"buffer":180}],156:[function(require,module,exports){
 (function (Buffer){
 var aes = require('./aes')
 var Transform = require('cipher-base')
@@ -34173,7 +34107,7 @@ function xorTest (a, b) {
 }
 
 }).call(this,require("buffer").Buffer)
-},{"./aes":154,"./ghash":159,"buffer":179,"buffer-xor":178,"cipher-base":181,"inherits":226}],156:[function(require,module,exports){
+},{"./aes":155,"./ghash":160,"buffer":180,"buffer-xor":179,"cipher-base":182,"inherits":227}],157:[function(require,module,exports){
 var ciphers = require('./encrypter')
 exports.createCipher = exports.Cipher = ciphers.createCipher
 exports.createCipheriv = exports.Cipheriv = ciphers.createCipheriv
@@ -34186,7 +34120,7 @@ function getCiphers () {
 }
 exports.listCiphers = exports.getCiphers = getCiphers
 
-},{"./decrypter":157,"./encrypter":158,"./modes":160}],157:[function(require,module,exports){
+},{"./decrypter":158,"./encrypter":159,"./modes":161}],158:[function(require,module,exports){
 (function (Buffer){
 var aes = require('./aes')
 var Transform = require('cipher-base')
@@ -34326,7 +34260,7 @@ exports.createDecipher = createDecipher
 exports.createDecipheriv = createDecipheriv
 
 }).call(this,require("buffer").Buffer)
-},{"./aes":154,"./authCipher":155,"./modes":160,"./modes/cbc":161,"./modes/cfb":162,"./modes/cfb1":163,"./modes/cfb8":164,"./modes/ctr":165,"./modes/ecb":166,"./modes/ofb":167,"./streamCipher":168,"buffer":179,"cipher-base":181,"evp_bytestokey":217,"inherits":226}],158:[function(require,module,exports){
+},{"./aes":155,"./authCipher":156,"./modes":161,"./modes/cbc":162,"./modes/cfb":163,"./modes/cfb1":164,"./modes/cfb8":165,"./modes/ctr":166,"./modes/ecb":167,"./modes/ofb":168,"./streamCipher":169,"buffer":180,"cipher-base":182,"evp_bytestokey":218,"inherits":227}],159:[function(require,module,exports){
 (function (Buffer){
 var aes = require('./aes')
 var Transform = require('cipher-base')
@@ -34451,7 +34385,7 @@ exports.createCipheriv = createCipheriv
 exports.createCipher = createCipher
 
 }).call(this,require("buffer").Buffer)
-},{"./aes":154,"./authCipher":155,"./modes":160,"./modes/cbc":161,"./modes/cfb":162,"./modes/cfb1":163,"./modes/cfb8":164,"./modes/ctr":165,"./modes/ecb":166,"./modes/ofb":167,"./streamCipher":168,"buffer":179,"cipher-base":181,"evp_bytestokey":217,"inherits":226}],159:[function(require,module,exports){
+},{"./aes":155,"./authCipher":156,"./modes":161,"./modes/cbc":162,"./modes/cfb":163,"./modes/cfb1":164,"./modes/cfb8":165,"./modes/ctr":166,"./modes/ecb":167,"./modes/ofb":168,"./streamCipher":169,"buffer":180,"cipher-base":182,"evp_bytestokey":218,"inherits":227}],160:[function(require,module,exports){
 (function (Buffer){
 var zeros = new Buffer(16)
 zeros.fill(0)
@@ -34553,7 +34487,7 @@ function xor (a, b) {
 }
 
 }).call(this,require("buffer").Buffer)
-},{"buffer":179}],160:[function(require,module,exports){
+},{"buffer":180}],161:[function(require,module,exports){
 exports['aes-128-ecb'] = {
   cipher: 'AES',
   key: 128,
@@ -34726,7 +34660,7 @@ exports['aes-256-gcm'] = {
   type: 'auth'
 }
 
-},{}],161:[function(require,module,exports){
+},{}],162:[function(require,module,exports){
 var xor = require('buffer-xor')
 
 exports.encrypt = function (self, block) {
@@ -34745,7 +34679,7 @@ exports.decrypt = function (self, block) {
   return xor(out, pad)
 }
 
-},{"buffer-xor":178}],162:[function(require,module,exports){
+},{"buffer-xor":179}],163:[function(require,module,exports){
 (function (Buffer){
 var xor = require('buffer-xor')
 
@@ -34780,7 +34714,7 @@ function encryptStart (self, data, decrypt) {
 }
 
 }).call(this,require("buffer").Buffer)
-},{"buffer":179,"buffer-xor":178}],163:[function(require,module,exports){
+},{"buffer":180,"buffer-xor":179}],164:[function(require,module,exports){
 (function (Buffer){
 function encryptByte (self, byteParam, decrypt) {
   var pad
@@ -34818,7 +34752,7 @@ function shiftIn (buffer, value) {
 }
 
 }).call(this,require("buffer").Buffer)
-},{"buffer":179}],164:[function(require,module,exports){
+},{"buffer":180}],165:[function(require,module,exports){
 (function (Buffer){
 function encryptByte (self, byteParam, decrypt) {
   var pad = self._cipher.encryptBlock(self._prev)
@@ -34837,7 +34771,7 @@ exports.encrypt = function (self, chunk, decrypt) {
 }
 
 }).call(this,require("buffer").Buffer)
-},{"buffer":179}],165:[function(require,module,exports){
+},{"buffer":180}],166:[function(require,module,exports){
 (function (Buffer){
 var xor = require('buffer-xor')
 
@@ -34872,7 +34806,7 @@ exports.encrypt = function (self, chunk) {
 }
 
 }).call(this,require("buffer").Buffer)
-},{"buffer":179,"buffer-xor":178}],166:[function(require,module,exports){
+},{"buffer":180,"buffer-xor":179}],167:[function(require,module,exports){
 exports.encrypt = function (self, block) {
   return self._cipher.encryptBlock(block)
 }
@@ -34880,7 +34814,7 @@ exports.decrypt = function (self, block) {
   return self._cipher.decryptBlock(block)
 }
 
-},{}],167:[function(require,module,exports){
+},{}],168:[function(require,module,exports){
 (function (Buffer){
 var xor = require('buffer-xor')
 
@@ -34900,7 +34834,7 @@ exports.encrypt = function (self, chunk) {
 }
 
 }).call(this,require("buffer").Buffer)
-},{"buffer":179,"buffer-xor":178}],168:[function(require,module,exports){
+},{"buffer":180,"buffer-xor":179}],169:[function(require,module,exports){
 (function (Buffer){
 var aes = require('./aes')
 var Transform = require('cipher-base')
@@ -34929,7 +34863,7 @@ StreamCipher.prototype._final = function () {
 }
 
 }).call(this,require("buffer").Buffer)
-},{"./aes":154,"buffer":179,"cipher-base":181,"inherits":226}],169:[function(require,module,exports){
+},{"./aes":155,"buffer":180,"cipher-base":182,"inherits":227}],170:[function(require,module,exports){
 var ebtk = require('evp_bytestokey')
 var aes = require('browserify-aes/browser')
 var DES = require('browserify-des')
@@ -35004,7 +34938,7 @@ function getCiphers () {
 }
 exports.listCiphers = exports.getCiphers = getCiphers
 
-},{"browserify-aes/browser":156,"browserify-aes/modes":160,"browserify-des":170,"browserify-des/modes":171,"evp_bytestokey":217}],170:[function(require,module,exports){
+},{"browserify-aes/browser":157,"browserify-aes/modes":161,"browserify-des":171,"browserify-des/modes":172,"evp_bytestokey":218}],171:[function(require,module,exports){
 (function (Buffer){
 var CipherBase = require('cipher-base')
 var des = require('des.js')
@@ -35051,7 +34985,7 @@ DES.prototype._final = function () {
 }
 
 }).call(this,require("buffer").Buffer)
-},{"buffer":179,"cipher-base":181,"des.js":189,"inherits":226}],171:[function(require,module,exports){
+},{"buffer":180,"cipher-base":182,"des.js":190,"inherits":227}],172:[function(require,module,exports){
 exports['des-ecb'] = {
   key: 8,
   iv: 0
@@ -35077,7 +35011,7 @@ exports['des-ede'] = {
   iv: 0
 }
 
-},{}],172:[function(require,module,exports){
+},{}],173:[function(require,module,exports){
 (function (Buffer){
 var bn = require('bn.js');
 var randomBytes = require('randombytes');
@@ -35121,7 +35055,7 @@ function getr(priv) {
 }
 
 }).call(this,require("buffer").Buffer)
-},{"bn.js":151,"buffer":179,"randombytes":249}],173:[function(require,module,exports){
+},{"bn.js":152,"buffer":180,"randombytes":250}],174:[function(require,module,exports){
 (function (Buffer){
 'use strict'
 exports['RSA-SHA224'] = exports.sha224WithRSAEncryption = {
@@ -35197,7 +35131,7 @@ exports['RSA-MD5'] = exports.md5WithRSAEncryption = {
 }
 
 }).call(this,require("buffer").Buffer)
-},{"buffer":179}],174:[function(require,module,exports){
+},{"buffer":180}],175:[function(require,module,exports){
 (function (Buffer){
 var _algos = require('./algos')
 var createHash = require('create-hash')
@@ -35304,7 +35238,7 @@ module.exports = {
 }
 
 }).call(this,require("buffer").Buffer)
-},{"./algos":173,"./sign":176,"./verify":177,"buffer":179,"create-hash":184,"inherits":226,"stream":269}],175:[function(require,module,exports){
+},{"./algos":174,"./sign":177,"./verify":178,"buffer":180,"create-hash":185,"inherits":227,"stream":270}],176:[function(require,module,exports){
 'use strict'
 exports['1.3.132.0.10'] = 'secp256k1'
 
@@ -35318,7 +35252,7 @@ exports['1.3.132.0.34'] = 'p384'
 
 exports['1.3.132.0.35'] = 'p521'
 
-},{}],176:[function(require,module,exports){
+},{}],177:[function(require,module,exports){
 (function (Buffer){
 // much of this based on https://github.com/indutny/self-signed/blob/gh-pages/lib/rsa.js
 var createHmac = require('create-hmac')
@@ -35507,7 +35441,7 @@ module.exports.getKey = getKey
 module.exports.makeKey = makeKey
 
 }).call(this,require("buffer").Buffer)
-},{"./curves":175,"bn.js":151,"browserify-rsa":172,"buffer":179,"create-hmac":187,"elliptic":199,"parse-asn1":234}],177:[function(require,module,exports){
+},{"./curves":176,"bn.js":152,"browserify-rsa":173,"buffer":180,"create-hmac":188,"elliptic":200,"parse-asn1":235}],178:[function(require,module,exports){
 (function (Buffer){
 // much of this based on https://github.com/indutny/self-signed/blob/gh-pages/lib/rsa.js
 var curves = require('./curves')
@@ -35614,7 +35548,7 @@ function checkValue (b, q) {
 module.exports = verify
 
 }).call(this,require("buffer").Buffer)
-},{"./curves":175,"bn.js":151,"buffer":179,"elliptic":199,"parse-asn1":234}],178:[function(require,module,exports){
+},{"./curves":176,"bn.js":152,"buffer":180,"elliptic":200,"parse-asn1":235}],179:[function(require,module,exports){
 (function (Buffer){
 module.exports = function xor (a, b) {
   var length = Math.min(a.length, b.length)
@@ -35628,7 +35562,7 @@ module.exports = function xor (a, b) {
 }
 
 }).call(this,require("buffer").Buffer)
-},{"buffer":179}],179:[function(require,module,exports){
+},{"buffer":180}],180:[function(require,module,exports){
 (function (global){
 /*!
  * The buffer module from node.js, for the browser.
@@ -37176,14 +37110,14 @@ function blitBuffer (src, dst, offset, length) {
 }
 
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
-},{"base64-js":150,"ieee754":224,"isarray":180}],180:[function(require,module,exports){
+},{"base64-js":151,"ieee754":225,"isarray":181}],181:[function(require,module,exports){
 var toString = {}.toString;
 
 module.exports = Array.isArray || function (arr) {
   return toString.call(arr) == '[object Array]';
 };
 
-},{}],181:[function(require,module,exports){
+},{}],182:[function(require,module,exports){
 (function (Buffer){
 var Transform = require('stream').Transform
 var inherits = require('inherits')
@@ -37277,7 +37211,7 @@ CipherBase.prototype._toString = function (value, enc, final) {
 }
 
 }).call(this,require("buffer").Buffer)
-},{"buffer":179,"inherits":226,"stream":269,"string_decoder":270}],182:[function(require,module,exports){
+},{"buffer":180,"inherits":227,"stream":270,"string_decoder":271}],183:[function(require,module,exports){
 (function (Buffer){
 // Copyright Joyent, Inc. and other Node contributors.
 //
@@ -37388,7 +37322,7 @@ function objectToString(o) {
 }
 
 }).call(this,{"isBuffer":require("../../is-buffer/index.js")})
-},{"../../is-buffer/index.js":227}],183:[function(require,module,exports){
+},{"../../is-buffer/index.js":228}],184:[function(require,module,exports){
 (function (Buffer){
 var elliptic = require('elliptic');
 var BN = require('bn.js');
@@ -37514,7 +37448,7 @@ function formatReturnValue(bn, enc, len) {
 }
 
 }).call(this,require("buffer").Buffer)
-},{"bn.js":151,"buffer":179,"elliptic":199}],184:[function(require,module,exports){
+},{"bn.js":152,"buffer":180,"elliptic":200}],185:[function(require,module,exports){
 (function (Buffer){
 'use strict';
 var inherits = require('inherits')
@@ -37570,7 +37504,7 @@ module.exports = function createHash (alg) {
 }
 
 }).call(this,require("buffer").Buffer)
-},{"./md5":186,"buffer":179,"cipher-base":181,"inherits":226,"ripemd160":260,"sha.js":262}],185:[function(require,module,exports){
+},{"./md5":187,"buffer":180,"cipher-base":182,"inherits":227,"ripemd160":261,"sha.js":263}],186:[function(require,module,exports){
 (function (Buffer){
 'use strict';
 var intSize = 4;
@@ -37607,7 +37541,7 @@ function hash(buf, fn, hashSize, bigEndian) {
 }
 exports.hash = hash;
 }).call(this,require("buffer").Buffer)
-},{"buffer":179}],186:[function(require,module,exports){
+},{"buffer":180}],187:[function(require,module,exports){
 'use strict';
 /*
  * A JavaScript implementation of the RSA Data Security, Inc. MD5 Message
@@ -37764,7 +37698,7 @@ function bit_rol(num, cnt)
 module.exports = function md5(buf) {
   return helpers.hash(buf, core_md5, 16);
 };
-},{"./helpers":185}],187:[function(require,module,exports){
+},{"./helpers":186}],188:[function(require,module,exports){
 (function (Buffer){
 'use strict';
 var createHash = require('create-hash/browser');
@@ -37836,7 +37770,7 @@ module.exports = function createHmac(alg, key) {
 }
 
 }).call(this,require("buffer").Buffer)
-},{"buffer":179,"create-hash/browser":184,"inherits":226,"stream":269}],188:[function(require,module,exports){
+},{"buffer":180,"create-hash/browser":185,"inherits":227,"stream":270}],189:[function(require,module,exports){
 'use strict'
 
 exports.randomBytes = exports.rng = exports.pseudoRandomBytes = exports.prng = require('randombytes')
@@ -37915,7 +37849,7 @@ var publicEncrypt = require('public-encrypt')
   }
 })
 
-},{"browserify-cipher":169,"browserify-sign":174,"browserify-sign/algos":173,"create-ecdh":183,"create-hash":184,"create-hmac":187,"diffie-hellman":195,"pbkdf2":236,"public-encrypt":239,"randombytes":249}],189:[function(require,module,exports){
+},{"browserify-cipher":170,"browserify-sign":175,"browserify-sign/algos":174,"create-ecdh":184,"create-hash":185,"create-hmac":188,"diffie-hellman":196,"pbkdf2":237,"public-encrypt":240,"randombytes":250}],190:[function(require,module,exports){
 'use strict';
 
 exports.utils = require('./des/utils');
@@ -37924,7 +37858,7 @@ exports.DES = require('./des/des');
 exports.CBC = require('./des/cbc');
 exports.EDE = require('./des/ede');
 
-},{"./des/cbc":190,"./des/cipher":191,"./des/des":192,"./des/ede":193,"./des/utils":194}],190:[function(require,module,exports){
+},{"./des/cbc":191,"./des/cipher":192,"./des/des":193,"./des/ede":194,"./des/utils":195}],191:[function(require,module,exports){
 'use strict';
 
 var assert = require('minimalistic-assert');
@@ -37991,7 +37925,7 @@ proto._update = function _update(inp, inOff, out, outOff) {
   }
 };
 
-},{"inherits":226,"minimalistic-assert":230}],191:[function(require,module,exports){
+},{"inherits":227,"minimalistic-assert":231}],192:[function(require,module,exports){
 'use strict';
 
 var assert = require('minimalistic-assert');
@@ -38134,7 +38068,7 @@ Cipher.prototype._finalDecrypt = function _finalDecrypt() {
   return this._unpad(out);
 };
 
-},{"minimalistic-assert":230}],192:[function(require,module,exports){
+},{"minimalistic-assert":231}],193:[function(require,module,exports){
 'use strict';
 
 var assert = require('minimalistic-assert');
@@ -38279,7 +38213,7 @@ DES.prototype._decrypt = function _decrypt(state, lStart, rStart, out, off) {
   utils.rip(l, r, out, off);
 };
 
-},{"../des":189,"inherits":226,"minimalistic-assert":230}],193:[function(require,module,exports){
+},{"../des":190,"inherits":227,"minimalistic-assert":231}],194:[function(require,module,exports){
 'use strict';
 
 var assert = require('minimalistic-assert');
@@ -38336,7 +38270,7 @@ EDE.prototype._update = function _update(inp, inOff, out, outOff) {
 EDE.prototype._pad = DES.prototype._pad;
 EDE.prototype._unpad = DES.prototype._unpad;
 
-},{"../des":189,"inherits":226,"minimalistic-assert":230}],194:[function(require,module,exports){
+},{"../des":190,"inherits":227,"minimalistic-assert":231}],195:[function(require,module,exports){
 'use strict';
 
 exports.readUInt32BE = function readUInt32BE(bytes, off) {
@@ -38594,7 +38528,7 @@ exports.padSplit = function padSplit(num, size, group) {
   return out.join(' ');
 };
 
-},{}],195:[function(require,module,exports){
+},{}],196:[function(require,module,exports){
 (function (Buffer){
 var generatePrime = require('./lib/generatePrime');
 var primes = require('./lib/primes');
@@ -38638,7 +38572,7 @@ exports.DiffieHellmanGroup = exports.createDiffieHellmanGroup = exports.getDiffi
 exports.createDiffieHellman = exports.DiffieHellman = createDiffieHellman;
 
 }).call(this,require("buffer").Buffer)
-},{"./lib/dh":196,"./lib/generatePrime":197,"./lib/primes":198,"buffer":179}],196:[function(require,module,exports){
+},{"./lib/dh":197,"./lib/generatePrime":198,"./lib/primes":199,"buffer":180}],197:[function(require,module,exports){
 (function (Buffer){
 var BN = require('bn.js');
 var MillerRabin = require('miller-rabin');
@@ -38806,7 +38740,7 @@ function formatReturnValue(bn, enc) {
 }
 
 }).call(this,require("buffer").Buffer)
-},{"./generatePrime":197,"bn.js":151,"buffer":179,"miller-rabin":229,"randombytes":249}],197:[function(require,module,exports){
+},{"./generatePrime":198,"bn.js":152,"buffer":180,"miller-rabin":230,"randombytes":250}],198:[function(require,module,exports){
 var randomBytes = require('randombytes');
 module.exports = findPrime;
 findPrime.simpleSieve = simpleSieve;
@@ -38913,7 +38847,7 @@ function findPrime(bits, gen) {
 
 }
 
-},{"bn.js":151,"miller-rabin":229,"randombytes":249}],198:[function(require,module,exports){
+},{"bn.js":152,"miller-rabin":230,"randombytes":250}],199:[function(require,module,exports){
 module.exports={
     "modp1": {
         "gen": "02",
@@ -38948,7 +38882,7 @@ module.exports={
         "prime": "ffffffffffffffffc90fdaa22168c234c4c6628b80dc1cd129024e088a67cc74020bbea63b139b22514a08798e3404ddef9519b3cd3a431b302b0a6df25f14374fe1356d6d51c245e485b576625e7ec6f44c42e9a637ed6b0bff5cb6f406b7edee386bfb5a899fa5ae9f24117c4b1fe649286651ece45b3dc2007cb8a163bf0598da48361c55d39a69163fa8fd24cf5f83655d23dca3ad961c62f356208552bb9ed529077096966d670c354e4abc9804f1746c08ca18217c32905e462e36ce3be39e772c180e86039b2783a2ec07a28fb5c55df06f4c52c9de2bcbf6955817183995497cea956ae515d2261898fa051015728e5a8aaac42dad33170d04507a33a85521abdf1cba64ecfb850458dbef0a8aea71575d060c7db3970f85a6e1e4c7abf5ae8cdb0933d71e8c94e04a25619dcee3d2261ad2ee6bf12ffa06d98a0864d87602733ec86a64521f2b18177b200cbbe117577a615d6c770988c0bad946e208e24fa074e5ab3143db5bfce0fd108e4b82d120a92108011a723c12a787e6d788719a10bdba5b2699c327186af4e23c1a946834b6150bda2583e9ca2ad44ce8dbbbc2db04de8ef92e8efc141fbecaa6287c59474e6bc05d99b2964fa090c3a2233ba186515be7ed1f612970cee2d7afb81bdd762170481cd0069127d5b05aa993b4ea988d8fddc186ffb7dc90a6c08f4df435c93402849236c3fab4d27c7026c1d4dcb2602646dec9751e763dba37bdf8ff9406ad9e530ee5db382f413001aeb06a53ed9027d831179727b0865a8918da3edbebcf9b14ed44ce6cbaced4bb1bdb7f1447e6cc254b332051512bd7af426fb8f401378cd2bf5983ca01c64b92ecf032ea15d1721d03f482d7ce6e74fef6d55e702f46980c82b5a84031900b1c9e59e7c97fbec7e8f323a97a7e36cc88be0f1d45b7ff585ac54bd407b22b4154aacc8f6d7ebf48e1d814cc5ed20f8037e0a79715eef29be32806a1d58bb7c5da76f550aa3d8a1fbff0eb19ccb1a313d55cda56c9ec2ef29632387fe8d76e3c0468043e8f663f4860ee12bf2d5b0b7474d6e694f91e6dbe115974a3926f12fee5e438777cb6a932df8cd8bec4d073b931ba3bc832b68d9dd300741fa7bf8afc47ed2576f6936ba424663aab639c5ae4f5683423b4742bf1c978238f16cbe39d652de3fdb8befc848ad922222e04a4037c0713eb57a81a23f0c73473fc646cea306b4bcbc8862f8385ddfa9d4b7fa2c087e879683303ed5bdd3a062b3cf5b3a278a66d2a13f83f44f82ddf310ee074ab6a364597e899a0255dc164f31cc50846851df9ab48195ded7ea1b1d510bd7ee74d73faf36bc31ecfa268359046f4eb879f924009438b481c6cd7889a002ed5ee382bc9190da6fc026e479558e4475677e9aa9e3050e2765694dfc81f56e880b96e7160c980dd98edd3dfffffffffffffffff"
     }
 }
-},{}],199:[function(require,module,exports){
+},{}],200:[function(require,module,exports){
 'use strict';
 
 var elliptic = exports;
@@ -38964,7 +38898,7 @@ elliptic.curves = require('./elliptic/curves');
 elliptic.ec = require('./elliptic/ec');
 elliptic.eddsa = require('./elliptic/eddsa');
 
-},{"../package.json":215,"./elliptic/curve":202,"./elliptic/curves":205,"./elliptic/ec":206,"./elliptic/eddsa":209,"./elliptic/hmac-drbg":212,"./elliptic/utils":214,"brorand":152}],200:[function(require,module,exports){
+},{"../package.json":216,"./elliptic/curve":203,"./elliptic/curves":206,"./elliptic/ec":207,"./elliptic/eddsa":210,"./elliptic/hmac-drbg":213,"./elliptic/utils":215,"brorand":153}],201:[function(require,module,exports){
 'use strict';
 
 var bn = require('bn.js');
@@ -39317,7 +39251,7 @@ BasePoint.prototype.dblp = function dblp(k) {
   return r;
 };
 
-},{"../../elliptic":199,"bn.js":151}],201:[function(require,module,exports){
+},{"../../elliptic":200,"bn.js":152}],202:[function(require,module,exports){
 'use strict';
 
 var curve = require('../curve');
@@ -39725,7 +39659,7 @@ Point.prototype.eq = function eq(other) {
 Point.prototype.toP = Point.prototype.normalize;
 Point.prototype.mixedAdd = Point.prototype.add;
 
-},{"../../elliptic":199,"../curve":202,"bn.js":151,"inherits":226}],202:[function(require,module,exports){
+},{"../../elliptic":200,"../curve":203,"bn.js":152,"inherits":227}],203:[function(require,module,exports){
 'use strict';
 
 var curve = exports;
@@ -39735,7 +39669,7 @@ curve.short = require('./short');
 curve.mont = require('./mont');
 curve.edwards = require('./edwards');
 
-},{"./base":200,"./edwards":201,"./mont":203,"./short":204}],203:[function(require,module,exports){
+},{"./base":201,"./edwards":202,"./mont":204,"./short":205}],204:[function(require,module,exports){
 'use strict';
 
 var curve = require('../curve');
@@ -39913,7 +39847,7 @@ Point.prototype.getX = function getX() {
   return this.x.fromRed();
 };
 
-},{"../../elliptic":199,"../curve":202,"bn.js":151,"inherits":226}],204:[function(require,module,exports){
+},{"../../elliptic":200,"../curve":203,"bn.js":152,"inherits":227}],205:[function(require,module,exports){
 'use strict';
 
 var curve = require('../curve');
@@ -40822,7 +40756,7 @@ JPoint.prototype.isInfinity = function isInfinity() {
   return this.z.cmpn(0) === 0;
 };
 
-},{"../../elliptic":199,"../curve":202,"bn.js":151,"inherits":226}],205:[function(require,module,exports){
+},{"../../elliptic":200,"../curve":203,"bn.js":152,"inherits":227}],206:[function(require,module,exports){
 'use strict';
 
 var curves = exports;
@@ -41029,7 +40963,7 @@ defineCurve('secp256k1', {
   ]
 });
 
-},{"../elliptic":199,"./precomputed/secp256k1":213,"hash.js":218}],206:[function(require,module,exports){
+},{"../elliptic":200,"./precomputed/secp256k1":214,"hash.js":219}],207:[function(require,module,exports){
 'use strict';
 
 var bn = require('bn.js');
@@ -41247,7 +41181,7 @@ EC.prototype.getKeyRecoveryParam = function(e, signature, Q, enc) {
   throw new Error('Unable to find valid recovery factor');
 };
 
-},{"../../elliptic":199,"./key":207,"./signature":208,"bn.js":151}],207:[function(require,module,exports){
+},{"../../elliptic":200,"./key":208,"./signature":209,"bn.js":152}],208:[function(require,module,exports){
 'use strict';
 
 var bn = require('bn.js');
@@ -41356,7 +41290,7 @@ KeyPair.prototype.inspect = function inspect() {
          ' pub: ' + (this.pub && this.pub.inspect()) + ' >';
 };
 
-},{"bn.js":151}],208:[function(require,module,exports){
+},{"bn.js":152}],209:[function(require,module,exports){
 'use strict';
 
 var bn = require('bn.js');
@@ -41493,7 +41427,7 @@ Signature.prototype.toDER = function toDER(enc) {
   return utils.encode(res, enc);
 };
 
-},{"../../elliptic":199,"bn.js":151}],209:[function(require,module,exports){
+},{"../../elliptic":200,"bn.js":152}],210:[function(require,module,exports){
 'use strict';
 
 var hash = require('hash.js');
@@ -41613,7 +41547,7 @@ EDDSA.prototype.isPoint = function isPoint(val) {
   return val instanceof this.pointClass;
 };
 
-},{"../../elliptic":199,"./key":210,"./signature":211,"hash.js":218}],210:[function(require,module,exports){
+},{"../../elliptic":200,"./key":211,"./signature":212,"hash.js":219}],211:[function(require,module,exports){
 'use strict';
 
 var elliptic = require('../../elliptic');
@@ -41711,7 +41645,7 @@ KeyPair.prototype.getPublic = function getPublic(enc) {
 
 module.exports = KeyPair;
 
-},{"../../elliptic":199}],211:[function(require,module,exports){
+},{"../../elliptic":200}],212:[function(require,module,exports){
 'use strict';
 
 var bn = require('bn.js');
@@ -41779,7 +41713,7 @@ Signature.prototype.toHex = function toHex() {
 
 module.exports = Signature;
 
-},{"../../elliptic":199,"bn.js":151}],212:[function(require,module,exports){
+},{"../../elliptic":200,"bn.js":152}],213:[function(require,module,exports){
 'use strict';
 
 var hash = require('hash.js');
@@ -41895,7 +41829,7 @@ HmacDRBG.prototype.generate = function generate(len, enc, add, addEnc) {
   return utils.encode(res, enc);
 };
 
-},{"../elliptic":199,"hash.js":218}],213:[function(require,module,exports){
+},{"../elliptic":200,"hash.js":219}],214:[function(require,module,exports){
 module.exports = {
   doubles: {
     step: 4,
@@ -42677,7 +42611,7 @@ module.exports = {
   }
 };
 
-},{}],214:[function(require,module,exports){
+},{}],215:[function(require,module,exports){
 'use strict';
 
 var utils = exports;
@@ -42852,7 +42786,7 @@ function intFromLE(bytes) {
 utils.intFromLE = intFromLE;
 
 
-},{"bn.js":151}],215:[function(require,module,exports){
+},{"bn.js":152}],216:[function(require,module,exports){
 module.exports={
   "_args": [
     [
@@ -42950,7 +42884,7 @@ module.exports={
   "version": "6.0.2"
 }
 
-},{}],216:[function(require,module,exports){
+},{}],217:[function(require,module,exports){
 // Copyright Joyent, Inc. and other Node contributors.
 //
 // Permission is hereby granted, free of charge, to any person obtaining a
@@ -43250,7 +43184,7 @@ function isUndefined(arg) {
   return arg === void 0;
 }
 
-},{}],217:[function(require,module,exports){
+},{}],218:[function(require,module,exports){
 (function (Buffer){
 var md5 = require('create-hash/md5')
 module.exports = EVP_BytesToKey
@@ -43322,7 +43256,7 @@ function EVP_BytesToKey (password, salt, keyLen, ivLen) {
 }
 
 }).call(this,require("buffer").Buffer)
-},{"buffer":179,"create-hash/md5":186}],218:[function(require,module,exports){
+},{"buffer":180,"create-hash/md5":187}],219:[function(require,module,exports){
 var hash = exports;
 
 hash.utils = require('./hash/utils');
@@ -43339,7 +43273,7 @@ hash.sha384 = hash.sha.sha384;
 hash.sha512 = hash.sha.sha512;
 hash.ripemd160 = hash.ripemd.ripemd160;
 
-},{"./hash/common":219,"./hash/hmac":220,"./hash/ripemd":221,"./hash/sha":222,"./hash/utils":223}],219:[function(require,module,exports){
+},{"./hash/common":220,"./hash/hmac":221,"./hash/ripemd":222,"./hash/sha":223,"./hash/utils":224}],220:[function(require,module,exports){
 var hash = require('../hash');
 var utils = hash.utils;
 var assert = utils.assert;
@@ -43432,7 +43366,7 @@ BlockHash.prototype._pad = function pad() {
   return res;
 };
 
-},{"../hash":218}],220:[function(require,module,exports){
+},{"../hash":219}],221:[function(require,module,exports){
 var hmac = exports;
 
 var hash = require('../hash');
@@ -43482,7 +43416,7 @@ Hmac.prototype.digest = function digest(enc) {
   return this.outer.digest(enc);
 };
 
-},{"../hash":218}],221:[function(require,module,exports){
+},{"../hash":219}],222:[function(require,module,exports){
 var hash = require('../hash');
 var utils = hash.utils;
 
@@ -43628,7 +43562,7 @@ var sh = [
   8, 5, 12, 9, 12, 5, 14, 6, 8, 13, 6, 5, 15, 13, 11, 11
 ];
 
-},{"../hash":218}],222:[function(require,module,exports){
+},{"../hash":219}],223:[function(require,module,exports){
 var hash = require('../hash');
 var utils = hash.utils;
 var assert = utils.assert;
@@ -44194,7 +44128,7 @@ function g1_512_lo(xh, xl) {
   return r;
 }
 
-},{"../hash":218}],223:[function(require,module,exports){
+},{"../hash":219}],224:[function(require,module,exports){
 var utils = exports;
 var inherits = require('inherits');
 
@@ -44453,7 +44387,7 @@ function shr64_lo(ah, al, num) {
 };
 exports.shr64_lo = shr64_lo;
 
-},{"inherits":226}],224:[function(require,module,exports){
+},{"inherits":227}],225:[function(require,module,exports){
 exports.read = function (buffer, offset, isLE, mLen, nBytes) {
   var e, m
   var eLen = nBytes * 8 - mLen - 1
@@ -44539,7 +44473,7 @@ exports.write = function (buffer, value, offset, isLE, mLen, nBytes) {
   buffer[offset + i - d] |= s * 128
 }
 
-},{}],225:[function(require,module,exports){
+},{}],226:[function(require,module,exports){
 
 var indexOf = [].indexOf;
 
@@ -44550,7 +44484,7 @@ module.exports = function(arr, obj){
   }
   return -1;
 };
-},{}],226:[function(require,module,exports){
+},{}],227:[function(require,module,exports){
 if (typeof Object.create === 'function') {
   // implementation from standard node.js 'util' module
   module.exports = function inherits(ctor, superCtor) {
@@ -44575,7 +44509,7 @@ if (typeof Object.create === 'function') {
   }
 }
 
-},{}],227:[function(require,module,exports){
+},{}],228:[function(require,module,exports){
 /**
  * Determine if an object is Buffer
  *
@@ -44594,12 +44528,12 @@ module.exports = function (obj) {
     ))
 }
 
-},{}],228:[function(require,module,exports){
+},{}],229:[function(require,module,exports){
 module.exports = Array.isArray || function (arr) {
   return Object.prototype.toString.call(arr) == '[object Array]';
 };
 
-},{}],229:[function(require,module,exports){
+},{}],230:[function(require,module,exports){
 var bn = require('bn.js');
 var brorand = require('brorand');
 
@@ -44714,7 +44648,7 @@ MillerRabin.prototype.getDivisor = function getDivisor(n, k) {
   return false;
 };
 
-},{"bn.js":151,"brorand":152}],230:[function(require,module,exports){
+},{"bn.js":152,"brorand":153}],231:[function(require,module,exports){
 module.exports = assert;
 
 function assert(val, msg) {
@@ -44727,7 +44661,7 @@ assert.equal = function assertEqual(l, r, msg) {
     throw new Error(msg || ('Assertion failed: ' + l + ' != ' + r));
 };
 
-},{}],231:[function(require,module,exports){
+},{}],232:[function(require,module,exports){
 module.exports={"2.16.840.1.101.3.4.1.1": "aes-128-ecb",
 "2.16.840.1.101.3.4.1.2": "aes-128-cbc",
 "2.16.840.1.101.3.4.1.3": "aes-128-ofb",
@@ -44741,7 +44675,7 @@ module.exports={"2.16.840.1.101.3.4.1.1": "aes-128-ecb",
 "2.16.840.1.101.3.4.1.43": "aes-256-ofb",
 "2.16.840.1.101.3.4.1.44": "aes-256-cfb"
 }
-},{}],232:[function(require,module,exports){
+},{}],233:[function(require,module,exports){
 // from https://github.com/indutny/self-signed/blob/gh-pages/lib/asn1.js
 // Fedor, you are amazing.
 
@@ -44860,7 +44794,7 @@ exports.signature = asn1.define('signature', function () {
   )
 })
 
-},{"asn1.js":136}],233:[function(require,module,exports){
+},{"asn1.js":137}],234:[function(require,module,exports){
 (function (Buffer){
 // adapted from https://github.com/apatil/pemstrip
 var findProc = /Proc-Type: 4,ENCRYPTED\r?\nDEK-Info: AES-((?:128)|(?:192)|(?:256))-CBC,([0-9A-H]+)\r?\n\r?\n([0-9A-z\n\r\+\/\=]+)\r?\n/m
@@ -44894,7 +44828,7 @@ module.exports = function (okey, password) {
 }
 
 }).call(this,require("buffer").Buffer)
-},{"browserify-aes":156,"buffer":179,"evp_bytestokey":217}],234:[function(require,module,exports){
+},{"browserify-aes":157,"buffer":180,"evp_bytestokey":218}],235:[function(require,module,exports){
 (function (Buffer){
 var asn1 = require('./asn1')
 var aesid = require('./aesid.json')
@@ -44999,7 +44933,7 @@ function decrypt (data, password) {
 }
 
 }).call(this,require("buffer").Buffer)
-},{"./aesid.json":231,"./asn1":232,"./fixProc":233,"browserify-aes":156,"buffer":179,"pbkdf2":236}],235:[function(require,module,exports){
+},{"./aesid.json":232,"./asn1":233,"./fixProc":234,"browserify-aes":157,"buffer":180,"pbkdf2":237}],236:[function(require,module,exports){
 (function (process){
 // Copyright Joyent, Inc. and other Node contributors.
 //
@@ -45227,7 +45161,7 @@ var substr = 'ab'.substr(-1) === 'b'
 ;
 
 }).call(this,require('_process'))
-},{"_process":238}],236:[function(require,module,exports){
+},{"_process":239}],237:[function(require,module,exports){
 (function (Buffer){
 var createHmac = require('create-hmac')
 var MAX_ALLOC = Math.pow(2, 30) - 1 // default in iojs
@@ -45311,7 +45245,7 @@ function pbkdf2Sync (password, salt, iterations, keylen, digest) {
 }
 
 }).call(this,require("buffer").Buffer)
-},{"buffer":179,"create-hmac":187}],237:[function(require,module,exports){
+},{"buffer":180,"create-hmac":188}],238:[function(require,module,exports){
 (function (process){
 'use strict';
 
@@ -45335,7 +45269,7 @@ function nextTick(fn) {
 }
 
 }).call(this,require('_process'))
-},{"_process":238}],238:[function(require,module,exports){
+},{"_process":239}],239:[function(require,module,exports){
 // shim for using process in browser
 
 var process = module.exports = {};
@@ -45428,7 +45362,7 @@ process.chdir = function (dir) {
 };
 process.umask = function() { return 0; };
 
-},{}],239:[function(require,module,exports){
+},{}],240:[function(require,module,exports){
 exports.publicEncrypt = require('./publicEncrypt');
 exports.privateDecrypt = require('./privateDecrypt');
 
@@ -45439,7 +45373,7 @@ exports.privateEncrypt = function privateEncrypt(key, buf) {
 exports.publicDecrypt = function publicDecrypt(key, buf) {
   return exports.privateDecrypt(key, buf, true);
 };
-},{"./privateDecrypt":241,"./publicEncrypt":242}],240:[function(require,module,exports){
+},{"./privateDecrypt":242,"./publicEncrypt":243}],241:[function(require,module,exports){
 (function (Buffer){
 var createHash = require('create-hash');
 module.exports = function (seed, len) {
@@ -45458,7 +45392,7 @@ function i2ops(c) {
   return out;
 }
 }).call(this,require("buffer").Buffer)
-},{"buffer":179,"create-hash":184}],241:[function(require,module,exports){
+},{"buffer":180,"create-hash":185}],242:[function(require,module,exports){
 (function (Buffer){
 var parseKeys = require('parse-asn1');
 var mgf = require('./mgf');
@@ -45569,7 +45503,7 @@ function compare(a, b){
   return dif;
 }
 }).call(this,require("buffer").Buffer)
-},{"./mgf":240,"./withPublic":243,"./xor":244,"bn.js":151,"browserify-rsa":172,"buffer":179,"create-hash":184,"parse-asn1":234}],242:[function(require,module,exports){
+},{"./mgf":241,"./withPublic":244,"./xor":245,"bn.js":152,"browserify-rsa":173,"buffer":180,"create-hash":185,"parse-asn1":235}],243:[function(require,module,exports){
 (function (Buffer){
 var parseKeys = require('parse-asn1');
 var randomBytes = require('randombytes');
@@ -45667,7 +45601,7 @@ function nonZero(len, crypto) {
   return out;
 }
 }).call(this,require("buffer").Buffer)
-},{"./mgf":240,"./withPublic":243,"./xor":244,"bn.js":151,"browserify-rsa":172,"buffer":179,"create-hash":184,"parse-asn1":234,"randombytes":249}],243:[function(require,module,exports){
+},{"./mgf":241,"./withPublic":244,"./xor":245,"bn.js":152,"browserify-rsa":173,"buffer":180,"create-hash":185,"parse-asn1":235,"randombytes":250}],244:[function(require,module,exports){
 (function (Buffer){
 var bn = require('bn.js');
 function withPublic(paddedMsg, key) {
@@ -45680,7 +45614,7 @@ function withPublic(paddedMsg, key) {
 
 module.exports = withPublic;
 }).call(this,require("buffer").Buffer)
-},{"bn.js":151,"buffer":179}],244:[function(require,module,exports){
+},{"bn.js":152,"buffer":180}],245:[function(require,module,exports){
 module.exports = function xor(a, b) {
   var len = a.length;
   var i = -1;
@@ -45689,7 +45623,7 @@ module.exports = function xor(a, b) {
   }
   return a
 };
-},{}],245:[function(require,module,exports){
+},{}],246:[function(require,module,exports){
 (function (global){
 /*! https://mths.be/punycode v1.4.0 by @mathias */
 ;(function(root) {
@@ -46226,7 +46160,7 @@ module.exports = function xor(a, b) {
 }(this));
 
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
-},{}],246:[function(require,module,exports){
+},{}],247:[function(require,module,exports){
 // Copyright Joyent, Inc. and other Node contributors.
 //
 // Permission is hereby granted, free of charge, to any person obtaining a
@@ -46312,7 +46246,7 @@ var isArray = Array.isArray || function (xs) {
   return Object.prototype.toString.call(xs) === '[object Array]';
 };
 
-},{}],247:[function(require,module,exports){
+},{}],248:[function(require,module,exports){
 // Copyright Joyent, Inc. and other Node contributors.
 //
 // Permission is hereby granted, free of charge, to any person obtaining a
@@ -46399,13 +46333,13 @@ var objectKeys = Object.keys || function (obj) {
   return res;
 };
 
-},{}],248:[function(require,module,exports){
+},{}],249:[function(require,module,exports){
 'use strict';
 
 exports.decode = exports.parse = require('./decode');
 exports.encode = exports.stringify = require('./encode');
 
-},{"./decode":246,"./encode":247}],249:[function(require,module,exports){
+},{"./decode":247,"./encode":248}],250:[function(require,module,exports){
 (function (process,global,Buffer){
 'use strict';
 
@@ -46437,10 +46371,10 @@ function oldBrowser() {
 }
 
 }).call(this,require('_process'),typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {},require("buffer").Buffer)
-},{"_process":238,"buffer":179}],250:[function(require,module,exports){
+},{"_process":239,"buffer":180}],251:[function(require,module,exports){
 module.exports = require("./lib/_stream_duplex.js")
 
-},{"./lib/_stream_duplex.js":251}],251:[function(require,module,exports){
+},{"./lib/_stream_duplex.js":252}],252:[function(require,module,exports){
 // a duplex stream is just a stream that is both readable and writable.
 // Since JS doesn't have multiple prototypal inheritance, this class
 // prototypally inherits from Readable, and then parasitically from
@@ -46524,7 +46458,7 @@ function forEach (xs, f) {
   }
 }
 
-},{"./_stream_readable":253,"./_stream_writable":255,"core-util-is":182,"inherits":226,"process-nextick-args":237}],252:[function(require,module,exports){
+},{"./_stream_readable":254,"./_stream_writable":256,"core-util-is":183,"inherits":227,"process-nextick-args":238}],253:[function(require,module,exports){
 // a passthrough stream.
 // basically just the most minimal sort of Transform stream.
 // Every written chunk gets output as-is.
@@ -46553,7 +46487,7 @@ PassThrough.prototype._transform = function(chunk, encoding, cb) {
   cb(null, chunk);
 };
 
-},{"./_stream_transform":254,"core-util-is":182,"inherits":226}],253:[function(require,module,exports){
+},{"./_stream_transform":255,"core-util-is":183,"inherits":227}],254:[function(require,module,exports){
 (function (process){
 'use strict';
 
@@ -47530,7 +47464,7 @@ function indexOf (xs, x) {
 }
 
 }).call(this,require('_process'))
-},{"./_stream_duplex":251,"_process":238,"buffer":179,"core-util-is":182,"events":216,"inherits":226,"isarray":228,"process-nextick-args":237,"string_decoder/":270,"util":153}],254:[function(require,module,exports){
+},{"./_stream_duplex":252,"_process":239,"buffer":180,"core-util-is":183,"events":217,"inherits":227,"isarray":229,"process-nextick-args":238,"string_decoder/":271,"util":154}],255:[function(require,module,exports){
 // a transform stream is a readable/writable stream where you do
 // something with the data.  Sometimes it's called a "filter",
 // but that's not a great name for it, since that implies a thing where
@@ -47729,7 +47663,7 @@ function done(stream, er) {
   return stream.push(null);
 }
 
-},{"./_stream_duplex":251,"core-util-is":182,"inherits":226}],255:[function(require,module,exports){
+},{"./_stream_duplex":252,"core-util-is":183,"inherits":227}],256:[function(require,module,exports){
 // A bit simpler than readable streams.
 // Implement an async ._write(chunk, encoding, cb), and it'll handle all
 // the drain event emission and buffering.
@@ -48258,10 +48192,10 @@ function endWritable(stream, state, cb) {
   state.ended = true;
 }
 
-},{"./_stream_duplex":251,"buffer":179,"core-util-is":182,"events":216,"inherits":226,"process-nextick-args":237,"util-deprecate":273}],256:[function(require,module,exports){
+},{"./_stream_duplex":252,"buffer":180,"core-util-is":183,"events":217,"inherits":227,"process-nextick-args":238,"util-deprecate":274}],257:[function(require,module,exports){
 module.exports = require("./lib/_stream_passthrough.js")
 
-},{"./lib/_stream_passthrough.js":252}],257:[function(require,module,exports){
+},{"./lib/_stream_passthrough.js":253}],258:[function(require,module,exports){
 var Stream = (function (){
   try {
     return require('st' + 'ream'); // hack to fix a circular dependency issue when used with browserify
@@ -48275,13 +48209,13 @@ exports.Duplex = require('./lib/_stream_duplex.js');
 exports.Transform = require('./lib/_stream_transform.js');
 exports.PassThrough = require('./lib/_stream_passthrough.js');
 
-},{"./lib/_stream_duplex.js":251,"./lib/_stream_passthrough.js":252,"./lib/_stream_readable.js":253,"./lib/_stream_transform.js":254,"./lib/_stream_writable.js":255}],258:[function(require,module,exports){
+},{"./lib/_stream_duplex.js":252,"./lib/_stream_passthrough.js":253,"./lib/_stream_readable.js":254,"./lib/_stream_transform.js":255,"./lib/_stream_writable.js":256}],259:[function(require,module,exports){
 module.exports = require("./lib/_stream_transform.js")
 
-},{"./lib/_stream_transform.js":254}],259:[function(require,module,exports){
+},{"./lib/_stream_transform.js":255}],260:[function(require,module,exports){
 module.exports = require("./lib/_stream_writable.js")
 
-},{"./lib/_stream_writable.js":255}],260:[function(require,module,exports){
+},{"./lib/_stream_writable.js":256}],261:[function(require,module,exports){
 (function (Buffer){
 /*
 CryptoJS v3.1.2
@@ -48495,7 +48429,7 @@ function ripemd160 (message) {
 module.exports = ripemd160
 
 }).call(this,require("buffer").Buffer)
-},{"buffer":179}],261:[function(require,module,exports){
+},{"buffer":180}],262:[function(require,module,exports){
 (function (Buffer){
 // prototype class for hash functions
 function Hash (blockSize, finalSize) {
@@ -48568,7 +48502,7 @@ Hash.prototype._update = function () {
 module.exports = Hash
 
 }).call(this,require("buffer").Buffer)
-},{"buffer":179}],262:[function(require,module,exports){
+},{"buffer":180}],263:[function(require,module,exports){
 var exports = module.exports = function SHA (algorithm) {
   algorithm = algorithm.toLowerCase()
 
@@ -48585,7 +48519,7 @@ exports.sha256 = require('./sha256')
 exports.sha384 = require('./sha384')
 exports.sha512 = require('./sha512')
 
-},{"./sha":263,"./sha1":264,"./sha224":265,"./sha256":266,"./sha384":267,"./sha512":268}],263:[function(require,module,exports){
+},{"./sha":264,"./sha1":265,"./sha224":266,"./sha256":267,"./sha384":268,"./sha512":269}],264:[function(require,module,exports){
 (function (Buffer){
 /*
  * A JavaScript implementation of the Secure Hash Algorithm, SHA-0, as defined
@@ -48689,7 +48623,7 @@ module.exports = Sha
 
 
 }).call(this,require("buffer").Buffer)
-},{"./hash":261,"buffer":179,"inherits":226}],264:[function(require,module,exports){
+},{"./hash":262,"buffer":180,"inherits":227}],265:[function(require,module,exports){
 (function (Buffer){
 /*
  * A JavaScript implementation of the Secure Hash Algorithm, SHA-1, as defined
@@ -48789,7 +48723,7 @@ Sha1.prototype._hash = function () {
 module.exports = Sha1
 
 }).call(this,require("buffer").Buffer)
-},{"./hash":261,"buffer":179,"inherits":226}],265:[function(require,module,exports){
+},{"./hash":262,"buffer":180,"inherits":227}],266:[function(require,module,exports){
 (function (Buffer){
 /**
  * A JavaScript implementation of the Secure Hash Algorithm, SHA-256, as defined
@@ -48845,7 +48779,7 @@ Sha224.prototype._hash = function () {
 module.exports = Sha224
 
 }).call(this,require("buffer").Buffer)
-},{"./hash":261,"./sha256":266,"buffer":179,"inherits":226}],266:[function(require,module,exports){
+},{"./hash":262,"./sha256":267,"buffer":180,"inherits":227}],267:[function(require,module,exports){
 (function (Buffer){
 /**
  * A JavaScript implementation of the Secure Hash Algorithm, SHA-256, as defined
@@ -48990,7 +48924,7 @@ Sha256.prototype._hash = function () {
 module.exports = Sha256
 
 }).call(this,require("buffer").Buffer)
-},{"./hash":261,"buffer":179,"inherits":226}],267:[function(require,module,exports){
+},{"./hash":262,"buffer":180,"inherits":227}],268:[function(require,module,exports){
 (function (Buffer){
 var inherits = require('inherits')
 var SHA512 = require('./sha512')
@@ -49050,7 +48984,7 @@ Sha384.prototype._hash = function () {
 module.exports = Sha384
 
 }).call(this,require("buffer").Buffer)
-},{"./hash":261,"./sha512":268,"buffer":179,"inherits":226}],268:[function(require,module,exports){
+},{"./hash":262,"./sha512":269,"buffer":180,"inherits":227}],269:[function(require,module,exports){
 (function (Buffer){
 var inherits = require('inherits')
 var Hash = require('./hash')
@@ -49320,7 +49254,7 @@ Sha512.prototype._hash = function () {
 module.exports = Sha512
 
 }).call(this,require("buffer").Buffer)
-},{"./hash":261,"buffer":179,"inherits":226}],269:[function(require,module,exports){
+},{"./hash":262,"buffer":180,"inherits":227}],270:[function(require,module,exports){
 // Copyright Joyent, Inc. and other Node contributors.
 //
 // Permission is hereby granted, free of charge, to any person obtaining a
@@ -49449,7 +49383,7 @@ Stream.prototype.pipe = function(dest, options) {
   return dest;
 };
 
-},{"events":216,"inherits":226,"readable-stream/duplex.js":250,"readable-stream/passthrough.js":256,"readable-stream/readable.js":257,"readable-stream/transform.js":258,"readable-stream/writable.js":259}],270:[function(require,module,exports){
+},{"events":217,"inherits":227,"readable-stream/duplex.js":251,"readable-stream/passthrough.js":257,"readable-stream/readable.js":258,"readable-stream/transform.js":259,"readable-stream/writable.js":260}],271:[function(require,module,exports){
 // Copyright Joyent, Inc. and other Node contributors.
 //
 // Permission is hereby granted, free of charge, to any person obtaining a
@@ -49672,7 +49606,7 @@ function base64DetectIncompleteChar(buffer) {
   this.charLength = this.charReceived ? 3 : 0;
 }
 
-},{"buffer":179}],271:[function(require,module,exports){
+},{"buffer":180}],272:[function(require,module,exports){
 // Copyright Joyent, Inc. and other Node contributors.
 //
 // Permission is hereby granted, free of charge, to any person obtaining a
@@ -50406,7 +50340,7 @@ Url.prototype.parseHost = function() {
   if (host) this.hostname = host;
 };
 
-},{"./util":272,"punycode":245,"querystring":248}],272:[function(require,module,exports){
+},{"./util":273,"punycode":246,"querystring":249}],273:[function(require,module,exports){
 'use strict';
 
 module.exports = {
@@ -50424,7 +50358,7 @@ module.exports = {
   }
 };
 
-},{}],273:[function(require,module,exports){
+},{}],274:[function(require,module,exports){
 (function (global){
 
 /**
@@ -50495,7 +50429,7 @@ function config (name) {
 }
 
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
-},{}],274:[function(require,module,exports){
+},{}],275:[function(require,module,exports){
 var indexOf = require('indexof');
 
 var Object_keys = function (obj) {
@@ -50635,4 +50569,4 @@ exports.createContext = Script.createContext = function (context) {
     return copy;
 };
 
-},{"indexof":225}]},{},[2]);
+},{"indexof":226}]},{},[4]);
