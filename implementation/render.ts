@@ -2,26 +2,28 @@ import {math} from "./math";
 import {config, Segment, generate, GeneratorResult, heatmap} from "./mapgen";
 import * as PIXI from 'pixi.js';
 
-const qd: { [key: string]: (string) } = {};
-location.search.substr(1).split("&").forEach(item => {
+const qd: { [key: string]: string } = {};
+location.search.substr(1).split(/[&;]/).forEach(item => {
     const [k, v] = item.split("=");
-    if(k) qd[decodeURIComponent(k)] = v ? decodeURIComponent(v) : "";
+    if (k) qd[decodeURIComponent(k)] = v ? decodeURIComponent(v) : "";
 });
 for (let c of Object.keys(qd)) {
-    let val:any = qd[c].trim();
+    let val: any = qd[c].trim();
     const list = c.toUpperCase().trim().split(".");
     const attr = list.pop();
     const targ = list.reduce((a, b, i, arr) => a[b], config as any);
     const origValue = targ[attr];
-    console.log(attr, val);
-    if(typeof origValue === "number" || typeof origValue === "boolean")
+    console.log(`config: ${attr} = ${val}`);
+    if (typeof origValue === "undefined")
+        console.warn("unknown config: " + attr);
+    if (typeof origValue === "number" || typeof origValue === "boolean")
         val = +val;
     targ[attr] = val;
 }
 
-const seed = config.SEED || Math.random() + "";
+let seed = config.SEED || Math.random() + "";
 console.log("generating with seed " + seed);
-export const generator = generate(seed);
+export let generator: Iterator<GeneratorResult>;
 let W = window.innerWidth, H = window.innerHeight;
 
 export const dobounds = function(segs: Segment[], interpolate = 1) {
@@ -32,7 +34,7 @@ export const dobounds = function(segs: Segment[], interpolate = 1) {
         maxx: Math.max(...lim.map(s => s.x + s.width)),
         maxy: Math.max(...lim.map(s => s.y + s.height)),
     }
-    const scale = Math.min(W / (bounds.maxx - bounds.minx), H / (bounds.maxy - bounds.miny)) * 0.9;
+    const scale = Math.min(W / (bounds.maxx - bounds.minx), H / (bounds.maxy - bounds.miny)) * config.TARGET_ZOOM;
     const npx = - (bounds.maxx + bounds.minx) / 2 * scale + W / 2;
     const npy = - (bounds.maxy + bounds.miny) / 2 * scale + H / 2;
     stage.position.x = math.lerp(stage.position.x, npx, interpolate);
@@ -40,6 +42,12 @@ export const dobounds = function(segs: Segment[], interpolate = 1) {
     stage.scale.x = math.lerp(stage.scale.x, scale, interpolate);
     stage.scale.y = math.lerp(stage.scale.y, scale, interpolate);
 };
+function restart() {
+    generator = generate(seed);
+    done = false;
+    iteration = 0;
+    iteration_wanted = 0;
+}
 export const renderer = PIXI.autoDetectRenderer(W, H, { backgroundColor: config.BACKGROUND_COLOR, antialias: true, transparent: config.TRANSPARENT });
 document.body.appendChild(renderer.view);
 export const graphics = new PIXI.Graphics();
@@ -57,7 +65,7 @@ function renderSegment(seg: Segment, color = 0x000000) {
     const len = seg.length();
     const arrowLength = Math.min(len, config.ARROWHEAD_SIZE);
     if (config.DRAW_CIRCLE_ON_SEGMENT_BASE) {
-        graphics.beginFill(0x000000);
+        graphics.beginFill(color);
         graphics.drawCircle(x1, y1, config.DRAW_CIRCLE_ON_SEGMENT_BASE);
         graphics.endFill();
     }
@@ -150,16 +158,27 @@ window.addEventListener('wheel', e => {
 export let stuff: GeneratorResult;
 
 let done = false;
-requestAnimationFrame(animate);
+let done_time = 0;
 let iteration = 0;
 let iteration_wanted = 0;
-function animate() {
+let last_timestamp = 0;
+
+restart();
+requestAnimationFrame(animate);
+function animate(timestamp: number) {
+    let delta = timestamp - last_timestamp;
+    last_timestamp = timestamp;
+    if (delta > 100) {
+        console.warn("delta = " + delta);
+        delta = 100;
+    }
     if (!done) {
-        iteration_wanted += iteration * config.ITERATION_SPEEDUP + config.ITERATIONS_PER_FRAME;
+        iteration_wanted += (iteration * config.ITERATION_SPEEDUP + config.ITERATIONS_PER_SECOND) * delta / 1000;
         while (iteration < iteration_wanted) {
             const iter = generator.next();
             if (iter.done) {
                 done = true;
+                done_time = timestamp;
                 break;
             } else {
                 stuff = iter.value;
@@ -167,8 +186,15 @@ function animate() {
                 iteration++;
             }
         }
-        if(!has_interacted)
-            dobounds(stuff.segments, iteration < 20 || (done && !has_interacted) ? 1 : 0.05);
+        if (!has_interacted)
+            dobounds([...stuff.segments, ...stuff.priorityQ], iteration < 20 || (done && !has_interacted) ? 1 : 0.05);
+    } else {
+        if (config.RESTART_AFTER_SECONDS >= 0 && done_time + config.RESTART_AFTER_SECONDS * 1000 < timestamp) {
+            if (config.RESEED_AFTER_RESTART) {
+                seed = Math.random() + "";
+            }
+            restart();
+        }
     }
     graphics.clear();
     if (config.DRAW_HEATMAP) {
@@ -191,7 +217,6 @@ function animate() {
 
     requestAnimationFrame(animate);
     renderer.render(stage);
-    iteration++;
 }
 function onResize() {
     W = window.innerWidth;

@@ -17,11 +17,16 @@ export const config = {
     HEAT_MAP_PIXEL_DIM: 25, DRAW_HEATMAP: false,
     QUADTREE_PARAMS: { x: -2E4, y: -2E4, width: 4E4, height: 4E4 },
     QUADTREE_MAX_OBJECTS: 10, QUADTREE_MAX_LEVELS: 10, DEBUG: false,
+    ONLY_HIGHWAYS: false,
     ARROWHEAD_SIZE: 0,
     DRAW_CIRCLE_ON_SEGMENT_BASE: 0,
     IGNORE_CONFLICTS: false,
     ITERATION_SPEEDUP: 0.01,
-    ITERATIONS_PER_FRAME: 1,
+    ITERATIONS_PER_SECOND: 100,
+    TARGET_ZOOM: 0.9,
+    RESTART_AFTER_SECONDS: -1,
+    RESEED_AFTER_RESTART: true,
+    TWO_SEGMENTS_INITIALLY: true,
     TRANSPARENT: false, BACKGROUND_COLOR: 0xFFFFFF,
     SEED: null as string
 };
@@ -272,7 +277,7 @@ function globalGoalsGenerate(previousSegment: Segment) {
         } else if (straightPop > config.NORMAL_BRANCH_POPULATION_THRESHOLD) {
             newBranches.push(continueStraight);
         }
-        if (straightPop > config.NORMAL_BRANCH_POPULATION_THRESHOLD) {
+        if(!config.ONLY_HIGHWAYS) if (straightPop > config.NORMAL_BRANCH_POPULATION_THRESHOLD) {
             if (Math.random() < config.DEFAULT_BRANCH_PROBABILITY) {
                 newBranches.push(templateBranch(- 90 + config.RANDOM_BRANCH_ANGLE()));
             } else if (Math.random() < config.DEFAULT_BRANCH_PROBABILITY) {
@@ -318,6 +323,7 @@ export interface GeneratorResult {
 function makeInitialSegments() {
     // setup first segments in queue
     const rootSegment = new Segment({ x: 0, y: 0 }, { x: config.HIGHWAY_SEGMENT_LENGTH, y: 0 }, 0, { highway: true });
+    if(!config.TWO_SEGMENTS_INITIALLY)  return [rootSegment];
     const oppositeDirection = rootSegment.clone();
     const newEnd = {
         x: rootSegment.start.x - config.HIGHWAY_SEGMENT_LENGTH,

@@ -74,9 +74,11 @@ Primary, secondary, tertiary streets are used in urban planning
 
 Begin with two opposite highway segments:
 
-<iframe data-src="implementation/bin/index.html?
-    segment_count_limit = 2 &
-    arrowhead_size = 80
+<iframe data-src="demo.html?
+    segment_count_limit = 2;
+    arrowhead_size = 80;
+    draw_circle_on_segment_base = 30;
+    iterations_per_frame = Infinity;
 "></iframe>
 
 ## Street growth
@@ -86,6 +88,18 @@ Begin with two opposite highway segments:
 - branch with some probability at about 90 degrees
 - label fully connected street segments as done
 
+<iframe data-src="demo.html?
+    segment_count_limit = 20;
+    arrowhead_size = 80;
+    draw_circle_on_segment_base = 30;
+    iterations_per_second = 1;
+    target_zoom = 0.8;
+    two_segments_initially = 0;
+    only_highways = 1;
+    seed = 0.03153736749663949;
+    restart_after_seconds = 3;
+    highway_branch_probability = 0.08;
+"></iframe>
 
 ## Conflict resolution (intersections, obstacles)
 
@@ -145,9 +159,9 @@ function generate() {
 ```
 (*globalGoalsGenerate* increases delay)
 
----
+## Complete demo
 
-<iframe data-src="implementation/bin/index.html?"></iframe>
+<iframe data-src="demo.html?"></iframe>
 
 ## Street patterns
 

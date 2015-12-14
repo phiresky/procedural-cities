@@ -1,5 +1,8 @@
-all: bin bin/index.html bin/render.browser.js
-bin/index.html: index.html
+MAKEFLAGS += --no-builtin-rules
+.SUFFIXES:
+
+all: bin bin/demo.html bin/render.browser.js
+bin/%.html: %.html
 	cat $< > $@
 
 bin/%.browser.js: $(patsubst %.ts, bin/%.js, $(wildcard *.ts))
@@ -21,3 +24,4 @@ clean:
 	rm -r bin/* tsc/*
 
 .PHONY: gh-pages
+.PRECIOUS: bin/%.js tsc/%.js
