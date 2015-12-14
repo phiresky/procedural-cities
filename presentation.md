@@ -114,6 +114,7 @@ Primary, secondary, tertiary streets are used in urban planning
     highway_segment_width = 24;
     two_segments_initially = 0;
     only_highways = 1;
+    smooth_zoom_start = 1;
     seed = 0.1;
     restart_after_seconds = 3;
 "></iframe>
@@ -124,13 +125,53 @@ Primary, secondary, tertiary streets are used in urban planning
     target_zoom = 0.8;
     two_segments_initially = 0;
     only_highways = 0;
+    smooth_zoom_start = 1;
     seed = 0.1;
     restart_after_seconds = 3;
     start_with_normal_streets = 1;
 "></iframe>
 
+## Parallel growth
 
-## Conflict resolution (intersections, obstacles)
+New potential segments are evaluated after existing ones
+
+<iframe style="height:500px;" data-src="demo.html?
+    segment_count_limit = 40;
+    //arrowhead_size = 80;
+    smooth_zoom_start = 1;
+    iterations_per_second = 2;
+    skip_iterations = 10;
+    delay_between_time_steps = 2;
+    seed = 0.1;
+    restart_after_seconds = 3;
+    start_with_normal_streets = 1;
+    priority_future_colors = 1;
+"></iframe>
+
+*red* = current step
+
+*green* = next step
+
+## Highway branching
+
+Normal streets branching from highways have an additional delay (*blue*)
+
+<iframe style="height:500px;" data-src="demo.html?
+    segment_count_limit = 400;
+    smooth_zoom_start = 1;
+    iterations_per_second = 1.5;
+    iteration_speedup = 0.2;
+    two_segments_initially = 0;
+    skip_iterations = 0;
+    normal_branch_time_delay_from_highway = 8;
+    seed = 0.018001661728973477;
+    restart_after_seconds = 3;
+    priority_future_colors = 1;
+"></iframe>
+
+This prevents highways being cut off by normal streets
+
+## Conflict resolution <br> (intersections, obstacles)
 
 > - If the new segment ends in an obstacle (e.g. water, park):  
 Shorten or rotate segment to fit
@@ -178,15 +219,16 @@ function generate() {
     let segments = [];
     while (!Q.empty() && segments.length < SEG_LIMIT) {
         let minSegment = Q.dequeue();
-        let accepted = localConstraints(minSegment, segments);
+        // resolve conflicts
+        let accepted = applyLocalConstraints(minSegment, segments);
         if (accepted) {
             segments.push(minSegment);
+            // create new segments
             Q.enqueueAll(globalGoalsGenerate(minSegment));
         }
     }
 }
 ```
-(*globalGoalsGenerate* increases delay)
 
 ## Complete demo
 

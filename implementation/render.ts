@@ -14,7 +14,7 @@ for (let c of Object.keys(qd)) {
     const targ = list.reduce((a, b, i, arr) => a[b], config as any);
     const origValue = targ[attr];
     console.log(`config: ${attr} = ${val}`);
-    if (typeof origValue === "undefined")
+    if (typeof origValue === "undefined" && attr.substr(0,2) !== "//")
         console.warn("unknown config: " + attr);
     if (typeof origValue === "number" || typeof origValue === "boolean")
         val = +val;
@@ -22,7 +22,6 @@ for (let c of Object.keys(qd)) {
 }
 
 let seed = config.SEED || Math.random() + "";
-console.log("generating with seed " + seed);
 export let generator: Iterator<GeneratorResult>;
 let W = window.innerWidth, H = window.innerHeight;
 
@@ -43,7 +42,9 @@ export const dobounds = function(segs: Segment[], interpolate = 1) {
     stage.scale.y = math.lerp(stage.scale.y, scale, interpolate);
 };
 function restart() {
+    console.log("generating with seed " + seed);
     generator = generate(seed);
+    for(let i = 0; i < config.SKIP_ITERATIONS; i++) generator.next();
     done = false;
     iteration = 0;
     iteration_wanted = 0;
@@ -162,7 +163,7 @@ let done_time = 0;
 let iteration = 0;
 let iteration_wanted = 0;
 let last_timestamp = 0;
-
+let last_t_found = -1; // only for DELAY_BETWEEN_TIME_STEPS
 restart();
 requestAnimationFrame(animate);
 function animate(timestamp: number) {
@@ -186,8 +187,6 @@ function animate(timestamp: number) {
                 iteration++;
             }
         }
-        if (!has_interacted)
-            dobounds([...stuff.segments, ...stuff.priorityQ], iteration < 20 || (done && !has_interacted) ? 1 : 0.05);
     } else {
         if (config.RESTART_AFTER_SECONDS >= 0 && done_time + config.RESTART_AFTER_SECONDS * 1000 < timestamp) {
             if (config.RESEED_AFTER_RESTART) {
@@ -196,6 +195,8 @@ function animate(timestamp: number) {
             restart();
         }
     }
+    if (!has_interacted)
+        dobounds([...stuff.segments, ...stuff.priorityQ], iteration <= config.SMOOTH_ZOOM_START ? 1 : 0.05);
     graphics.clear();
     if (config.DRAW_HEATMAP) {
         const dim = config.HEAT_MAP_PIXEL_DIM;
@@ -213,7 +214,22 @@ function animate(timestamp: number) {
         }
     }
     for (const seg of stuff.segments) renderSegment(seg);
-    if (!done) for (const seg of stuff.priorityQ) renderSegment(seg, 0xFF0000);
+    if (!done) {
+        if (config.PRIORITY_FUTURE_COLORS) {
+            const minT = stuff.priorityQ.reduce((min, seg) => Math.min(min, seg.t), Infinity);
+            const future_colors = [0xFF0000, 0x44ff44, 0x6666ff];
+            for (const seg of stuff.priorityQ) renderSegment(seg, future_colors[Math.min(seg.t-minT, future_colors.length-1)]);
+        } else {
+            for (const seg of stuff.priorityQ) renderSegment(seg, 0xFF0000);
+        }
+        if(config.DELAY_BETWEEN_TIME_STEPS) {
+            const first_t = stuff.priorityQ[0].t;
+            if(first_t !== last_t_found && stuff.priorityQ.every(seg => seg.t === first_t)) {
+                iteration_wanted -= config.DELAY_BETWEEN_TIME_STEPS * config.ITERATIONS_PER_SECOND;
+                last_t_found = first_t;
+            }
+        }
+    }
 
     requestAnimationFrame(animate);
     renderer.render(stage);
