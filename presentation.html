@@ -177,6 +177,8 @@ code > span.in { color: #60a0b0; font-weight: bold; font-style: italic; } /* Inf
 ">
 </iframe>
 </div>
+</section><section id="parallel-growth" class="slide level2">
+<h1>Parallel growth</h1>
 </section><section id="conflict-resolution-intersections-obstacles" class="slide level2">
 <h1>Conflict resolution (intersections, obstacles)</h1>
 <ul>
@@ -222,9 +224,11 @@ p9: ?I(roadAttr,state) : state!=UNASSIGNED -&gt; e</code></pre>
     <span class="kw">let</span> segments <span class="op">=</span> []<span class="op">;</span>
     <span class="cf">while</span> (<span class="op">!</span><span class="va">Q</span>.<span class="at">empty</span>() <span class="op">&amp;&amp;</span> <span class="va">segments</span>.<span class="at">length</span> <span class="op">&lt;</span> SEG_LIMIT) <span class="op">{</span>
         <span class="kw">let</span> minSegment <span class="op">=</span> <span class="va">Q</span>.<span class="at">dequeue</span>()<span class="op">;</span>
+        <span class="co">// resolve conflicts</span>
         <span class="kw">let</span> accepted <span class="op">=</span> <span class="at">localConstraints</span>(minSegment<span class="op">,</span> segments)<span class="op">;</span>
         <span class="cf">if</span> (accepted) <span class="op">{</span>
             <span class="va">segments</span>.<span class="at">push</span>(minSegment)<span class="op">;</span>
+            <span class="co">// create new segments</span>
             <span class="va">Q</span>.<span class="at">enqueueAll</span>(<span class="at">globalGoalsGenerate</span>(minSegment))<span class="op">;</span>
         <span class="op">}</span>
     <span class="op">}</span>
