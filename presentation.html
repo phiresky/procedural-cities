@@ -112,13 +112,9 @@ code > span.in { color: #60a0b0; font-weight: bold; font-style: italic; } /* Inf
 <li>City zones (residential, industrial, etc.)</li>
 </ul>
 </div>
-</section><section id="street-hierarchy" class="slide level2">
-<h1>Street hierarchy</h1>
-<p>Primary, secondary, tertiary streets are used in urban planning</p>
-<p>→ Simplified distinction between “highways” and normal streets</p>
 </section><section id="initialization" class="slide level2">
 <h1>Initialization</h1>
-<p>Begin with two opposite highway segments:</p>
+<p>Begin with two opposite street segments:</p>
 <iframe data-src="demo.html?
     segment_count_limit = 2;
     arrowhead_size = 80;
@@ -129,12 +125,12 @@ code > span.in { color: #60a0b0; font-weight: bold; font-style: italic; } /* Inf
 </section><section id="street-growth" class="slide level2">
 <h1>Street growth</h1>
 <ul>
-<li>create new street segments greedily, in parallel.</li>
-<li>mostly straight from existing segment</li>
-<li>branch with some probability at about 90 degrees</li>
+<li>create new street segments greedily</li>
+<li>continue straight from existing end segments</li>
+<li>branch with some probability at ≈ 90 degrees</li>
 <li>label fully connected street segments as done</li>
 </ul>
-<iframe data-src="demo.html?
+<iframe style="height:600px" data-src="demo.html?
     segment_count_limit = 20;
     arrowhead_size = 80;
     draw_circle_on_segment_base = 30;
@@ -147,6 +143,40 @@ code > span.in { color: #60a0b0; font-weight: bold; font-style: italic; } /* Inf
     highway_branch_probability = 0.08;
 ">
 </iframe>
+</section><section id="street-hierarchy" class="slide level2">
+<h1>Street hierarchy</h1>
+<p>Primary, secondary, tertiary streets are used in urban planning</p>
+<p>→ Simplified distinction between “highways” and normal streets</p>
+<div class="fragment">
+<ul>
+<li>highway segments are longer and branch less</li>
+<li>normal streets can only branch into normal streets</li>
+</ul>
+<iframe style="height:400px;width:500px;" data-src="demo.html?
+    segment_count_limit = 20;
+    arrowhead_size = 100;
+    iterations_per_second = 1;
+    target_zoom = 0.8;
+    highway_segment_width = 24;
+    two_segments_initially = 0;
+    only_highways = 1;
+    seed = 0.1;
+    restart_after_seconds = 3;
+">
+</iframe>
+<iframe style="height:400px;width:500px;" data-src="demo.html?
+    segment_count_limit = 40;
+    arrowhead_size = 80;
+    iterations_per_second = 2;
+    target_zoom = 0.8;
+    two_segments_initially = 0;
+    only_highways = 0;
+    seed = 0.1;
+    restart_after_seconds = 3;
+    start_with_normal_streets = 1;
+">
+</iframe>
+</div>
 </section><section id="conflict-resolution-intersections-obstacles" class="slide level2">
 <h1>Conflict resolution (intersections, obstacles)</h1>
 <ul>

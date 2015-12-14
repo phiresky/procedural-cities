@@ -31,6 +31,7 @@ exports.config = {
     RESTART_AFTER_SECONDS: -1,
     RESEED_AFTER_RESTART: true,
     TWO_SEGMENTS_INITIALLY: true,
+    START_WITH_NORMAL_STREETS: false,
     TRANSPARENT: false, BACKGROUND_COLOR: 0xFFFFFF,
     SEED: null
 };
@@ -315,7 +316,7 @@ class PriorityQueue {
     }
 }
 function makeInitialSegments() {
-    const rootSegment = new Segment({ x: 0, y: 0 }, { x: exports.config.HIGHWAY_SEGMENT_LENGTH, y: 0 }, 0, { highway: true });
+    const rootSegment = new Segment({ x: 0, y: 0 }, { x: exports.config.HIGHWAY_SEGMENT_LENGTH, y: 0 }, 0, { highway: !exports.config.START_WITH_NORMAL_STREETS });
     if (!exports.config.TWO_SEGMENTS_INITIALLY) return [rootSegment];
     const oppositeDirection = rootSegment.clone();
     const newEnd = {
