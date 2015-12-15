@@ -69,7 +69,7 @@ Need some type of contextual information
 
 Begin with two opposite street segments:
 
-<iframe data-src="demo.html?
+<iframe data-src="demo.html#
     segment_count_limit = 2;
     arrowhead_size = 80;
     draw_circle_on_segment_base = 30;
@@ -83,7 +83,7 @@ Begin with two opposite street segments:
 - branch with some probability at ≈ 90 degrees
 - label fully connected street segments as done
 
-<iframe style="height:600px" data-src="demo.html?
+<iframe style="height:600px" data-src="demo.html#
     segment_count_limit = 20;
     arrowhead_size = 80;
     draw_circle_on_segment_base = 30;
@@ -107,7 +107,7 @@ Primary, secondary, tertiary streets are used in urban planning
 - highway segments are longer and branch less
 - normal streets can only branch into normal streets
 
-<iframe style="height:400px;width:500px;" data-src="demo.html?
+<iframe style="height:400px;width:500px;" data-src="demo.html#
     segment_count_limit = 20;
     arrowhead_size = 100;
     iterations_per_second = 1;
@@ -119,7 +119,7 @@ Primary, secondary, tertiary streets are used in urban planning
     seed = 0.1;
     restart_after_seconds = 3;
 "></iframe>
-<iframe style="height:400px;width:500px;" data-src="demo.html?
+<iframe style="height:400px;width:500px;" data-src="demo.html#
     segment_count_limit = 40;
     arrowhead_size = 80;
     iterations_per_second = 2;
@@ -136,7 +136,7 @@ Primary, secondary, tertiary streets are used in urban planning
 
 New potential segments are evaluated after existing ones
 
-<iframe style="height:500px;" data-src="demo.html?
+<iframe style="height:500px;" data-src="demo.html#
     segment_count_limit = 40;
     //arrowhead_size = 80;
     smooth_zoom_start = 1;
@@ -157,7 +157,7 @@ New potential segments are evaluated after existing ones
 
 Normal streets branching from highways have an additional delay (*blue*)
 
-<iframe style="height:500px;" data-src="demo.html?
+<iframe style="height:500px;" data-src="demo.html#
     segment_count_limit = 400;
     smooth_zoom_start = 1;
     iterations_per_second = 1.5;
@@ -199,7 +199,7 @@ function populationAt(x, y) {
 }
 ```
 
-<iframe style="height:500px" data-src="demo.html?
+<iframe style="height:500px" data-src="demo.html#
     segment_count_limit = 0;
     iterations_per_second = Infinity;
     draw_heatmap = 1;
@@ -217,7 +217,7 @@ Highways try to connect population centers
 
 Possible new directions are sampled, the one with largest population is chosen
 
-<iframe style="height:400px;" data-src="demo.html?
+<iframe style="height:400px;" data-src="demo.html#
     segment_count_limit = 1000;
     draw_heatmap = 1;
     heatmap_pixel_dim = 10;
@@ -234,7 +234,7 @@ Possible new directions are sampled, the one with largest population is chosen
 
 Streets only branch if population is larger than some threshold:
 
-<iframe data-src="demo.html?
+<iframe data-src="demo.html#
     segment_count_limit = 10000;
     iteration_speedup = 1;
     draw_heatmap = 1;

@@ -3,14 +3,13 @@ import {Segment, generate, GeneratorResult, heatmap} from "./mapgen";
 import {config} from "./config";
 import * as PIXI from 'pixi.js';
 
-const qd: { [key: string]: string } = {};
-location.search.substr(1).split(/[&;]/).forEach(item => {
+(location.search.substr(1) + "&" + location.hash.substr(1))
+.split(/[&;]/).forEach(item => {
     const [k, v] = item.split("=");
-    if (k) qd[decodeURIComponent(k)] = v ? decodeURIComponent(v) : "";
-});
-for (let c of Object.keys(qd)) {
-    let val: any = qd[c].trim();
-    const list = c.toUpperCase().trim().split(".");
+    if (!k) return;
+    const key = decodeURIComponent(k).trim();
+    let val = (v ? decodeURIComponent(v).trim() : "") as string | number;
+    const list = key.toUpperCase().trim().split(".");
     const attr = list.pop();
     const targ = list.reduce((a, b, i, arr) => a[b], config as any);
     const origValue = targ[attr];
@@ -20,7 +19,7 @@ for (let c of Object.keys(qd)) {
     if (typeof origValue === "number" || typeof origValue === "boolean")
         val = +val;
     targ[attr] = val;
-}
+});
 
 let seed = config.SEED || Math.random() + "";
 export let generator: Iterator<GeneratorResult>;
