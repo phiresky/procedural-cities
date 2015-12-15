@@ -233,17 +233,19 @@ function globalGoalsGenerate(previousSegment: Segment) {
         const continueStraight = templateContinue(0);
         const straightPop = heatmap.popOnRoad(continueStraight);
         if (previousSegment.q.highway) {
-            const randomStraight = templateContinue(config.RANDOM_STRAIGHT_ANGLE());
-            const randomPop = heatmap.popOnRoad(randomStraight);
-            let roadPop: number;
-            if (randomPop > straightPop) {
-                newBranches.push(randomStraight);
-                roadPop = randomPop;
-            } else {
-                newBranches.push(continueStraight);
-                roadPop = straightPop;
+            let maxPop = straightPop;
+            let bestSegment = continueStraight;
+            for(let i = 0; i < config.HIGHWAY_POPULATION_SAMPLE_SIZE; i++) {
+                // TODO: https://github.com/phiresky/prosem-proto/blob/gh-pages/src/main.tsx#L524
+                const curSegment = templateContinue(config.RANDOM_STRAIGHT_ANGLE());
+                const curPop = heatmap.popOnRoad(curSegment);
+                if(curPop > maxPop) {
+                    maxPop = curPop;
+                    bestSegment = curSegment;
+                }
             }
-            if (roadPop > config.HIGHWAY_BRANCH_POPULATION_THRESHOLD) {
+            newBranches.push(bestSegment);
+            if (maxPop > config.HIGHWAY_BRANCH_POPULATION_THRESHOLD) {
                 if (Math.random() < config.HIGHWAY_BRANCH_PROBABILITY) {
                     newBranches.push(templateContinue(- 90 + config.RANDOM_BRANCH_ANGLE()));
                 } else if (Math.random() < config.HIGHWAY_BRANCH_PROBABILITY) {

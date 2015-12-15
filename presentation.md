@@ -223,8 +223,7 @@ possible new directions are sampled, the one with largest population is chosen:
     segment_count_limit = 600;
     draw_heatmap = 1;
     heatmap_pixel_dim = 10;
-    draw_heatmap_as_threshold = 0;
-    iterations_per_second = 200;
+    iterations_per_second = 100;
     only_highways = 1;
     seed = 0.8163482854142785;
 "></iframe>
