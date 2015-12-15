@@ -353,9 +353,15 @@ function generate() {
 
 ## Tensor fields
 
+![](img/20151215231757.png)
+
 ## Time simulation
 
+![](img/20151124201337.png)
+
 # Example projects
+
+##
 
 - CityEngine (large commercial application originating from @cities2001)
 -
