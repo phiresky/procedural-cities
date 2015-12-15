@@ -170,7 +170,7 @@ Normal streets branching from highways have an additional delay (*blue*)
     priority_future_colors = 1;
 "></iframe>
 
-This prevents highways being cut off by normal streets
+This prevents highways from being cut off by normal streets
 
 ## Conflict resolution <br> (intersections, obstacles)
 
@@ -185,20 +185,52 @@ Shorten or rotate segment to fit
 
 ## Global goals (1)
 
+<div style="float:right;border:1px">
+<small>Simplex noise</small><br><img src="img/20151215214538.png" style="margin-top:-1ex;border:none;height:200px;"></div>
+
 Population map (generated with layered simplex noise):
 
-<iframe data-src="demo.html?
-    segment_count_limit = 1;
+```javascript
+function populationAt(x, y) {
+    const value1 = noise.simplex2(x / 10      , y / 10      ) / 2 + 0.5;
+    const value2 = noise.simplex2(x / 20 + 0.5, y / 20 + 0.5) / 2 + 0.5;
+    const value3 = noise.simplex2(x / 20 + 1.0, y / 20 + 1.0) / 2 + 0.5;
+    return Math.pow((value1 * value2 + value3) / 2, 2);
+}
+```
+
+<iframe style="height:500px" data-src="demo.html?
+    segment_count_limit = 0;
     iterations_per_second = Infinity;
     draw_heatmap = 1;
     seed = 0.8174194933380932;
     smooth_zoom_start = Infinity;
-    heatmap_pixel_dim = 10;
+    heatmap_pixel_dim = 7;
     heatmap_as_threshold = 0;
     target_zoom = 0.01;
 "></iframe>
 
----
+
+## Global goals (2)
+
+Highways try to connect population centers
+
+Possible new directions are sampled, the one with largest population is chosen
+
+<iframe style="height:400px;" data-src="demo.html?
+    segment_count_limit = 1000;
+    draw_heatmap = 1;
+    heatmap_pixel_dim = 10;
+    draw_heatmap_as_threshold = 0;
+    iterations_per_second = 200;
+    only_highways = 1;
+    restart_after_seconds = 10;
+    seed = 0.8163482854142785;
+"></iframe>
+
+![](img/20151215171754.png)
+
+## Global goals (3)
 
 Streets only branch if population is larger than some threshold:
 
@@ -210,26 +242,40 @@ Streets only branch if population is larger than some threshold:
     heatmap_pixel_dim = 10;
     heatmap_as_threshold = 1;
     target_zoom = 1.0;
-    restart_after_seconds = 6;
+    restart_after_seconds = 7;
 "></iframe>
 
-## Global goals (2)
+## Global Goals (4) — Street patterns
 
-Highways try to connect population centers
+Different patterns found in cities:
 
-possible new directions are sampled, the one with largest population is chosen:
+- Rectangular raster (≈ 90° angles)
+- Radial
+- Branching / random
 
-<iframe style="height:400px;" data-src="demo.html?
-    segment_count_limit = 600;
-    draw_heatmap = 1;
-    heatmap_pixel_dim = 10;
-    iterations_per_second = 100;
-    only_highways = 1;
-    seed = 0.8163482854142785;
-"></iframe>
+![<small>[@cities2001]</small>](img/20151213214501.png)
 
-![<small>@cities2001</small>](img/20151215171754.png)
+. . .
 
+Reality is a bit more complicated
+
+## Street patterns — Examples
+
+
+<div style="float:left">
+![San Francisco](img/sanfran.png)
+</div>
+<div style="float:left">
+![Sao Paolo](img/20151215222027.png)
+</div>
+<div style="float:left">
+![New Delhi](img/newdelhi.png)
+</div>
+<div style="float:left">
+![Tokyo](img/20151215221746.png)
+</div>
+
+<small>http://maps.stamen.com/</small>
 
 ## Implementation as parametric L-System
 
@@ -279,29 +325,9 @@ function generate() {
 }
 ```
 
-## Complete demo
+<small>(+ a quadtree in *applyLocalConstraints*)</small>
 
-<iframe data-src="demo.html?"></iframe>
-
-## Street patterns
-
-Different patterns found in cities:
-
-- Rectangular raster (≈ 90° angles)
-- Radial
-- Branching / random
-
-![](img/20151213214501.png)
-
----
-
-demo walkthrough...
-
----
-
-Acceleration: Quadtrees
-
-# Modeling of buildings
+# Modeling of buildings blocks and architecture
 
 ## Input parameters
 
@@ -310,20 +336,29 @@ Acceleration: Quadtrees
 
 ## Lot subdivision
 
-## Architektur: L-systems, split grammars, etc.
+![<small>@cities2001</small>](img/20151108215824.png)
 
+1. Calculate areas by scaling from street crossings
+2. Assume convex and mostly rectangular regions
+3. Recursively divide along the longest edges that are approximately parallel
+4. Discard all blocks that do not have street access
 
----
+## Architecture
 
-demo walkthrough...
+- L-systems, split grammars, etc.
 
----
+(todo?)
 
-# Alternative Methoden: Tensorfelder / Zeitsimulation
+# Alternative Methods
 
-# Beispielprojekte
+## Tensor fields
 
-- CityEngine
+## Time simulation
+
+# Example projects
+
+- CityEngine (large commercial application originating from @cities2001)
+-
 
 #
 
