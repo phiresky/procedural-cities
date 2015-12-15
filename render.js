@@ -4,9 +4,9 @@ var _slicedToArray = (function () { function sliceIterator(arr, i) { var _arr = 
 
 var math_1 = require("./math");
 var mapgen_1 = require("./mapgen");
+var config_1 = require("./config");
 var PIXI = require('pixi.js');
-const qd = {};
-location.search.substr(1).split(/[&;]/).forEach(item => {
+(location.search.substr(1) + "&" + location.hash.substr(1)).split(/[&;]/).forEach(item => {
     var _item$split = item.split("=");
 
     var _item$split2 = _slicedToArray(_item$split, 2);
@@ -14,20 +14,19 @@ location.search.substr(1).split(/[&;]/).forEach(item => {
     const k = _item$split2[0];
     const v = _item$split2[1];
 
-    if (k) qd[decodeURIComponent(k)] = v ? decodeURIComponent(v) : "";
-});
-for (let c of Object.keys(qd)) {
-    let val = qd[c].trim();
-    const list = c.toUpperCase().trim().split(".");
+    if (!k) return;
+    const key = decodeURIComponent(k).trim();
+    let val = v ? decodeURIComponent(v).trim() : "";
+    const list = key.toUpperCase().trim().split(".");
     const attr = list.pop();
-    const targ = list.reduce((a, b, i, arr) => a[b], mapgen_1.config);
+    const targ = list.reduce((a, b, i, arr) => a[b], config_1.config);
     const origValue = targ[attr];
     console.log(`config: ${ attr } = ${ val }`);
     if (typeof origValue === "undefined" && attr.substr(0, 2) !== "//") console.warn("unknown config: " + attr);
     if (typeof origValue === "number" || typeof origValue === "boolean") val = +val;
     targ[attr] = val;
-}
-let seed = mapgen_1.config.SEED || Math.random() + "";
+});
+let seed = config_1.config.SEED || Math.random() + "";
 let W = window.innerWidth,
     H = window.innerHeight;
 exports.dobounds = function (segs) {
@@ -40,7 +39,7 @@ exports.dobounds = function (segs) {
         maxx: Math.max(...lim.map(s => s.x + s.width)),
         maxy: Math.max(...lim.map(s => s.y + s.height))
     };
-    const scale = Math.min(W / (bounds.maxx - bounds.minx), H / (bounds.maxy - bounds.miny)) * mapgen_1.config.TARGET_ZOOM;
+    const scale = Math.min(W / (bounds.maxx - bounds.minx), H / (bounds.maxy - bounds.miny)) * config_1.config.TARGET_ZOOM;
     const npx = -(bounds.maxx + bounds.minx) / 2 * scale + W / 2;
     const npy = -(bounds.maxy + bounds.miny) / 2 * scale + H / 2;
     exports.stage.position.x = math_1.math.lerp(exports.stage.position.x, npx, interpolate);
@@ -51,12 +50,13 @@ exports.dobounds = function (segs) {
 function restart() {
     console.log("generating with seed " + seed);
     exports.generator = mapgen_1.generate(seed);
-    for (let i = 0; i < mapgen_1.config.SKIP_ITERATIONS; i++) exports.generator.next();
+    for (let i = 0; i < config_1.config.SKIP_ITERATIONS; i++) exports.generator.next();
     done = false;
     iteration = 0;
     iteration_wanted = 0;
+    has_interacted = false;
 }
-exports.renderer = PIXI.autoDetectRenderer(W, H, { backgroundColor: mapgen_1.config.BACKGROUND_COLOR, antialias: true, transparent: mapgen_1.config.TRANSPARENT });
+exports.renderer = PIXI.autoDetectRenderer(W, H, { backgroundColor: config_1.config.BACKGROUND_COLOR, antialias: true, transparent: config_1.config.TRANSPARENT });
 document.body.appendChild(exports.renderer.view);
 exports.graphics = new PIXI.Graphics();
 exports.stage = new PIXI.Container();
@@ -73,13 +73,13 @@ function renderSegment(seg) {
     const y1 = seg.start.y;
     const y2 = seg.end.y;
     const len = seg.length();
-    const arrowLength = Math.min(len, mapgen_1.config.ARROWHEAD_SIZE);
-    if (mapgen_1.config.DRAW_CIRCLE_ON_SEGMENT_BASE) {
+    const arrowLength = Math.min(len, config_1.config.ARROWHEAD_SIZE);
+    if (config_1.config.DRAW_CIRCLE_ON_SEGMENT_BASE) {
         exports.graphics.beginFill(color);
-        exports.graphics.drawCircle(x1, y1, mapgen_1.config.DRAW_CIRCLE_ON_SEGMENT_BASE);
+        exports.graphics.drawCircle(x1, y1, config_1.config.DRAW_CIRCLE_ON_SEGMENT_BASE);
         exports.graphics.endFill();
     }
-    if (mapgen_1.config.ARROWHEAD_SIZE) {
+    if (config_1.config.ARROWHEAD_SIZE) {
         exports.graphics.lineStyle(seg.width * 2, color, 1);
         exports.graphics.moveTo(x1, y1);
         exports.graphics.lineTo(math_1.math.lerp(x1, x2, 1 - arrowLength / len), math_1.math.lerp(y1, y2, 1 - arrowLength / len));
@@ -88,7 +88,7 @@ function renderSegment(seg) {
         exports.graphics.moveTo(x1, y1);
         exports.graphics.lineTo(x2, y2);
     }
-    if (mapgen_1.config.ARROWHEAD_SIZE) {
+    if (config_1.config.ARROWHEAD_SIZE) {
         const angle = Math.PI / 8;
         const h = Math.abs(arrowLength / Math.cos(angle));
         const lineangle = Math.atan2(y2 - y1, x2 - x1);
@@ -109,7 +109,7 @@ function renderSegment(seg) {
 }
 exports.stage.on('mousedown', onDragStart).on('touchstart', onDragStart).on('mouseup', onDragEnd).on('mouseupoutside', onDragEnd).on('touchend', onDragEnd).on('touchendoutside', onDragEnd).on('mousemove', onDragMove).on('touchmove', onDragMove).on('click', onClick);
 function onClick(event) {
-    if (this.wasdragged || !mapgen_1.config.DEBUG) return;
+    if (this.wasdragged || !config_1.config.DEBUG) return;
     const p = event.data.getLocalPosition(exports.graphics);
     const poss = exports.stuff.qTree.retrieve({
         x: p.x - 10, y: p.y - 10,
@@ -167,7 +167,7 @@ function animate(timestamp) {
         delta = 100;
     }
     if (!done) {
-        iteration_wanted += (iteration * mapgen_1.config.ITERATION_SPEEDUP + mapgen_1.config.ITERATIONS_PER_SECOND) * delta / 1000;
+        iteration_wanted += (iteration * config_1.config.ITERATION_SPEEDUP + config_1.config.ITERATIONS_PER_SECOND) * delta / 1000;
         while (iteration < iteration_wanted) {
             const iter = exports.generator.next();
             if (iter.done) {
@@ -181,21 +181,26 @@ function animate(timestamp) {
             }
         }
     } else {
-        if (mapgen_1.config.RESTART_AFTER_SECONDS >= 0 && done_time + mapgen_1.config.RESTART_AFTER_SECONDS * 1000 < timestamp) {
-            if (mapgen_1.config.RESEED_AFTER_RESTART) {
+        if (config_1.config.RESTART_AFTER_SECONDS >= 0 && done_time + config_1.config.RESTART_AFTER_SECONDS * 1000 < timestamp) {
+            if (config_1.config.RESEED_AFTER_RESTART) {
                 seed = Math.random() + "";
             }
             restart();
         }
     }
-    if (!has_interacted) exports.dobounds([...exports.stuff.segments, ...exports.stuff.priorityQ], iteration <= mapgen_1.config.SMOOTH_ZOOM_START ? 1 : 0.05);
+    if (!has_interacted) exports.dobounds([...exports.stuff.segments, ...exports.stuff.priorityQ], iteration <= config_1.config.SMOOTH_ZOOM_START ? 1 : 0.05);
     exports.graphics.clear();
-    if (mapgen_1.config.DRAW_HEATMAP) {
-        const dim = mapgen_1.config.HEAT_MAP_PIXEL_DIM;
+    if (config_1.config.DRAW_HEATMAP) {
+        const dim = config_1.config.HEATMAP_PIXEL_DIM;
         for (let x = 0; x < W; x += dim) for (let y = 0; y < H; y += dim) {
             const p = exports.stage.toLocal(new PIXI.Point(x, y));
             const pop = mapgen_1.heatmap.populationAt(p.x + dim / 2, p.y + dim / 2);
-            const v = pop > mapgen_1.config.NORMAL_BRANCH_POPULATION_THRESHOLD ? 255 : pop > mapgen_1.config.HIGHWAY_BRANCH_POPULATION_THRESHOLD ? 200 : 150;
+            let v;
+            if (config_1.config.HEATMAP_AS_THRESHOLD) {
+                v = pop > config_1.config.NORMAL_BRANCH_POPULATION_THRESHOLD ? 255 : pop > config_1.config.HIGHWAY_BRANCH_POPULATION_THRESHOLD ? 200 : 150;
+            } else {
+                v = 255 - pop * 255 | 0;
+            }
             exports.graphics.beginFill(v << 16 | v << 8 | v);
             exports.graphics.drawRect(p.x, p.y, dim / exports.stage.scale.x, dim / exports.stage.scale.y);
             exports.graphics.endFill();
@@ -203,17 +208,17 @@ function animate(timestamp) {
     }
     for (const seg of exports.stuff.segments) renderSegment(seg);
     if (!done) {
-        if (mapgen_1.config.PRIORITY_FUTURE_COLORS) {
+        if (config_1.config.PRIORITY_FUTURE_COLORS) {
             const minT = exports.stuff.priorityQ.reduce((min, seg) => Math.min(min, seg.t), Infinity);
             const future_colors = [0xFF0000, 0x44ff44, 0x6666ff];
             for (const seg of exports.stuff.priorityQ) renderSegment(seg, future_colors[Math.min(seg.t - minT, future_colors.length - 1)]);
         } else {
             for (const seg of exports.stuff.priorityQ) renderSegment(seg, 0xFF0000);
         }
-        if (mapgen_1.config.DELAY_BETWEEN_TIME_STEPS) {
+        if (config_1.config.DELAY_BETWEEN_TIME_STEPS) {
             const first_t = exports.stuff.priorityQ[0].t;
             if (first_t !== last_t_found && exports.stuff.priorityQ.every(seg => seg.t === first_t)) {
-                iteration_wanted -= mapgen_1.config.DELAY_BETWEEN_TIME_STEPS * mapgen_1.config.ITERATIONS_PER_SECOND;
+                iteration_wanted -= config_1.config.DELAY_BETWEEN_TIME_STEPS * config_1.config.ITERATIONS_PER_SECOND;
                 last_t_found = first_t;
             }
         }

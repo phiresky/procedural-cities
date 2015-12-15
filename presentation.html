@@ -85,15 +85,15 @@ code > span.in { color: #60a0b0; font-weight: bold; font-style: italic; } /* Inf
 <li>Land use planning</li>
 </ul>
 </div>
-</section></section>
-<section><section id="einführung-und-grundlagen" class="titleslide slide level1"><h1>Einführung und Grundlagen</h1></section><section id="approach" class="slide level2">
+</section><section id="approach" class="slide level2">
 <h1>Approach</h1>
 <ol type="1">
-<li>Festlegen/Verarbeiten der Eingabeparameter</li>
+<li>Choose/Process input parameters</li>
 <li>Generate street network</li>
-<li>generate building structure</li>
+<li>Evaluate building blocks</li>
+<li>Generate building structure and architecture</li>
 </ol>
-<p>dazwischen optional Interaktion</p>
+<p>Optional interaction between these steps</p>
 </section></section>
 <section><section id="modeling-of-the-street-network" class="titleslide slide level1"><h1>Modeling of the street network</h1></section><section id="input-parameters" class="slide level2">
 <h1>Input parameters</h1>
@@ -105,21 +105,21 @@ code > span.in { color: #60a0b0; font-weight: bold; font-style: italic; } /* Inf
 <div class="fragment">
 <p><strong>Examples</strong></p>
 <ul>
-<li>Elevation and water map</li>
-<li>Population density map</li>
-<li>Vegetation map</li>
-<li>City type and road patterns</li>
-<li>City zones (residential, industrial, etc.)</li>
+<li>elevation and water map</li>
+<li>population density map</li>
+<li>vegetation map</li>
+<li>city type and road patterns</li>
+<li>city zones (residential, industrial, etc.)</li>
 </ul>
 </div>
 </section><section id="initialization" class="slide level2">
 <h1>Initialization</h1>
 <p>Begin with two opposite street segments:</p>
-<iframe data-src="demo.html?
+<iframe data-src="demo.html#
     segment_count_limit = 2;
     arrowhead_size = 80;
     draw_circle_on_segment_base = 30;
-    iterations_per_frame = Infinity;
+    iterations_per_second = Infinity;
 ">
 </iframe>
 </section><section id="street-growth" class="slide level2">
@@ -130,7 +130,7 @@ code > span.in { color: #60a0b0; font-weight: bold; font-style: italic; } /* Inf
 <li>branch with some probability at ≈ 90 degrees</li>
 <li>label fully connected street segments as done</li>
 </ul>
-<iframe style="height:600px" data-src="demo.html?
+<iframe style="height:600px" data-src="demo.html#
     segment_count_limit = 20;
     arrowhead_size = 80;
     draw_circle_on_segment_base = 30;
@@ -152,7 +152,7 @@ code > span.in { color: #60a0b0; font-weight: bold; font-style: italic; } /* Inf
 <li>highway segments are longer and branch less</li>
 <li>normal streets can only branch into normal streets</li>
 </ul>
-<iframe style="height:400px;width:500px;" data-src="demo.html?
+<iframe style="height:400px;width:500px;" data-src="demo.html#
     segment_count_limit = 20;
     arrowhead_size = 100;
     iterations_per_second = 1;
@@ -165,7 +165,7 @@ code > span.in { color: #60a0b0; font-weight: bold; font-style: italic; } /* Inf
     restart_after_seconds = 3;
 ">
 </iframe>
-<iframe style="height:400px;width:500px;" data-src="demo.html?
+<iframe style="height:400px;width:500px;" data-src="demo.html#
     segment_count_limit = 40;
     arrowhead_size = 80;
     iterations_per_second = 2;
@@ -182,7 +182,7 @@ code > span.in { color: #60a0b0; font-weight: bold; font-style: italic; } /* Inf
 </section><section id="parallel-growth" class="slide level2">
 <h1>Parallel growth</h1>
 <p>New potential segments are evaluated after existing ones</p>
-<iframe style="height:500px;" data-src="demo.html?
+<iframe style="height:500px;" data-src="demo.html#
     segment_count_limit = 40;
     //arrowhead_size = 80;
     smooth_zoom_start = 1;
@@ -200,7 +200,7 @@ code > span.in { color: #60a0b0; font-weight: bold; font-style: italic; } /* Inf
 </section><section id="highway-branching" class="slide level2">
 <h1>Highway branching</h1>
 <p>Normal streets branching from highways have an additional delay (<em>blue</em>)</p>
-<iframe style="height:500px;" data-src="demo.html?
+<iframe style="height:500px;" data-src="demo.html#
     segment_count_limit = 400;
     smooth_zoom_start = 1;
     iterations_per_second = 1.5;
@@ -213,7 +213,7 @@ code > span.in { color: #60a0b0; font-weight: bold; font-style: italic; } /* Inf
     priority_future_colors = 1;
 ">
 </iframe>
-<p>This prevents highways being cut off by normal streets</p>
+<p>This prevents highways from being cut off by normal streets</p>
 </section><section id="conflict-resolution-intersections-obstacles" class="slide level2">
 <h1>Conflict resolution <br> (intersections, obstacles)</h1>
 <ul>
@@ -227,6 +227,98 @@ Shorten or rotate segment to fit</li>
 <img src="img/20151213214559.png" alt="Parish and Müller (2001)" /><figcaption><small><span class="citation" data-cites="cities2001">Parish and Müller (2001)</span></small></figcaption>
 </figure>
 </div>
+</section><section id="global-goals-1" class="slide level2">
+<h1>Global goals (1)</h1>
+<div style="float:right;border:1px">
+<small>Simplex noise</small><br><img src="img/20151215214538.png" style="margin-top:-1ex;border:none;height:200px;">
+</div>
+<p>Population map (generated with layered simplex noise):</p>
+<div class="sourceCode"><pre class="sourceCode javascript"><code class="sourceCode javascript"><span class="kw">function</span> <span class="at">populationAt</span>(x<span class="op">,</span> y) <span class="op">{</span>
+    <span class="kw">const</span> value1 <span class="op">=</span> <span class="va">noise</span>.<span class="at">simplex2</span>(x / <span class="dv">10</span>      <span class="op">,</span> y / <span class="dv">10</span>      ) / <span class="dv">2</span> <span class="op">+</span> <span class="fl">0.5</span><span class="op">;</span>
+    <span class="kw">const</span> value2 <span class="op">=</span> <span class="va">noise</span>.<span class="at">simplex2</span>(x / <span class="dv">20</span> <span class="op">+</span> <span class="fl">0.5</span><span class="op">,</span> y / <span class="dv">20</span> <span class="op">+</span> <span class="fl">0.5</span>) / <span class="dv">2</span> <span class="op">+</span> <span class="fl">0.5</span><span class="op">;</span>
+    <span class="kw">const</span> value3 <span class="op">=</span> <span class="va">noise</span>.<span class="at">simplex2</span>(x / <span class="dv">20</span> <span class="op">+</span> <span class="fl">1.0</span><span class="op">,</span> y / <span class="dv">20</span> <span class="op">+</span> <span class="fl">1.0</span>) / <span class="dv">2</span> <span class="op">+</span> <span class="fl">0.5</span><span class="op">;</span>
+    <span class="cf">return</span> <span class="va">Math</span>.<span class="at">pow</span>((value1 <span class="op">*</span> value2 <span class="op">+</span> value3) / <span class="dv">2</span><span class="op">,</span> <span class="dv">2</span>)<span class="op">;</span>
+<span class="op">}</span></code></pre></div>
+<iframe style="height:500px" data-src="demo.html#
+    segment_count_limit = 0;
+    iterations_per_second = Infinity;
+    draw_heatmap = 1;
+    seed = 0.8174194933380932;
+    smooth_zoom_start = Infinity;
+    heatmap_pixel_dim = 7;
+    heatmap_as_threshold = 0;
+    target_zoom = 0.01;
+">
+</iframe>
+</section><section id="global-goals-2" class="slide level2">
+<h1>Global goals (2)</h1>
+<p>Highways try to connect population centers</p>
+<p>Possible new directions are sampled, the one with largest population is chosen</p>
+<iframe style="height:400px;" data-src="demo.html#
+    segment_count_limit = 1000;
+    draw_heatmap = 1;
+    heatmap_pixel_dim = 10;
+    draw_heatmap_as_threshold = 0;
+    iterations_per_second = 200;
+    only_highways = 1;
+    restart_after_seconds = 10;
+    seed = 0.8163482854142785;
+">
+</iframe>
+<figure>
+<img src="img/20151215171754.png" alt="" />
+</figure>
+</section><section id="global-goals-3" class="slide level2">
+<h1>Global goals (3)</h1>
+<p>Streets only branch if population is larger than some threshold:</p>
+<iframe data-src="demo.html#
+    segment_count_limit = 10000;
+    iteration_speedup = 1;
+    draw_heatmap = 1;
+    seed = 0.8174194933380932;
+    heatmap_pixel_dim = 10;
+    heatmap_as_threshold = 1;
+    target_zoom = 1.0;
+    restart_after_seconds = 7;
+">
+</iframe>
+</section><section id="global-goals-4-street-patterns" class="slide level2">
+<h1>Global Goals (4) — Street patterns</h1>
+<p>Different patterns found in cities:</p>
+<ul>
+<li>Rectangular raster (≈ 90° angles)</li>
+<li>Radial</li>
+<li>Branching / random</li>
+</ul>
+<figure>
+<img src="img/20151213214501.png" alt="(Parish and Müller 2001)" /><figcaption><small><span class="citation" data-cites="cities2001">(Parish and Müller 2001)</span></small></figcaption>
+</figure>
+<div class="fragment">
+<p>Reality is a bit more complicated</p>
+</div>
+</section><section id="street-patterns-examples" class="slide level2">
+<h1>Street patterns — Examples</h1>
+<div style="float:left">
+<figure>
+<img src="img/sanfran.png" alt="San Francisco" /><figcaption>San Francisco</figcaption>
+</figure>
+</div>
+<div style="float:left">
+<figure>
+<img src="img/20151215222027.png" alt="Sao Paolo" /><figcaption>Sao Paolo</figcaption>
+</figure>
+</div>
+<div style="float:left">
+<figure>
+<img src="img/newdelhi.png" alt="New Delhi" /><figcaption>New Delhi</figcaption>
+</figure>
+</div>
+<div style="float:left">
+<figure>
+<img src="img/20151215221746.png" alt="Tokyo" /><figcaption>Tokyo</figcaption>
+</figure>
+</div>
+<p><small>http://maps.stamen.com/</small></p>
 </section><section id="implementation-as-parametric-l-system" class="slide level2">
 <h1>Implementation as parametric L-System</h1>
 <p>Original implementation by <span class="citation" data-cites="cities2001">Parish and Müller (2001)</span></p>
@@ -268,29 +360,9 @@ p9: ?I(roadAttr,state) : state!=UNASSIGNED -&gt; e</code></pre>
         <span class="op">}</span>
     <span class="op">}</span>
 <span class="op">}</span></code></pre></div>
-</section><section id="complete-demo" class="slide level2">
-<h1>Complete demo</h1>
-<iframe data-src="demo.html?">
-</iframe>
-</section><section id="street-patterns" class="slide level2">
-<h1>Street patterns</h1>
-<p>Different patterns found in cities:</p>
-<ul>
-<li>Rectangular raster (≈ 90° angles)</li>
-<li>Radial</li>
-<li>Branching / random</li>
-</ul>
-<figure>
-<img src="img/20151213214501.png" alt="" />
-</figure>
-</section><section class="slide level2">
-
-<p>demo walkthrough…</p>
-</section><section class="slide level2">
-
-<p>Acceleration: Quadtrees</p>
+<p><small>(+ a quadtree in <em>applyLocalConstraints</em>)</small></p>
 </section></section>
-<section><section id="modeling-of-buildings" class="titleslide slide level1"><h1>Modeling of buildings</h1></section><section id="input-parameters-1" class="slide level2">
+<section><section id="modeling-of-buildings-blocks-and-architecture" class="titleslide slide level1"><h1>Modeling of buildings blocks and architecture</h1></section><section id="input-parameters-1" class="slide level2">
 <h1>Input parameters</h1>
 <ul>
 <li>Street network</li>
@@ -298,22 +370,49 @@ p9: ?I(roadAttr,state) : state!=UNASSIGNED -&gt; e</code></pre>
 </ul>
 </section><section id="lot-subdivision" class="slide level2">
 <h1>Lot subdivision</h1>
-</section><section id="architektur-l-systems-split-grammars-etc." class="slide level2">
-<h1>Architektur: L-systems, split grammars, etc.</h1>
-</section><section class="slide level2">
-
-<p>demo walkthrough…</p>
-</section><section class="slide level2">
-
+<figure>
+<img src="img/20151108215824.png" alt="Parish and Müller (2001)" /><figcaption><small><span class="citation" data-cites="cities2001">Parish and Müller (2001)</span></small></figcaption>
+</figure>
+<ol type="1">
+<li>Calculate areas by scaling from street crossings</li>
+<li>Assume convex and mostly rectangular regions</li>
+<li>Recursively divide along the longest edges that are approximately parallel</li>
+<li>Discard all blocks that do not have street access</li>
+</ol>
+</section><section id="architecture" class="slide level2">
+<h1>Architecture</h1>
+<ul>
+<li>L-systems, split grammars, etc.</li>
+</ul>
+<p>(todo?)</p>
 </section></section>
-<section><section id="alternative-methoden-tensorfelder-zeitsimulation" class="titleslide slide level1"><h1>Alternative Methoden: Tensorfelder / Zeitsimulation</h1></section></section>
-<section><section id="beispielprojekte" class="titleslide slide level1"><h1>Beispielprojekte</h1></section></section>
-<section><section id="section" class="titleslide slide level1"><h1></h1></section><section id="quellen" class="slide level2">
+<section><section id="alternative-methods" class="titleslide slide level1"><h1>Alternative Methods</h1></section><section id="tensor-fields" class="slide level2">
+<h1>Tensor fields</h1>
+<figure>
+<img src="img/20151215231757.png" alt="" />
+</figure>
+</section><section id="time-simulation" class="slide level2">
+<h1>Time simulation</h1>
+<figure>
+<img src="img/20151124201337.png" alt="" />
+</figure>
+</section></section>
+<section><section id="example-projects" class="titleslide slide level1"><h1>Example projects</h1></section><section id="section" class="slide level2">
+<h1></h1>
+<ul>
+<li>CityEngine (large commercial application originating from <span class="citation" data-cites="cities2001">Parish and Müller (2001)</span>)</li>
+<li></li>
+</ul>
+</section></section>
+<section><section id="section-1" class="titleslide slide level1"><h1></h1></section><section id="quellen" class="slide level2">
 <h1>Quellen</h1>
 <p>Quellen inkl. Links sind auf der Ankündigungsseite</p>
 <div id="references" class="references">
 <div id="ref-cities2001">
 <p>Parish, Yoav I. H., and Pascal Müller. 2001. “Procedural Modeling of Cities.” In <em>Proceedings of the 28th Annual Conference on Computer Graphics and Interactive Techniques</em>, 301–8. SIGGRAPH ’01. New York, NY, USA: ACM. doi:<a href="http://doi.org/10.1145/383259.383292" class="uri">http://doi.org/10.1145/383259.383292</a>.</p>
+</div>
+<div id="ref-subvimpl">
+<p>“Procedural City Generation - Projects.” 2015. Accessed November 5. <a href="http://www.tmwhere.com/city_generation.html" class="uri">http://www.tmwhere.com/city_generation.html</a>.</p>
 </div>
 <div id="ref-harmful">
 <p>Sean Barrett. 2008. “L-Systems Considered Harmful.” <a href="http://nothings.org/gamedev/l_systems.html" class="uri">http://nothings.org/gamedev/l_systems.html</a>.</p>

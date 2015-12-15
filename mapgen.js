@@ -1,48 +1,12 @@
-"use strict";
-
+"use strict"
+// code adapted from http://www.tmwhere.com/city_generation.html
+;
 var perlin_1 = require('perlin');
 var seedrandom_1 = require('seedrandom');
 seedrandom_1.default;
 var Quadtree_1 = require("./Quadtree");
 var math_1 = require('./math');
-exports.config = {
-    DEFAULT_SEGMENT_LENGTH: 300, HIGHWAY_SEGMENT_LENGTH: 400,
-    DEFAULT_SEGMENT_WIDTH: 6, HIGHWAY_SEGMENT_WIDTH: 16,
-    RANDOM_BRANCH_ANGLE: function () {
-        return math_1.math.randomNearCubic(3);
-    },
-    RANDOM_STRAIGHT_ANGLE: function () {
-        return math_1.math.randomNearCubic(15);
-    },
-    DEFAULT_BRANCH_PROBABILITY: .4, HIGHWAY_BRANCH_PROBABILITY: .02,
-    HIGHWAY_BRANCH_POPULATION_THRESHOLD: .1,
-    NORMAL_BRANCH_POPULATION_THRESHOLD: .1,
-    NORMAL_BRANCH_TIME_DELAY_FROM_HIGHWAY: 10,
-    MINIMUM_INTERSECTION_DEVIATION: 30,
-    SEGMENT_COUNT_LIMIT: 5000,
-    ROAD_SNAP_DISTANCE: 50,
-    HEAT_MAP_PIXEL_DIM: 25, DRAW_HEATMAP: false,
-    QUADTREE_PARAMS: { x: -2E4, y: -2E4, width: 4E4, height: 4E4 },
-    QUADTREE_MAX_OBJECTS: 10, QUADTREE_MAX_LEVELS: 10,
-    DEBUG: false,
-    ONLY_HIGHWAYS: false,
-    ARROWHEAD_SIZE: 0,
-    DRAW_CIRCLE_ON_SEGMENT_BASE: 0,
-    IGNORE_CONFLICTS: false,
-    ITERATION_SPEEDUP: 0.01,
-    ITERATIONS_PER_SECOND: 100,
-    PRIORITY_FUTURE_COLORS: false,
-    SMOOTH_ZOOM_START: 20,
-    SKIP_ITERATIONS: 0,
-    DELAY_BETWEEN_TIME_STEPS: 0,
-    TARGET_ZOOM: 0.9,
-    RESTART_AFTER_SECONDS: -1,
-    RESEED_AFTER_RESTART: true,
-    TWO_SEGMENTS_INITIALLY: true,
-    START_WITH_NORMAL_STREETS: false,
-    TRANSPARENT: false, BACKGROUND_COLOR: 0xFFFFFF,
-    SEED: null
-};
+var config_1 = require("./config");
 class Segment {
     constructor(start, end) {
         let t = arguments.length <= 2 || arguments[2] === undefined ? 0 : arguments[2];
@@ -50,14 +14,18 @@ class Segment {
 
         this.start = start;
         this.end = end;
+        /** meta-information relevant to global goals */
         this.q = {};
+        /** links backwards and forwards */
         this.links = { b: [], f: [] };
         this.setupBranchLinks = undefined;
         const obj = this;
         for (const t in q) this.q[t] = q[t];
-        this.width = this.q.highway ? exports.config.HIGHWAY_SEGMENT_WIDTH : exports.config.DEFAULT_SEGMENT_WIDTH;
+        this.width = this.q.highway ? config_1.config.HIGHWAY_SEGMENT_WIDTH : config_1.config.DEFAULT_SEGMENT_WIDTH;
+        // representation of road
         this.t = t;
     }
+    // clockwise direction
     dir() {
         const vector = math_1.math.subtractPoints(this.end, this.start);
         return -1 * math_1.math.sign(math_1.math.crossProduct({ x: 0, y: 1 }, vector)) * math_1.math.angleBetween({ x: 0, y: 1 }, vector);
@@ -106,9 +74,12 @@ class Segment {
         qTree.insert(splitPart.limits(), splitPart);
         splitPart.end = point;
         this.start = point;
+        // links are not copied using the preceding factory method.
+        // copy link array for the split part, keeping references the same
         splitPart.links.b = this.links.b.slice(0);
         splitPart.links.f = this.links.f.slice(0);
         let firstSplit, fixLinks, secondSplit;
+        // determine which links correspond to which end of the split segment
         if (startIsBackwards) {
             firstSplit = splitPart;
             secondSplit = this;
@@ -141,7 +112,7 @@ class Segment {
     }
     static usingDirection(start) {
         let dir = arguments.length <= 1 || arguments[1] === undefined ? 90 : arguments[1];
-        let length = arguments.length <= 2 || arguments[2] === undefined ? exports.config.DEFAULT_SEGMENT_LENGTH : arguments[2];
+        let length = arguments.length <= 2 || arguments[2] === undefined ? config_1.config.DEFAULT_SEGMENT_LENGTH : arguments[2];
         let t = arguments[3];
         let q = arguments[4];
 
@@ -177,11 +148,12 @@ class DebugData {
 }
 let debugData = new DebugData();
 const localConstraints = function (segment, segments, qTree) {
-    if (exports.config.IGNORE_CONFLICTS) return true;
+    if (config_1.config.IGNORE_CONFLICTS) return true;
     const action = {
         priority: 0, func: undefined, t: undefined
     };
     for (const other of qTree.retrieve(segment.limits())) {
+        // intersection check
         if (action.priority <= 4) {
             const intersection = segment.intersectWith(other);
             if (intersection) {
@@ -189,7 +161,8 @@ const localConstraints = function (segment, segments, qTree) {
                     action.t = intersection.t;
                     action.priority = 4;
                     action.func = function () {
-                        if (math_1.math.minDegreeDifference(other.dir(), segment.dir()) < exports.config.MINIMUM_INTERSECTION_DEVIATION) {
+                        // if intersecting lines are too similar don't continue
+                        if (math_1.math.minDegreeDifference(other.dir(), segment.dir()) < config_1.config.MINIMUM_INTERSECTION_DEVIATION) {
                             return false;
                         }
                         other.split(intersection, segment, segments, qTree);
@@ -201,19 +174,27 @@ const localConstraints = function (segment, segments, qTree) {
                 }
             }
         }
+        // snap to crossing within radius check
         if (action.priority <= 3) {
-            if (math_1.math.length(segment.end, other.end) <= exports.config.ROAD_SNAP_DISTANCE) {
+            // current segment's start must have been checked to have been created.
+            // other segment's start must have a corresponding end.
+            if (math_1.math.length(segment.end, other.end) <= config_1.config.ROAD_SNAP_DISTANCE) {
                 const point = other.end;
                 action.priority = 3;
                 action.func = function () {
                     segment.end = point;
                     segment.q.severed = true;
+                    // update links of otherSegment corresponding to other.r.end
                     const links = other.startIsBackwards() ? other.links.f : other.links.b;
+                    // check for duplicate lines, don't add if it exists
+                    // this should be done before links are setup, to avoid having to undo that step
                     if (links.some(link => math_1.math.equalV(link.start, segment.end) && math_1.math.equalV(link.end, segment.start) || math_1.math.equalV(link.start, segment.start) && math_1.math.equalV(link.end, segment.end))) {
                         return false;
                     }
                     links.forEach(link => {
+                        // pick links of remaining segments at junction corresponding to other.r.end
                         link.linksForEndContaining(other).push(segment);
+                        // add junction segments to snapped segment
                         segment.links.f.push(link);
                     });
                     links.push(segment);
@@ -223,6 +204,7 @@ const localConstraints = function (segment, segments, qTree) {
                 };
             }
         }
+        //  intersection within radius check
         if (action.priority <= 2) {
             var _math_1$math$distance = math_1.math.distanceToLine(segment.end, other.start, other.end);
 
@@ -231,13 +213,14 @@ const localConstraints = function (segment, segments, qTree) {
             const lineProj2 = _math_1$math$distance.lineProj2;
             const length2 = _math_1$math$distance.length2;
 
-            if (distance2 < exports.config.ROAD_SNAP_DISTANCE * exports.config.ROAD_SNAP_DISTANCE && lineProj2 >= 0 && lineProj2 <= length2) {
+            if (distance2 < config_1.config.ROAD_SNAP_DISTANCE * config_1.config.ROAD_SNAP_DISTANCE && lineProj2 >= 0 && lineProj2 <= length2) {
                 const point = pointOnLine;
                 action.priority = 2;
                 action.func = function () {
                     segment.end = point;
                     segment.q.severed = true;
-                    if (math_1.math.minDegreeDifference(other.dir(), segment.dir()) < exports.config.MINIMUM_INTERSECTION_DEVIATION) {
+                    // if intersecting lines are too closely aligned don't continue
+                    if (math_1.math.minDegreeDifference(other.dir(), segment.dir()) < config_1.config.MINIMUM_INTERSECTION_DEVIATION) {
                         return false;
                     }
                     other.split(point, segment, segments, qTree);
@@ -254,40 +237,45 @@ function globalGoalsGenerate(previousSegment) {
     const newBranches = [];
     if (!previousSegment.q.severed) {
         const template = (direction, length, t, q) => Segment.usingDirection(previousSegment.end, previousSegment.dir() + direction, length, t, q);
+        // used for highways or going straight on a normal branch
         const templateContinue = direction => template(direction, previousSegment.length(), 0, previousSegment.q);
-        const templateBranch = direction => template(direction, exports.config.DEFAULT_SEGMENT_LENGTH, previousSegment.q.highway ? exports.config.NORMAL_BRANCH_TIME_DELAY_FROM_HIGHWAY : 0, null);
+        // not using q, i.e. not highways
+        const templateBranch = direction => template(direction, config_1.config.DEFAULT_SEGMENT_LENGTH, previousSegment.q.highway ? config_1.config.NORMAL_BRANCH_TIME_DELAY_FROM_HIGHWAY : 0, null);
         const continueStraight = templateContinue(0);
         const straightPop = exports.heatmap.popOnRoad(continueStraight);
         if (previousSegment.q.highway) {
-            const randomStraight = templateContinue(exports.config.RANDOM_STRAIGHT_ANGLE());
-            const randomPop = exports.heatmap.popOnRoad(randomStraight);
-            let roadPop;
-            if (randomPop > straightPop) {
-                newBranches.push(randomStraight);
-                roadPop = randomPop;
-            } else {
-                newBranches.push(continueStraight);
-                roadPop = straightPop;
-            }
-            if (roadPop > exports.config.HIGHWAY_BRANCH_POPULATION_THRESHOLD) {
-                if (Math.random() < exports.config.HIGHWAY_BRANCH_PROBABILITY) {
-                    newBranches.push(templateContinue(-90 + exports.config.RANDOM_BRANCH_ANGLE()));
-                } else if (Math.random() < exports.config.HIGHWAY_BRANCH_PROBABILITY) {
-                    newBranches.push(templateContinue(+90 + exports.config.RANDOM_BRANCH_ANGLE()));
+            let maxPop = straightPop;
+            let bestSegment = continueStraight;
+            for (let i = 0; i < config_1.config.HIGHWAY_POPULATION_SAMPLE_SIZE; i++) {
+                // TODO: https://github.com/phiresky/prosem-proto/blob/gh-pages/src/main.tsx#L524
+                const curSegment = templateContinue(config_1.config.RANDOM_STRAIGHT_ANGLE());
+                const curPop = exports.heatmap.popOnRoad(curSegment);
+                if (curPop > maxPop) {
+                    maxPop = curPop;
+                    bestSegment = curSegment;
                 }
             }
-        } else if (straightPop > exports.config.NORMAL_BRANCH_POPULATION_THRESHOLD) {
+            newBranches.push(bestSegment);
+            if (maxPop > config_1.config.HIGHWAY_BRANCH_POPULATION_THRESHOLD) {
+                if (Math.random() < config_1.config.HIGHWAY_BRANCH_PROBABILITY) {
+                    newBranches.push(templateContinue(-90 + config_1.config.RANDOM_BRANCH_ANGLE()));
+                } else if (Math.random() < config_1.config.HIGHWAY_BRANCH_PROBABILITY) {
+                    newBranches.push(templateContinue(+90 + config_1.config.RANDOM_BRANCH_ANGLE()));
+                }
+            }
+        } else if (straightPop > config_1.config.NORMAL_BRANCH_POPULATION_THRESHOLD) {
             newBranches.push(continueStraight);
         }
-        if (!exports.config.ONLY_HIGHWAYS) if (straightPop > exports.config.NORMAL_BRANCH_POPULATION_THRESHOLD) {
-            if (Math.random() < exports.config.DEFAULT_BRANCH_PROBABILITY) {
-                newBranches.push(templateBranch(-90 + exports.config.RANDOM_BRANCH_ANGLE()));
-            } else if (Math.random() < exports.config.DEFAULT_BRANCH_PROBABILITY) {
-                newBranches.push(templateBranch(+90 + exports.config.RANDOM_BRANCH_ANGLE()));
+        if (!config_1.config.ONLY_HIGHWAYS) if (straightPop > config_1.config.NORMAL_BRANCH_POPULATION_THRESHOLD) {
+            if (Math.random() < config_1.config.DEFAULT_BRANCH_PROBABILITY) {
+                newBranches.push(templateBranch(-90 + config_1.config.RANDOM_BRANCH_ANGLE()));
+            } else if (Math.random() < config_1.config.DEFAULT_BRANCH_PROBABILITY) {
+                newBranches.push(templateBranch(+90 + config_1.config.RANDOM_BRANCH_ANGLE()));
             }
         }
     }
     for (const branch of newBranches) {
+        // setup links between each current branch and each existing branch stemming from the previous segment
         branch.setupBranchLinks = function () {
             previousSegment.links.f.forEach(link => {
                 branch.links.b.push(link);
@@ -308,6 +296,7 @@ class PriorityQueue {
         this.elements.push(...arguments);
     }
     dequeue() {
+        // benchmarked - linear array as fast or faster than actual min-heap
         let minT = Infinity;
         let minT_i = 0;
         this.elements.forEach((segment, i) => {
@@ -324,11 +313,12 @@ class PriorityQueue {
     }
 }
 function makeInitialSegments() {
-    const rootSegment = new Segment({ x: 0, y: 0 }, { x: exports.config.HIGHWAY_SEGMENT_LENGTH, y: 0 }, 0, { highway: !exports.config.START_WITH_NORMAL_STREETS });
-    if (!exports.config.TWO_SEGMENTS_INITIALLY) return [rootSegment];
+    // setup first segments in queue
+    const rootSegment = new Segment({ x: 0, y: 0 }, { x: config_1.config.HIGHWAY_SEGMENT_LENGTH, y: 0 }, 0, { highway: !config_1.config.START_WITH_NORMAL_STREETS });
+    if (!config_1.config.TWO_SEGMENTS_INITIALLY) return [rootSegment];
     const oppositeDirection = rootSegment.clone();
     const newEnd = {
-        x: rootSegment.start.x - exports.config.HIGHWAY_SEGMENT_LENGTH,
+        x: rootSegment.start.x - config_1.config.HIGHWAY_SEGMENT_LENGTH,
         y: oppositeDirection.end.y
     };
     oppositeDirection.end = newEnd;
@@ -355,8 +345,8 @@ function* generate(seed) {
     const priorityQ = new PriorityQueue(s => s.t);
     priorityQ.enqueue(...makeInitialSegments());
     const segments = [];
-    const qTree = new Quadtree_1.Quadtree(exports.config.QUADTREE_PARAMS, exports.config.QUADTREE_MAX_OBJECTS, exports.config.QUADTREE_MAX_LEVELS);
-    while (!priorityQ.empty() && segments.length < exports.config.SEGMENT_COUNT_LIMIT) {
+    const qTree = new Quadtree_1.Quadtree(config_1.config.QUADTREE_PARAMS, config_1.config.QUADTREE_MAX_OBJECTS, config_1.config.QUADTREE_MAX_LEVELS);
+    while (!priorityQ.empty() && segments.length < config_1.config.SEGMENT_COUNT_LIMIT) {
         generationStep(priorityQ, segments, qTree);
         yield { segments: segments, priorityQ: priorityQ.elements, qTree: qTree };
     }

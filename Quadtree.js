@@ -1,21 +1,16 @@
-/*
- * Javascript Quadtree
- * @version 1.1.1
- * @licence MIT
- * @author Timo Hausmann
- * https://github.com/timohausmann/quadtree-js/
- */
 "use strict";
 
 class Quadtree {
-    /*
-     * Quadtree Constructor
-     * @param Object bounds		bounds of the node, object with x, y, width, height
-     * @param Integer max_objects		(optional) max objects a node can hold before splitting into 4 subnodes (default: 10)
-     * @param Integer max_levels		(optional) total max levels inside root Quadtree (default: 4)
-     * @param Integer level		(optional) deepth level, required for subnodes
+    /**
+     * @param max_objects max objects a node can hold before splitting into 4 subnodes (default: 10)
+     * @param max_levels total max levels inside root Quadtree (default: 4)
+     * @param level	depth level (0 for root node)
      */
-    constructor(bounds, max_objects, max_levels, level) {
+    constructor(bounds) {
+        let max_objects = arguments.length <= 1 || arguments[1] === undefined ? 10 : arguments[1];
+        let max_levels = arguments.length <= 2 || arguments[2] === undefined ? 4 : arguments[2];
+        let level = arguments.length <= 3 || arguments[3] === undefined ? 0 : arguments[3];
+
         this.bounds = bounds;
         this.max_objects = max_objects;
         this.max_levels = max_levels;
@@ -23,12 +18,8 @@ class Quadtree {
         this.objects = [];
         this.objectsO = [];
         this.isLeaf = true;
-        if (this.level === undefined) this.level = 0;
     }
-
-    /**
-     * Split the node into 4 subnodes
-     */
+    /** split this node, moving all objects to their corresponding subnode */
     split() {
         this.isLeaf = false;
         const level = this.level + 1,
@@ -58,10 +49,6 @@ class Quadtree {
         this.objectsO = [];
     }
 
-    /**
-     * Determine which nodes the object belongs to
-     * @param r the AABB to check
-     */
     getRelevantNodes(r) {
         const midX = this.bounds.x + this.bounds.width / 2;
         const midY = this.bounds.y + this.bounds.height / 2;
@@ -80,10 +67,8 @@ class Quadtree {
     }
 
     /**
-     * Insert the object into the node. If the node
-     * exceeds the capacity, it will split and add all
-     * objects to their corresponding subnodes.
-     * @param Object pRect		bounds of the object to be added, with x, y, width, height
+     * Insert object into the tree.
+     * If the tree exceeds the capacity, it will be split.
      */
     insert(pRect, obj) {
         if (!this.isLeaf) {
@@ -96,9 +81,7 @@ class Quadtree {
     }
 
     /**
-     * Return all objects that could collide with the given object
-     * @param Object pRect		bounds of the object to be checked, with x, y, width, height
-     * @Return Array		array with all detected objects
+     * Return all objects that could collide with the given bounds
      */
     retrieve(pRect) {
         if (this.isLeaf) return this.objectsO;
