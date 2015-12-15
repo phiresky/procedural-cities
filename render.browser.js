@@ -1,23 +1,16 @@
 (function e(t,n,r){function s(o,u){if(!n[o]){if(!t[o]){var a=typeof require=="function"&&require;if(!u&&a)return a(o,!0);if(i)return i(o,!0);var f=new Error("Cannot find module '"+o+"'");throw f.code="MODULE_NOT_FOUND",f}var l=n[o]={exports:{}};t[o][0].call(l.exports,function(e){var n=t[o][1][e];return s(n?n:e)},l,l.exports,e,t,n,r)}return n[o].exports}var i=typeof require=="function"&&require;for(var o=0;o<r.length;o++)s(r[o]);return s})({1:[function(require,module,exports){
 "use strict";
 
-var _createClass = (function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; })();
-
-function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
-
-let Quadtree = (function () {
+class Quadtree {
     /**
      * @param max_objects max objects a node can hold before splitting into 4 subnodes (default: 10)
      * @param max_levels total max levels inside root Quadtree (default: 4)
      * @param level	depth level (0 for root node)
      */
-
-    function Quadtree(bounds) {
+    constructor(bounds) {
         let max_objects = arguments.length <= 1 || arguments[1] === undefined ? 10 : arguments[1];
         let max_levels = arguments.length <= 2 || arguments[2] === undefined ? 4 : arguments[2];
         let level = arguments.length <= 3 || arguments[3] === undefined ? 0 : arguments[3];
-
-        _classCallCheck(this, Quadtree);
 
         this.bounds = bounds;
         this.max_objects = max_objects;
@@ -28,88 +21,76 @@ let Quadtree = (function () {
         this.isLeaf = true;
     }
     /** split this node, moving all objects to their corresponding subnode */
-
-    _createClass(Quadtree, [{
-        key: "split",
-        value: function split() {
-            this.isLeaf = false;
-            const level = this.level + 1,
-                  width = this.bounds.width / 2,
-                  height = this.bounds.height / 2,
-                  x = this.bounds.x,
-                  y = this.bounds.y;
-            this.topRight = new Quadtree({
-                x: x + width, y: y, width: width, height: height
-            }, this.max_objects, this.max_levels, level);
-            this.topLeft = new Quadtree({
-                x: x, y: y, width: width, height: height
-            }, this.max_objects, this.max_levels, level);
-            this.bottomLeft = new Quadtree({
-                x: x, y: y + height, width: width, height: height
-            }, this.max_objects, this.max_levels, level);
-            this.bottomRight = new Quadtree({
-                x: x + width, y: y + height, width: width, height: height
-            }, this.max_objects, this.max_levels, level);
-            //add all objects to there corresponding subnodes
-            for (let i = 0; i < this.objects.length; i++) {
-                const rect = this.objects[i];
-                const obj = this.objectsO[i];
-                for (const node of this.getRelevantNodes(rect)) node.insert(rect, obj);
-            }
-            this.objects = [];
-            this.objectsO = [];
+    split() {
+        this.isLeaf = false;
+        const level = this.level + 1,
+              width = this.bounds.width / 2,
+              height = this.bounds.height / 2,
+              x = this.bounds.x,
+              y = this.bounds.y;
+        this.topRight = new Quadtree({
+            x: x + width, y: y, width: width, height: height
+        }, this.max_objects, this.max_levels, level);
+        this.topLeft = new Quadtree({
+            x: x, y: y, width: width, height: height
+        }, this.max_objects, this.max_levels, level);
+        this.bottomLeft = new Quadtree({
+            x: x, y: y + height, width: width, height: height
+        }, this.max_objects, this.max_levels, level);
+        this.bottomRight = new Quadtree({
+            x: x + width, y: y + height, width: width, height: height
+        }, this.max_objects, this.max_levels, level);
+        //add all objects to there corresponding subnodes
+        for (let i = 0; i < this.objects.length; i++) {
+            const rect = this.objects[i];
+            const obj = this.objectsO[i];
+            for (const node of this.getRelevantNodes(rect)) node.insert(rect, obj);
         }
-    }, {
-        key: "getRelevantNodes",
-        value: function getRelevantNodes(r) {
-            const midX = this.bounds.x + this.bounds.width / 2;
-            const midY = this.bounds.y + this.bounds.height / 2;
-            const qs = [];
-            const isTop = r.y <= midY;
-            const isBottom = r.y + r.height > midY;
-            if (r.x <= midX) {
-                if (isTop) qs.push(this.topLeft);
-                if (isBottom) qs.push(this.bottomLeft);
-            }
-            if (r.x + r.width > midX) {
-                if (isTop) qs.push(this.topRight);
-                if (isBottom) qs.push(this.bottomRight);
-            }
-            return qs;
+        this.objects = [];
+        this.objectsO = [];
+    }
+
+    getRelevantNodes(r) {
+        const midX = this.bounds.x + this.bounds.width / 2;
+        const midY = this.bounds.y + this.bounds.height / 2;
+        const qs = [];
+        const isTop = r.y <= midY;
+        const isBottom = r.y + r.height > midY;
+        if (r.x <= midX) {
+            if (isTop) qs.push(this.topLeft);
+            if (isBottom) qs.push(this.bottomLeft);
         }
-    }, {
-        key: "insert",
-
-        /**
-         * Insert object into the tree.
-         * If the tree exceeds the capacity, it will be split.
-         */
-        value: function insert(pRect, obj) {
-            if (!this.isLeaf) {
-                for (const node of this.getRelevantNodes(pRect)) node.insert(pRect, obj);
-                return;
-            }
-            this.objects.push(pRect);
-            this.objectsO.push(obj);
-            if (this.objects.length > this.max_objects && this.level < this.max_levels) this.split();
+        if (r.x + r.width > midX) {
+            if (isTop) qs.push(this.topRight);
+            if (isBottom) qs.push(this.bottomRight);
         }
-    }, {
-        key: "retrieve",
+        return qs;
+    }
 
-        /**
-         * Return all objects that could collide with the given bounds
-         */
-        value: function retrieve(pRect) {
-            if (this.isLeaf) return this.objectsO;
-            let relevant = [];
-            for (const node of this.getRelevantNodes(pRect)) relevant = relevant.concat(node.retrieve(pRect));
-            return relevant;
+    /**
+     * Insert object into the tree.
+     * If the tree exceeds the capacity, it will be split.
+     */
+    insert(pRect, obj) {
+        if (!this.isLeaf) {
+            for (const node of this.getRelevantNodes(pRect)) node.insert(pRect, obj);
+            return;
         }
-    }]);
+        this.objects.push(pRect);
+        this.objectsO.push(obj);
+        if (this.objects.length > this.max_objects && this.level < this.max_levels) this.split();
+    }
 
-    return Quadtree;
-})();
-
+    /**
+     * Return all objects that could collide with the given bounds
+     */
+    retrieve(pRect) {
+        if (this.isLeaf) return this.objectsO;
+        let relevant = [];
+        for (const node of this.getRelevantNodes(pRect)) relevant = relevant.concat(node.retrieve(pRect));
+        return relevant;
+    }
+}
 exports.Quadtree = Quadtree;
 
 
@@ -162,24 +143,16 @@ exports.config = {
 "use strict"
 // code adapted from http://www.tmwhere.com/city_generation.html
 ;
-
-var _createClass = (function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; })();
-
-function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
-
 var perlin_1 = require('perlin');
 var seedrandom_1 = require('seedrandom');
 seedrandom_1.default;
 var Quadtree_1 = require("./Quadtree");
 var math_1 = require('./math');
 var config_1 = require("./config");
-
-let Segment = (function () {
-    function Segment(start, end) {
+class Segment {
+    constructor(start, end) {
         let t = arguments.length <= 2 || arguments[2] === undefined ? 0 : arguments[2];
         let q = arguments[3];
-
-        _classCallCheck(this, Segment);
 
         this.start = start;
         this.end = end;
@@ -195,125 +168,106 @@ let Segment = (function () {
         this.t = t;
     }
     // clockwise direction
+    dir() {
+        const vector = math_1.math.subtractPoints(this.end, this.start);
+        return -1 * math_1.math.sign(math_1.math.crossProduct({ x: 0, y: 1 }, vector)) * math_1.math.angleBetween({ x: 0, y: 1 }, vector);
+    }
 
-    _createClass(Segment, [{
-        key: 'dir',
-        value: function dir() {
-            const vector = math_1.math.subtractPoints(this.end, this.start);
-            return -1 * math_1.math.sign(math_1.math.crossProduct({ x: 0, y: 1 }, vector)) * math_1.math.angleBetween({ x: 0, y: 1 }, vector);
+    length() {
+        return math_1.math.length(this.start, this.end);
+    }
+
+    limits() {
+        return {
+            x: Math.min(this.start.x, this.end.x),
+            y: Math.min(this.start.y, this.end.y),
+            width: Math.abs(this.start.x - this.end.x),
+            height: Math.abs(this.start.y - this.end.y)
+        };
+    }
+    debugLinks() {
+        this.q.color = 0x00FF00;
+        this.links.b.forEach(backwards => backwards.q.color = 0xFF0000);
+        this.links.f.forEach(forwards => forwards.q.color = 0x0000FF);
+    }
+
+    startIsBackwards() {
+        if (this.links.b.length > 0) {
+            return math_1.math.equalV(this.links.b[0].start, this.start) || math_1.math.equalV(this.links.b[0].end, this.start);
+        } else {
+            return math_1.math.equalV(this.links.f[0].start, this.end) || math_1.math.equalV(this.links.f[0].end, this.end);
         }
-    }, {
-        key: 'length',
-        value: function length() {
-            return math_1.math.length(this.start, this.end);
+    }
+
+    linksForEndContaining(segment) {
+        if (this.links.b.indexOf(segment) !== -1) {
+            return this.links.b;
+        } else if (this.links.f.indexOf(segment) !== -1) {
+            return this.links.f;
+        } else {
+            return void 0;
         }
-    }, {
-        key: 'limits',
-        value: function limits() {
-            return {
-                x: Math.min(this.start.x, this.end.x),
-                y: Math.min(this.start.y, this.end.y),
-                width: Math.abs(this.start.x - this.end.x),
-                height: Math.abs(this.start.y - this.end.y)
-            };
+    }
+
+    split(point, segment, segmentList, qTree) {
+        const splitPart = this.clone();
+        const startIsBackwards = this.startIsBackwards();
+        segmentList.push(splitPart);
+        qTree.insert(splitPart.limits(), splitPart);
+        splitPart.end = point;
+        this.start = point;
+        // links are not copied using the preceding factory method.
+        // copy link array for the split part, keeping references the same
+        splitPart.links.b = this.links.b.slice(0);
+        splitPart.links.f = this.links.f.slice(0);
+        let firstSplit, fixLinks, secondSplit;
+        // determine which links correspond to which end of the split segment
+        if (startIsBackwards) {
+            firstSplit = splitPart;
+            secondSplit = this;
+            fixLinks = splitPart.links.b;
+        } else {
+            firstSplit = this;
+            secondSplit = splitPart;
+            fixLinks = splitPart.links.f;
         }
-    }, {
-        key: 'debugLinks',
-        value: function debugLinks() {
-            this.q.color = 0x00FF00;
-            this.links.b.forEach(backwards => backwards.q.color = 0xFF0000);
-            this.links.f.forEach(forwards => forwards.q.color = 0x0000FF);
-        }
-    }, {
-        key: 'startIsBackwards',
-        value: function startIsBackwards() {
-            if (this.links.b.length > 0) {
-                return math_1.math.equalV(this.links.b[0].start, this.start) || math_1.math.equalV(this.links.b[0].end, this.start);
+        fixLinks.forEach(link => {
+            var index = link.links.b.indexOf(this);
+            if (index !== -1) {
+                link.links.b[index] = splitPart;
             } else {
-                return math_1.math.equalV(this.links.f[0].start, this.end) || math_1.math.equalV(this.links.f[0].end, this.end);
+                index = link.links.f.indexOf(this);
+                link.links.f[index] = splitPart;
             }
-        }
-    }, {
-        key: 'linksForEndContaining',
-        value: function linksForEndContaining(segment) {
-            if (this.links.b.indexOf(segment) !== -1) {
-                return this.links.b;
-            } else if (this.links.f.indexOf(segment) !== -1) {
-                return this.links.f;
-            } else {
-                return void 0;
-            }
-        }
-    }, {
-        key: 'split',
-        value: function split(point, segment, segmentList, qTree) {
-            const splitPart = this.clone();
-            const startIsBackwards = this.startIsBackwards();
-            segmentList.push(splitPart);
-            qTree.insert(splitPart.limits(), splitPart);
-            splitPart.end = point;
-            this.start = point;
-            // links are not copied using the preceding factory method.
-            // copy link array for the split part, keeping references the same
-            splitPart.links.b = this.links.b.slice(0);
-            splitPart.links.f = this.links.f.slice(0);
-            let firstSplit, fixLinks, secondSplit;
-            // determine which links correspond to which end of the split segment
-            if (startIsBackwards) {
-                firstSplit = splitPart;
-                secondSplit = this;
-                fixLinks = splitPart.links.b;
-            } else {
-                firstSplit = this;
-                secondSplit = splitPart;
-                fixLinks = splitPart.links.f;
-            }
-            fixLinks.forEach(link => {
-                var index = link.links.b.indexOf(this);
-                if (index !== -1) {
-                    link.links.b[index] = splitPart;
-                } else {
-                    index = link.links.f.indexOf(this);
-                    link.links.f[index] = splitPart;
-                }
-            });
-            firstSplit.links.f = [segment, secondSplit];
-            secondSplit.links.b = [segment, firstSplit];
-            segment.links.f.push(firstSplit);
-            segment.links.f.push(secondSplit);
-        }
-    }, {
-        key: 'clone',
-        value: function clone() {
-            let t = arguments.length <= 0 || arguments[0] === undefined ? this.t : arguments[0];
-            let q = arguments.length <= 1 || arguments[1] === undefined ? this.q : arguments[1];
+        });
+        firstSplit.links.f = [segment, secondSplit];
+        secondSplit.links.b = [segment, firstSplit];
+        segment.links.f.push(firstSplit);
+        segment.links.f.push(secondSplit);
+    }
 
-            return new Segment(this.start, this.end, t, q);
-        }
-    }, {
-        key: 'intersectWith',
-        value: function intersectWith(s) {
-            return math_1.math.doLineSegmentsIntersect(this.start, this.end, s.start, s.end, true);
-        }
-    }], [{
-        key: 'usingDirection',
-        value: function usingDirection(start) {
-            let dir = arguments.length <= 1 || arguments[1] === undefined ? 90 : arguments[1];
-            let length = arguments.length <= 2 || arguments[2] === undefined ? config_1.config.DEFAULT_SEGMENT_LENGTH : arguments[2];
-            let t = arguments[3];
-            let q = arguments[4];
+    clone() {
+        let t = arguments.length <= 0 || arguments[0] === undefined ? this.t : arguments[0];
+        let q = arguments.length <= 1 || arguments[1] === undefined ? this.q : arguments[1];
 
-            var end = {
-                x: start.x + length * Math.sin(dir * Math.PI / 180),
-                y: start.y + length * Math.cos(dir * Math.PI / 180)
-            };
-            return new Segment(start, end, t, q);
-        }
-    }]);
+        return new Segment(this.start, this.end, t, q);
+    }
+    static usingDirection(start) {
+        let dir = arguments.length <= 1 || arguments[1] === undefined ? 90 : arguments[1];
+        let length = arguments.length <= 2 || arguments[2] === undefined ? config_1.config.DEFAULT_SEGMENT_LENGTH : arguments[2];
+        let t = arguments[3];
+        let q = arguments[4];
 
-    return Segment;
-})();
-
+        var end = {
+            x: start.x + length * Math.sin(dir * Math.PI / 180),
+            y: start.y + length * Math.cos(dir * Math.PI / 180)
+        };
+        return new Segment(start, end, t, q);
+    }
+    intersectWith(s) {
+        return math_1.math.doLineSegmentsIntersect(this.start, this.end, s.start, s.end, true);
+    }
+}
 exports.Segment = Segment;
 ;
 exports.heatmap = {
@@ -327,15 +281,13 @@ exports.heatmap = {
         return Math.pow((value1 * value2 + value3) / 2, 2);
     }
 };
-
-let DebugData = function DebugData() {
-    _classCallCheck(this, DebugData);
-
-    this.snaps = [];
-    this.intersectionsRadius = [];
-    this.intersections = [];
-};
-
+class DebugData {
+    constructor() {
+        this.snaps = [];
+        this.intersectionsRadius = [];
+        this.intersections = [];
+    }
+}
 let debugData = new DebugData();
 const localConstraints = function (segment, segments, qTree) {
     if (config_1.config.IGNORE_CONFLICTS) return true;
@@ -477,45 +429,31 @@ function globalGoalsGenerate(previousSegment) {
     }
     return newBranches;
 }
-
-let PriorityQueue = (function () {
-    function PriorityQueue(getPriority) {
-        _classCallCheck(this, PriorityQueue);
-
+class PriorityQueue {
+    constructor(getPriority) {
         this.getPriority = getPriority;
         this.elements = [];
     }
-
-    _createClass(PriorityQueue, [{
-        key: 'enqueue',
-        value: function enqueue() {
-            this.elements.push(...arguments);
-        }
-    }, {
-        key: 'dequeue',
-        value: function dequeue() {
-            // benchmarked - linear array as fast or faster than actual min-heap
-            let minT = Infinity;
-            let minT_i = 0;
-            this.elements.forEach((segment, i) => {
-                const t = this.getPriority(segment);
-                if (t < minT) {
-                    minT = t;
-                    minT_i = i;
-                }
-            });
-            return this.elements.splice(minT_i, 1)[0];
-        }
-    }, {
-        key: 'empty',
-        value: function empty() {
-            return this.elements.length === 0;
-        }
-    }]);
-
-    return PriorityQueue;
-})();
-
+    enqueue() {
+        this.elements.push(...arguments);
+    }
+    dequeue() {
+        // benchmarked - linear array as fast or faster than actual min-heap
+        let minT = Infinity;
+        let minT_i = 0;
+        this.elements.forEach((segment, i) => {
+            const t = this.getPriority(segment);
+            if (t < minT) {
+                minT = t;
+                minT_i = i;
+            }
+        });
+        return this.elements.splice(minT_i, 1)[0];
+    }
+    empty() {
+        return this.elements.length === 0;
+    }
+}
 function makeInitialSegments() {
     // setup first segments in queue
     const rootSegment = new Segment({ x: 0, y: 0 }, { x: config_1.config.HIGHWAY_SEGMENT_LENGTH, y: 0 }, 0, { highway: !config_1.config.START_WITH_NORMAL_STREETS });
