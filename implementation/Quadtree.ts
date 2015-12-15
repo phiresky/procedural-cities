@@ -1,30 +1,3 @@
-/*
- * Javascript Quadtree
- * @version 1.1.1
- * @licence MIT
- * @author Timo Hausmann
- * https://github.com/timohausmann/quadtree-js/
- */
-
-/*
- Copyright © 2012 Timo Hausmann
-Permission is hereby granted, free of charge, to any person obtaining
-a copy of this software and associated documentation files (the
-"Software"), to deal in the Software without restriction, including
-without limitation the rights to use, copy, modify, merge, publish,
-distribute, sublicense, and/or sell copies of the Software, and to
-permit persons to whom the Software is furnished to do so, subject to
-the following conditions:
-The above copyright notice and this permission notice shall be
-included in all copies or substantial portions of the Software.
-THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
-EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
-MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
-NONINFRINGEMENthis. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE
-LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION
-OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION
-WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
-*/
 export interface Bounds {
     x: number, y: number, width: number, height: number
 }
@@ -36,21 +9,14 @@ export class Quadtree<T> {
     topRight: Quadtree<T>;
     bottomLeft: Quadtree<T>;
     bottomRight: Quadtree<T>;
-    /*
-     * Quadtree Constructor
-     * @param Object bounds		bounds of the node, object with x, y, width, height
-     * @param Integer max_objects		(optional) max objects a node can hold before splitting into 4 subnodes (default: 10)
-     * @param Integer max_levels		(optional) total max levels inside root Quadtree (default: 4)
-     * @param Integer level		(optional) deepth level, required for subnodes
+    /**
+     * @param max_objects max objects a node can hold before splitting into 4 subnodes (default: 10)
+     * @param max_levels total max levels inside root Quadtree (default: 4)
+     * @param level	depth level (0 for root node)
      */
-    constructor(public bounds: Bounds, public max_objects: number, public max_levels: number, public level?: number) {
-        if (this.level === undefined) this.level = 0;
-    };
+    constructor(public bounds: Bounds, public max_objects = 10, public max_levels = 4, public level = 0) {}
 
-
-	/**
-	 * Split the node into 4 subnodes
-	 */
+    /** split this node, moving all objects to their corresponding subnode */
     split() {
         this.isLeaf = false;
         const level = this.level + 1,
@@ -85,11 +51,6 @@ export class Quadtree<T> {
         this.objectsO = [];
     };
 
-
-	/**
-	 * Determine which nodes the object belongs to
-	 * @param r the AABB to check
-	 */
     getRelevantNodes(r: Bounds) {
         const midX = this.bounds.x + (this.bounds.width / 2);
         const midY = this.bounds.y + (this.bounds.height / 2);
@@ -110,10 +71,8 @@ export class Quadtree<T> {
 
 
 	/**
-	 * Insert the object into the node. If the node
-	 * exceeds the capacity, it will split and add all
-	 * objects to their corresponding subnodes.
-	 * @param Object pRect		bounds of the object to be added, with x, y, width, height
+	 * Insert object into the tree.
+	 * If the tree exceeds the capacity, it will be split.
 	 */
     insert(pRect: Bounds, obj: T) {
         if (!this.isLeaf) {
@@ -131,9 +90,7 @@ export class Quadtree<T> {
 
 
 	/**
-	 * Return all objects that could collide with the given object
-	 * @param Object pRect		bounds of the object to be checked, with x, y, width, height
-	 * @Return Array		array with all detected objects
+	 * Return all objects that could collide with the given bounds
 	 */
     retrieve(pRect: Bounds) {
         if(this.isLeaf) return this.objectsO;

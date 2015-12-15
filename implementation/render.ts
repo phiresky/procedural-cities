@@ -1,5 +1,6 @@
 import {math} from "./math";
-import {config, Segment, generate, GeneratorResult, heatmap} from "./mapgen";
+import {Segment, generate, GeneratorResult, heatmap} from "./mapgen";
+import {config} from "./config";
 import * as PIXI from 'pixi.js';
 
 const qd: { [key: string]: string } = {};
