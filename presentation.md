@@ -5,6 +5,7 @@ height: 960
 margin: 0.05
 theme: white
 slideNumber: true
+nocite: @subvimpl
 bibliography: prosem.bib
 header-includes: |
     <style>
@@ -35,15 +36,14 @@ header-includes: |
 * Military training
 * Land use planning
 
-# Einführung und Grundlagen
-
 ## Approach
 
-1. Festlegen/Verarbeiten der Eingabeparameter
+1. Choose/Process input parameters
 2. Generate street network
-3. generate building structure
+3. Evaluate building blocks
+4. Generate building structure and architecture
 
-dazwischen optional Interaktion
+Optional interaction between these steps
 
 # Modeling of the street network
 
@@ -58,11 +58,11 @@ Need some type of contextual information
 
 **Examples**
 
-- Elevation and water map
-- Population density map
-- Vegetation map
-- City type and road patterns
-- City zones (residential, industrial, etc.)
+- elevation and water map
+- population density map
+- vegetation map
+- city type and road patterns
+- city zones (residential, industrial, etc.)
 
 ## Initialization
 
@@ -181,6 +181,45 @@ Shorten or rotate segment to fit
 . . .
 
 ![<small>@cities2001</small>](img/20151213214559.png)
+
+## Global goals (1)
+
+Population map (generated with perlin noise):
+
+<iframe style="height:500px;" data-src="demo.html?
+    segment_count_limit = 0;
+    draw_heatmap = 1;
+    draw_heatmap_as_threshold = 0;
+    seed = 0.018001661728973477;
+"></iframe>
+
+Streets only branch if population is larger than some threshold:
+
+<iframe style="height:500px;" data-src="demo.html?
+    segment_count_limit = 0;
+    draw_heatmap = 1;
+    draw_heatmap_as_threshold = 1;
+    seed = 0.018001661728973477;
+"></iframe>
+
+## Global goals (2)
+
+Highways try to connect population centers
+
+possible new directions are sampled, the one with largest population is chosen:
+
+![<small>@cities2001</small>](img/20151215171754.png)
+
+demo?
+<iframe style="height:500px;" data-src="demo.html?
+    segment_count_limit = 0;
+    draw_heatmap = 1;
+    draw_heatmap_as_threshold = 0;
+    seed = 0.018001661728973477;
+    iterations_per_second = 20;
+    only_highways = 1;
+"></iframe>
+
 
 ## Implementation as parametric L-System
 

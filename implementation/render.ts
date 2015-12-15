@@ -14,7 +14,7 @@ for (let c of Object.keys(qd)) {
     const targ = list.reduce((a, b, i, arr) => a[b], config as any);
     const origValue = targ[attr];
     console.log(`config: ${attr} = ${val}`);
-    if (typeof origValue === "undefined" && attr.substr(0,2) !== "//")
+    if (typeof origValue === "undefined" && attr.substr(0, 2) !== "//")
         console.warn("unknown config: " + attr);
     if (typeof origValue === "number" || typeof origValue === "boolean")
         val = +val;
@@ -44,7 +44,7 @@ export const dobounds = function(segs: Segment[], interpolate = 1) {
 function restart() {
     console.log("generating with seed " + seed);
     generator = generate(seed);
-    for(let i = 0; i < config.SKIP_ITERATIONS; i++) generator.next();
+    for (let i = 0; i < config.SKIP_ITERATIONS; i++) generator.next();
     done = false;
     iteration = 0;
     iteration_wanted = 0;
@@ -203,9 +203,13 @@ function animate(timestamp: number) {
         for (let x = 0; x < W; x += dim) for (let y = 0; y < H; y += dim) {
             const p = stage.toLocal(new PIXI.Point(x, y));
             const pop = heatmap.populationAt(p.x + dim / 2, p.y + dim / 2);
-            //const v = 255 - (pop * 127) | 0;
-            const v = pop > config.NORMAL_BRANCH_POPULATION_THRESHOLD ? 255 :
-                pop > config.HIGHWAY_BRANCH_POPULATION_THRESHOLD ? 200 : 150;
+            let v: number;
+            if (config.HEATMAP_AS_THRESHOLD) {
+                v = pop > config.NORMAL_BRANCH_POPULATION_THRESHOLD ? 255 :
+                    pop > config.HIGHWAY_BRANCH_POPULATION_THRESHOLD ? 200 : 150;
+            } else {
+                v = 255 - (pop * 200) | 0;
+            }
             graphics.beginFill(v << 16 | v << 8 | v);
             graphics.drawRect(p.x, p.y,
                 dim / stage.scale.x,
@@ -218,13 +222,13 @@ function animate(timestamp: number) {
         if (config.PRIORITY_FUTURE_COLORS) {
             const minT = stuff.priorityQ.reduce((min, seg) => Math.min(min, seg.t), Infinity);
             const future_colors = [0xFF0000, 0x44ff44, 0x6666ff];
-            for (const seg of stuff.priorityQ) renderSegment(seg, future_colors[Math.min(seg.t-minT, future_colors.length-1)]);
+            for (const seg of stuff.priorityQ) renderSegment(seg, future_colors[Math.min(seg.t - minT, future_colors.length - 1)]);
         } else {
             for (const seg of stuff.priorityQ) renderSegment(seg, 0xFF0000);
         }
-        if(config.DELAY_BETWEEN_TIME_STEPS) {
+        if (config.DELAY_BETWEEN_TIME_STEPS) {
             const first_t = stuff.priorityQ[0].t;
-            if(first_t !== last_t_found && stuff.priorityQ.every(seg => seg.t === first_t)) {
+            if (first_t !== last_t_found && stuff.priorityQ.every(seg => seg.t === first_t)) {
                 iteration_wanted -= config.DELAY_BETWEEN_TIME_STEPS * config.ITERATIONS_PER_SECOND;
                 last_t_found = first_t;
             }
