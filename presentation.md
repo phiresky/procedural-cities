@@ -5,7 +5,8 @@ height: 960
 margin: 0.05
 theme: white
 slideNumber: true
-nocite: @subvimpl
+nocite: |
+    @subvimpl
 bibliography: prosem.bib
 header-includes: |
     <style>
@@ -72,7 +73,7 @@ Begin with two opposite street segments:
     segment_count_limit = 2;
     arrowhead_size = 80;
     draw_circle_on_segment_base = 30;
-    iterations_per_frame = Infinity;
+    iterations_per_second = Infinity;
 "></iframe>
 
 ## Street growth
@@ -184,22 +185,32 @@ Shorten or rotate segment to fit
 
 ## Global goals (1)
 
-Population map (generated with perlin noise):
+Population map (generated with layered simplex noise):
 
-<iframe style="height:500px;" data-src="demo.html?
-    segment_count_limit = 0;
+<iframe data-src="demo.html?
+    segment_count_limit = 1;
+    iterations_per_second = Infinity;
     draw_heatmap = 1;
-    draw_heatmap_as_threshold = 0;
-    seed = 0.018001661728973477;
+    seed = 0.8174194933380932;
+    smooth_zoom_start = Infinity;
+    heatmap_pixel_dim = 10;
+    heatmap_as_threshold = 0;
+    target_zoom = 0.01;
 "></iframe>
+
+---
 
 Streets only branch if population is larger than some threshold:
 
-<iframe style="height:500px;" data-src="demo.html?
-    segment_count_limit = 0;
+<iframe data-src="demo.html?
+    segment_count_limit = 10000;
+    iteration_speedup = 1;
     draw_heatmap = 1;
-    draw_heatmap_as_threshold = 1;
-    seed = 0.018001661728973477;
+    seed = 0.8174194933380932;
+    heatmap_pixel_dim = 10;
+    heatmap_as_threshold = 1;
+    target_zoom = 1.0;
+    restart_after_seconds = 6;
 "></iframe>
 
 ## Global goals (2)
@@ -208,17 +219,17 @@ Highways try to connect population centers
 
 possible new directions are sampled, the one with largest population is chosen:
 
-![<small>@cities2001</small>](img/20151215171754.png)
-
-demo?
-<iframe style="height:500px;" data-src="demo.html?
-    segment_count_limit = 0;
+<iframe style="height:400px;" data-src="demo.html?
+    segment_count_limit = 600;
     draw_heatmap = 1;
+    heatmap_pixel_dim = 10;
     draw_heatmap_as_threshold = 0;
-    seed = 0.018001661728973477;
-    iterations_per_second = 20;
+    iterations_per_second = 200;
     only_highways = 1;
+    seed = 0.8163482854142785;
 "></iframe>
+
+![<small>@cities2001</small>](img/20151215171754.png)
 
 
 ## Implementation as parametric L-System

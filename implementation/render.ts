@@ -48,6 +48,7 @@ function restart() {
     done = false;
     iteration = 0;
     iteration_wanted = 0;
+    has_interacted = false;
 }
 export const renderer = PIXI.autoDetectRenderer(W, H, { backgroundColor: config.BACKGROUND_COLOR, antialias: true, transparent: config.TRANSPARENT });
 document.body.appendChild(renderer.view);
@@ -199,7 +200,7 @@ function animate(timestamp: number) {
         dobounds([...stuff.segments, ...stuff.priorityQ], iteration <= config.SMOOTH_ZOOM_START ? 1 : 0.05);
     graphics.clear();
     if (config.DRAW_HEATMAP) {
-        const dim = config.HEAT_MAP_PIXEL_DIM;
+        const dim = config.HEATMAP_PIXEL_DIM;
         for (let x = 0; x < W; x += dim) for (let y = 0; y < H; y += dim) {
             const p = stage.toLocal(new PIXI.Point(x, y));
             const pop = heatmap.populationAt(p.x + dim / 2, p.y + dim / 2);
@@ -208,7 +209,7 @@ function animate(timestamp: number) {
                 v = pop > config.NORMAL_BRANCH_POPULATION_THRESHOLD ? 255 :
                     pop > config.HIGHWAY_BRANCH_POPULATION_THRESHOLD ? 200 : 150;
             } else {
-                v = 255 - (pop * 200) | 0;
+                v = 255 - (pop * 255) | 0;
             }
             graphics.beginFill(v << 16 | v << 8 | v);
             graphics.drawRect(p.x, p.y,
