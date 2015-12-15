@@ -364,10 +364,11 @@ function generate() {
 ##
 
 - CityEngine (large commercial application originating from @cities2001)
--
+- ...
+- this code (<https://github.com/phiresky/procedural-cities>)
 
-#
+## References
 
-## Quellen
+Sources including links are on the announcement website.
 
-Quellen inkl. Links sind auf der Ankündigungsseite
+<small>
