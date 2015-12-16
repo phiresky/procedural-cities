@@ -27,7 +27,7 @@ header-includes: |
 
 ---
 
-**Goal**: *Automatic generation of a realistic-looking city including road structure and buildings*
+**Goal**: *Automatic generation of a realistic-looking city<br> including road structure and buildings*
 
 . . .
 
@@ -74,6 +74,7 @@ Begin with two opposite street segments:
     arrowhead_size = 80;
     draw_circle_on_segment_base = 30;
     iterations_per_second = Infinity;
+    smooth_zoom_start = 1;
 "></iframe>
 
 ## Street growth
@@ -86,6 +87,7 @@ Begin with two opposite street segments:
 <iframe style="height:600px" data-src="demo.html#
     segment_count_limit = 20;
     arrowhead_size = 80;
+    smooth_zoom_start = 1;
     draw_circle_on_segment_base = 30;
     iterations_per_second = 1;
     target_zoom = 0.8;
