@@ -67,20 +67,24 @@ Need some type of contextual information
 
 ## Initialization
 
-Begin with two opposite street segments:
+* begin with two opposite street segments
+* greedily continue mostly straight from existing segments
 
 <iframe data-src="demo.html#
-    segment_count_limit = 2;
+    segment_count_limit = 10;
     arrowhead_size = 80;
     draw_circle_on_segment_base = 30;
-    iterations_per_second = Infinity;
+    iterations_per_second = 1;
     smooth_zoom_start = 1;
+    highway_branch_probability = 0;
+    only_highways = 1;
+    restart_after_seconds = 2;
+    HIGHWAY_POPULATION_SAMPLE_SIZE = 0;
+    seed = 0.4010764153208;
 "></iframe>
 
 ## Street growth
 
-- create new street segments greedily
-- continue straight from existing end segments
 - branch with some probability at ≈ 90 degrees
 - label fully connected street segments as done
 
@@ -92,6 +96,7 @@ Begin with two opposite street segments:
     iterations_per_second = 1;
     target_zoom = 0.8;
     two_segments_initially = 0;
+    HIGHWAY_POPULATION_SAMPLE_SIZE = 0;
     only_highways = 1;
     seed = 0.03153736749663949;
     restart_after_seconds = 3;
@@ -224,6 +229,7 @@ Possible new directions are sampled, the one with largest population is chosen
     draw_heatmap = 1;
     heatmap_pixel_dim = 10;
     draw_heatmap_as_threshold = 0;
+    HIGHWAY_POPULATION_SAMPLE_SIZE = 1;
     iterations_per_second = 200;
     only_highways = 1;
     restart_after_seconds = 10;
