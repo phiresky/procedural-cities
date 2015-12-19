@@ -382,22 +382,22 @@ function generate() {
 
 ## Tensor fields
 
-![](img/20151215231757.png)
+![<small>Chen, Guoning, Gregory Esch, Peter Wonka, Pascal Müller, and Eugene Zhang. 2008. “Interactive Procedural Street Modeling.” In <em>ACM SIGGRAPH 2008 Papers</em>, 103:1–103:10. SIGGRAPH ’08. New York, NY, USA: ACM. doi:<a href="http://doi.org/10.1145/1399504.1360702" class="uri">http://doi.org/10.1145/1399504.1360702</a>.</small>](img/20151215231757.png)
 
 ## Time simulation
 
-![](img/20151124201337.png)
+![<small>Weber, Basil, Pascal Müller, Peter Wonka, and Markus Gross. 2009. “Interactive Geometric Simulation of 4D Cities.” <em>Computer Graphics Forum</em> 28 (2): 481–92. doi:<a href="http://doi.org/10.1111/j.1467-8659.2009.01387.x" class="uri">http://doi.org/10.1111/j.1467-8659.2009.01387.x</a>.</small>](img/20151124201337.png)
 
-# 
+#
 
 ## Example projects
 
 - CityEngine (large commercial application originating from @cities2001)
-- ...
-- this code (<https://github.com/phiresky/procedural-cities>)
 
 ## References
 
-Sources including links are on the announcement website.
+Slides including source code:
+
+<http://cg.studium.sexy>
 
 <small>
