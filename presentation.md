@@ -10,13 +10,11 @@ nocite: |
 bibliography: prosem.bib
 header-includes: |
     <style>
-    img {max-height:400px ! important;}
+    img { max-height:400px !important; }
     .reveal h1 { font-size: 1.5em; }
     iframe {
-        width: 1024px;
-        height: 768px;
+        width: 1024px; height: 768px;
     }
-    /*p { text-align: left; }*/
     </style>
 ---
 
@@ -171,7 +169,7 @@ Normal streets branching from highways have an additional delay (*blue*)
     HIGHWAY_POPULATION_SAMPLE_SIZE = 0;
     normal_branch_time_delay_from_highway = 8;
     seed = 0.384021194207972;
-    // or = 0.14609342411312398;
+    // seed = 0.14609342411312398;
     restart_after_seconds = 3;
     priority_future_colors = 1;
 "></iframe>
@@ -388,6 +386,6 @@ function generate() {
 
 Slides including source code:
 
-<http://cg.studium.sexy>
+<h2 style="text-transform:none"><http://cg.studium.sexy></h2>
 
 <small>
