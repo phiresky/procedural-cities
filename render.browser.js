@@ -107,7 +107,8 @@ exports.config = {
     RANDOM_STRAIGHT_ANGLE: function () {
         return math_1.math.randomNearCubic(15);
     },
-    DEFAULT_BRANCH_PROBABILITY: .4, HIGHWAY_BRANCH_PROBABILITY: .02,
+    DEFAULT_BRANCH_PROBABILITY: .4,
+    HIGHWAY_BRANCH_PROBABILITY: .02,
     HIGHWAY_BRANCH_POPULATION_THRESHOLD: .1,
     NORMAL_BRANCH_POPULATION_THRESHOLD: .1,
     NORMAL_BRANCH_TIME_DELAY_FROM_HIGHWAY: 10,
@@ -115,7 +116,9 @@ exports.config = {
     MINIMUM_INTERSECTION_DEVIATION: 30,
     SEGMENT_COUNT_LIMIT: 5000,
     ROAD_SNAP_DISTANCE: 50,
-    HEATMAP_PIXEL_DIM: 25, DRAW_HEATMAP: false, HEATMAP_AS_THRESHOLD: false,
+    HEATMAP_PIXEL_DIM: 25,
+    DRAW_HEATMAP: false,
+    HEATMAP_AS_THRESHOLD: false,
     QUADTREE_PARAMS: { x: -2E4, y: -2E4, width: 4E4, height: 4E4 },
     QUADTREE_MAX_OBJECTS: 10, QUADTREE_MAX_LEVELS: 10,
     DEBUG: false,
@@ -123,8 +126,8 @@ exports.config = {
     ARROWHEAD_SIZE: 0,
     DRAW_CIRCLE_ON_SEGMENT_BASE: 0,
     IGNORE_CONFLICTS: false,
-    ITERATION_SPEEDUP: 0.01,
     ITERATIONS_PER_SECOND: 100,
+    ITERATION_SPEEDUP: 0.01,
     PRIORITY_FUTURE_COLORS: false,
     SMOOTH_ZOOM_START: 20,
     SKIP_ITERATIONS: 0,
@@ -675,7 +678,7 @@ exports.graphics = new PIXI.Graphics();
 exports.stage = new PIXI.Container();
 exports.stage.addChild(exports.graphics);
 exports.stage.interactive = true;
-exports.stage.hitArea = new PIXI.Rectangle(-1e5, -1e5, 2e5, 2e5);
+exports.stage.hitArea = new PIXI.Rectangle(-1e7, -1e7, 2e7, 2e7);
 let has_interacted = false;
 function renderSegment(seg) {
     let color = arguments.length <= 1 || arguments[1] === undefined ? 0x000000 : arguments[1];
@@ -733,9 +736,7 @@ function onClick(event) {
         if (x.lineProj2 >= 0 && x.lineProj2 <= x.length2) return x.distance2;else return Infinity;
     };
     poss.sort((a, b) => dist(a) - dist(b));
-    //for(poss[0].linksaa)
     poss[0].debugLinks();
-    //poss[0].q.color = 0xff0000;
 }
 function onDragStart(event) {
     this.dragstart = { x: event.data.global.x, y: event.data.global.y };
@@ -771,7 +772,7 @@ let done_time = 0;
 let iteration = 0;
 let iteration_wanted = 0;
 let last_timestamp = 0;
-let last_t_found = -1; // only for DELAY_BETWEEN_TIME_STEPS
+let last_t_found = -1;
 restart();
 requestAnimationFrame(animate);
 function animate(timestamp) {

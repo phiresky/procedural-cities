@@ -59,13 +59,11 @@ code > span.in { color: #60a0b0; font-weight: bold; font-style: italic; } /* Inf
   <script src="reveal.js/lib/js/html5shiv.js"></script>
   <![endif]-->
   <style>
-  img {max-height:400px ! important;}
+  img { max-height:400px !important; }
   .reveal h1 { font-size: 1.5em; }
   iframe {
-      width: 1024px;
-      height: 768px;
+      width: 1024px; height: 768px;
   }
-  /*p { text-align: left; }*/
   </style>
 </head>
 <body>
@@ -73,10 +71,9 @@ code > span.in { color: #60a0b0; font-weight: bold; font-style: italic; } /* Inf
     <div class="slides">
 
 
-<section><section id="procedural-modeling-of-cities" class="titleslide slide level1"><h1>Procedural Modeling of Cities <img src="img/20151124201337.png" alt="" /></h1></section></section>
-<section><section id="goal-and-motivation" class="titleslide slide level1"><h1>Goal and Motivation</h1></section><section class="slide level2">
-
-<p><strong>Goal</strong>: <em>Automatic generation of a realistic-looking city including road structure and buildings</em></p>
+<section><section id="procedural-modeling-of-cities" class="titleslide slide level1"><h1>Procedural Modeling of Cities <img src="img/20151124201337.png" alt="" /></h1></section><section id="section" class="slide level2">
+<h1></h1>
+<p><strong>Goal</strong>: <em>Automatic generation of a realistic-looking city<br> including road structure and buildings</em></p>
 <div class="fragment">
 <h3 id="applications">Applications</h3>
 <ul>
@@ -114,33 +111,41 @@ code > span.in { color: #60a0b0; font-weight: bold; font-style: italic; } /* Inf
 </div>
 </section><section id="initialization" class="slide level2">
 <h1>Initialization</h1>
-<p>Begin with two opposite street segments:</p>
+<ul>
+<li>begin with two opposite street segments</li>
+<li>greedily continue mostly straight from existing segments</li>
+</ul>
 <iframe data-src="demo.html#
-    segment_count_limit = 2;
-    arrowhead_size = 80;
-    draw_circle_on_segment_base = 30;
-    iterations_per_second = Infinity;
+    segment_count_limit = 10;
+    arrowhead_size = 110;
+    draw_circle_on_segment_base = 25;
+    iterations_per_second = 1;
+    smooth_zoom_start = 1;
+    highway_branch_probability = 0;
+    only_highways = 1;
+    restart_after_seconds = 2;
+    HIGHWAY_POPULATION_SAMPLE_SIZE = 0;
+    seed = 0.4010764153208;
 ">
 </iframe>
-</section><section id="street-growth" class="slide level2">
-<h1>Street growth</h1>
+</section><section id="branching" class="slide level2">
+<h1>Branching</h1>
 <ul>
-<li>create new street segments greedily</li>
-<li>continue straight from existing end segments</li>
 <li>branch with some probability at ≈ 90 degrees</li>
-<li>label fully connected street segments as done</li>
 </ul>
 <iframe style="height:600px" data-src="demo.html#
     segment_count_limit = 20;
     arrowhead_size = 80;
+    smooth_zoom_start = 1;
     draw_circle_on_segment_base = 30;
     iterations_per_second = 1;
     target_zoom = 0.8;
     two_segments_initially = 0;
+    HIGHWAY_POPULATION_SAMPLE_SIZE = 0;
     only_highways = 1;
-    seed = 0.03153736749663949;
+    seed = 0.03;
     restart_after_seconds = 3;
-    highway_branch_probability = 0.08;
+    highway_branch_probability = 0.12;
 ">
 </iframe>
 </section><section id="street-hierarchy" class="slide level2">
@@ -207,25 +212,30 @@ code > span.in { color: #60a0b0; font-weight: bold; font-style: italic; } /* Inf
     iteration_speedup = 0.2;
     two_segments_initially = 0;
     skip_iterations = 0;
+    HIGHWAY_POPULATION_SAMPLE_SIZE = 0;
     normal_branch_time_delay_from_highway = 8;
-    seed = 0.018001661728973477;
+    seed = 0.384021194207972;
+    // seed = 0.14609342411312398;
     restart_after_seconds = 3;
     priority_future_colors = 1;
 ">
 </iframe>
 <p>This prevents highways from being cut off by normal streets</p>
-</section><section id="conflict-resolution-intersections-obstacles" class="slide level2">
-<h1>Conflict resolution <br> (intersections, obstacles)</h1>
+</section><section id="conflict-resolution" class="slide level2">
+<h1>Conflict resolution</h1>
+<p>If a new segment</p>
 <ul>
-<li class="fragment">If the new segment ends in an obstacle (e.g. water, park):<br />
-Shorten or rotate segment to fit</li>
-<li class="fragment">If new segment intersects with existing street: Shorten and create intersection</li>
-<li class="fragment">If existing street / intersection is near: Join road to intersection</li>
+<li>is near an existing street: Shorten and create intersection</li>
 </ul>
 <div class="fragment">
 <figure>
 <img src="img/20151213214559.png" alt="Parish and Müller (2001)" /><figcaption><small><span class="citation" data-cites="cities2001">Parish and Müller (2001)</span></small></figcaption>
 </figure>
+</div>
+<div class="fragment">
+<ul>
+<li>ends in an obstacle (e.g. water, park): Shorten or rotate segment to fit</li>
+</ul>
 </div>
 </section><section id="global-goals-1" class="slide level2">
 <h1>Global goals (1)</h1>
@@ -234,9 +244,9 @@ Shorten or rotate segment to fit</li>
 </div>
 <p>Population map (generated with layered simplex noise):</p>
 <div class="sourceCode"><pre class="sourceCode javascript"><code class="sourceCode javascript"><span class="kw">function</span> <span class="at">populationAt</span>(x<span class="op">,</span> y) <span class="op">{</span>
-    <span class="kw">const</span> value1 <span class="op">=</span> <span class="va">noise</span>.<span class="at">simplex2</span>(x / <span class="dv">10</span>      <span class="op">,</span> y / <span class="dv">10</span>      ) / <span class="dv">2</span> <span class="op">+</span> <span class="fl">0.5</span><span class="op">;</span>
-    <span class="kw">const</span> value2 <span class="op">=</span> <span class="va">noise</span>.<span class="at">simplex2</span>(x / <span class="dv">20</span> <span class="op">+</span> <span class="fl">0.5</span><span class="op">,</span> y / <span class="dv">20</span> <span class="op">+</span> <span class="fl">0.5</span>) / <span class="dv">2</span> <span class="op">+</span> <span class="fl">0.5</span><span class="op">;</span>
-    <span class="kw">const</span> value3 <span class="op">=</span> <span class="va">noise</span>.<span class="at">simplex2</span>(x / <span class="dv">20</span> <span class="op">+</span> <span class="fl">1.0</span><span class="op">,</span> y / <span class="dv">20</span> <span class="op">+</span> <span class="fl">1.0</span>) / <span class="dv">2</span> <span class="op">+</span> <span class="fl">0.5</span><span class="op">;</span>
+    value1 <span class="op">=</span> <span class="at">simplex2</span>(x / <span class="dv">10</span>      <span class="op">,</span> y / <span class="dv">10</span>      ) / <span class="dv">2</span> <span class="op">+</span> <span class="fl">0.5</span><span class="op">;</span>
+    value2 <span class="op">=</span> <span class="at">simplex2</span>(x / <span class="dv">20</span> <span class="op">+</span> <span class="fl">0.5</span><span class="op">,</span> y / <span class="dv">20</span> <span class="op">+</span> <span class="fl">0.5</span>) / <span class="dv">2</span> <span class="op">+</span> <span class="fl">0.5</span><span class="op">;</span>
+    value3 <span class="op">=</span> <span class="at">simplex2</span>(x / <span class="dv">20</span> <span class="op">+</span> <span class="fl">1.0</span><span class="op">,</span> y / <span class="dv">20</span> <span class="op">+</span> <span class="fl">1.0</span>) / <span class="dv">2</span> <span class="op">+</span> <span class="fl">0.5</span><span class="op">;</span>
     <span class="cf">return</span> <span class="va">Math</span>.<span class="at">pow</span>((value1 <span class="op">*</span> value2 <span class="op">+</span> value3) / <span class="dv">2</span><span class="op">,</span> <span class="dv">2</span>)<span class="op">;</span>
 <span class="op">}</span></code></pre></div>
 <iframe style="height:500px" data-src="demo.html#
@@ -252,22 +262,25 @@ Shorten or rotate segment to fit</li>
 </iframe>
 </section><section id="global-goals-2" class="slide level2">
 <h1>Global goals (2)</h1>
-<p>Highways try to connect population centers</p>
+<p>Highways try to connect population centers.</p>
 <p>Possible new directions are sampled, the one with largest population is chosen</p>
+<figure>
+<img src="img/20151215171754.png" alt="" />
+</figure>
+<div class="fragment">
 <iframe style="height:400px;" data-src="demo.html#
     segment_count_limit = 1000;
     draw_heatmap = 1;
     heatmap_pixel_dim = 10;
     draw_heatmap_as_threshold = 0;
+    HIGHWAY_POPULATION_SAMPLE_SIZE = 1;
     iterations_per_second = 200;
     only_highways = 1;
     restart_after_seconds = 10;
     seed = 0.8163482854142785;
 ">
 </iframe>
-<figure>
-<img src="img/20151215171754.png" alt="" />
-</figure>
+</div>
 </section><section id="global-goals-3" class="slide level2">
 <h1>Global goals (3)</h1>
 <p>Streets only branch if population is larger than some threshold:</p>
@@ -285,17 +298,16 @@ Shorten or rotate segment to fit</li>
 </section><section id="global-goals-4-street-patterns" class="slide level2">
 <h1>Global Goals (4) — Street patterns</h1>
 <p>Different patterns found in cities:</p>
+<aside class="notes">
 <ul>
 <li>Rectangular raster (≈ 90° angles)</li>
 <li>Radial</li>
 <li>Branching / random</li>
 </ul>
+</aside>
 <figure>
 <img src="img/20151213214501.png" alt="(Parish and Müller 2001)" /><figcaption><small><span class="citation" data-cites="cities2001">(Parish and Müller 2001)</span></small></figcaption>
 </figure>
-<div class="fragment">
-<p>Reality is a bit more complicated</p>
-</div>
 </section><section id="street-patterns-examples" class="slide level2">
 <h1>Street patterns — Examples</h1>
 <div style="float:left">
@@ -344,11 +356,12 @@ p9: ?I(roadAttr,state) : state!=UNASSIGNED -&gt; e</code></pre>
 <p>→ unnecessarily complicated</p>
 </section><section id="implementation-with-priority-queue" class="slide level2">
 <h1>Implementation with priority queue</h1>
-<p>Implementation by <span class="citation" data-cites="harmful">Sean Barrett (2008)</span></p>
+<p>originally from <span class="citation" data-cites="harmful">Sean Barrett (2008)</span></p>
 <div class="sourceCode"><pre class="sourceCode javascript"><code class="sourceCode javascript"><span class="kw">function</span> <span class="at">generate</span>() <span class="op">{</span>
     <span class="kw">let</span> Q <span class="op">=</span> <span class="kw">new</span> PriorityQueue<span class="op">&lt;</span>Segment<span class="op">&gt;</span>()<span class="op">;</span>
     <span class="va">Q</span>.<span class="at">enqueueAll</span>(<span class="at">makeInitialSegments</span>())<span class="op">;</span>
     <span class="kw">let</span> segments <span class="op">=</span> []<span class="op">;</span>
+
     <span class="cf">while</span> (<span class="op">!</span><span class="va">Q</span>.<span class="at">empty</span>() <span class="op">&amp;&amp;</span> <span class="va">segments</span>.<span class="at">length</span> <span class="op">&lt;</span> SEG_LIMIT) <span class="op">{</span>
         <span class="kw">let</span> minSegment <span class="op">=</span> <span class="va">Q</span>.<span class="at">dequeue</span>()<span class="op">;</span>
         <span class="co">// resolve conflicts</span>
@@ -361,6 +374,16 @@ p9: ?I(roadAttr,state) : state!=UNASSIGNED -&gt; e</code></pre>
     <span class="op">}</span>
 <span class="op">}</span></code></pre></div>
 <p><small>(+ a quadtree in <em>applyLocalConstraints</em>)</small></p>
+</section><section id="complete-demo" class="slide level2">
+<h1>Complete demo</h1>
+<p>(10000 segments, not full speed)</p>
+<iframe data-src="demo.html#
+    iteration_speedup = 1;
+    segment_count_limit = 10000;
+    restart_after_seconds = 3;
+    seed = 0.14140297517183242;
+">
+</iframe>
 </section></section>
 <section><section id="modeling-of-buildings-blocks-and-architecture" class="titleslide slide level1"><h1>Modeling of buildings blocks and architecture</h1></section><section id="input-parameters-1" class="slide level2">
 <h1>Input parameters</h1>
@@ -370,9 +393,7 @@ p9: ?I(roadAttr,state) : state!=UNASSIGNED -&gt; e</code></pre>
 </ul>
 </section><section id="lot-subdivision" class="slide level2">
 <h1>Lot subdivision</h1>
-<figure>
-<img src="img/20151108215824.png" alt="Parish and Müller (2001)" /><figcaption><small><span class="citation" data-cites="cities2001">Parish and Müller (2001)</span></small></figcaption>
-</figure>
+<p><img src="img/20151108215824.png" width=1000> <br><small><span class="citation" data-cites="cities2001">Parish and Müller (2001)</span></small></p>
 <ol type="1">
 <li>Calculate areas by scaling from street crossings</li>
 <li>Assume convex and mostly rectangular regions</li>
@@ -382,31 +403,27 @@ p9: ?I(roadAttr,state) : state!=UNASSIGNED -&gt; e</code></pre>
 </section><section id="architecture" class="slide level2">
 <h1>Architecture</h1>
 <ul>
-<li>L-systems, split grammars, etc.</li>
+<li>L-systems</li>
+<li>Split grammars</li>
 </ul>
 <p>(todo?)</p>
 </section></section>
 <section><section id="alternative-methods" class="titleslide slide level1"><h1>Alternative Methods</h1></section><section id="tensor-fields" class="slide level2">
 <h1>Tensor fields</h1>
 <figure>
-<img src="img/20151215231757.png" alt="" />
+<img src="img/20151215231757.png" alt="Chen, Guoning, Gregory Esch, Peter Wonka, Pascal Müller, and Eugene Zhang. 2008. Interactive Procedural Street Modeling. In ACM SIGGRAPH 2008 Papers, 103:1–103:10. SIGGRAPH ’08. New York, NY, USA: ACM. doi:http://doi.org/10.1145/1399504.1360702." /><figcaption><small>Chen, Guoning, Gregory Esch, Peter Wonka, Pascal Müller, and Eugene Zhang. 2008. “Interactive Procedural Street Modeling.” In <em>ACM SIGGRAPH 2008 Papers</em>, 103:1–103:10. SIGGRAPH ’08. New York, NY, USA: ACM. doi:<a href="http://doi.org/10.1145/1399504.1360702" class="uri">http://doi.org/10.1145/1399504.1360702</a>.</small></figcaption>
 </figure>
 </section><section id="time-simulation" class="slide level2">
 <h1>Time simulation</h1>
 <figure>
-<img src="img/20151124201337.png" alt="" />
+<img src="img/20151124201337.png" alt="Weber, Basil, Pascal Müller, Peter Wonka, and Markus Gross. 2009. Interactive Geometric Simulation of 4D Cities. Computer Graphics Forum 28 (2): 481–92. doi:http://doi.org/10.1111/j.1467-8659.2009.01387.x." /><figcaption><small>Weber, Basil, Pascal Müller, Peter Wonka, and Markus Gross. 2009. “Interactive Geometric Simulation of 4D Cities.” <em>Computer Graphics Forum</em> 28 (2): 481–92. doi:<a href="http://doi.org/10.1111/j.1467-8659.2009.01387.x" class="uri">http://doi.org/10.1111/j.1467-8659.2009.01387.x</a>.</small></figcaption>
 </figure>
-</section></section>
-<section><section id="example-projects" class="titleslide slide level1"><h1>Example projects</h1></section><section id="section" class="slide level2">
-<h1></h1>
-<ul>
-<li>CityEngine (large commercial application originating from <span class="citation" data-cites="cities2001">Parish and Müller (2001)</span>)</li>
-<li>…</li>
-<li>this code (<a href="https://github.com/phiresky/procedural-cities" class="uri">https://github.com/phiresky/procedural-cities</a>)</li>
-</ul>
 </section><section id="references" class="slide level2">
 <h1>References</h1>
-<p>Sources including links are on the announcement website.</p>
+<p>Slides including source code:</p>
+<h2 style="text-transform:none">
+<a href="http://cg.studium.sexy" class="uri">http://cg.studium.sexy</a>
+</h2>
 <p><small></p>
 <div id="references" class="references">
 <div id="ref-cities2001">

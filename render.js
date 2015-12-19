@@ -62,7 +62,7 @@ exports.graphics = new PIXI.Graphics();
 exports.stage = new PIXI.Container();
 exports.stage.addChild(exports.graphics);
 exports.stage.interactive = true;
-exports.stage.hitArea = new PIXI.Rectangle(-1e5, -1e5, 2e5, 2e5);
+exports.stage.hitArea = new PIXI.Rectangle(-1e7, -1e7, 2e7, 2e7);
 let has_interacted = false;
 function renderSegment(seg) {
     let color = arguments.length <= 1 || arguments[1] === undefined ? 0x000000 : arguments[1];
@@ -120,9 +120,7 @@ function onClick(event) {
         if (x.lineProj2 >= 0 && x.lineProj2 <= x.length2) return x.distance2;else return Infinity;
     };
     poss.sort((a, b) => dist(a) - dist(b));
-    //for(poss[0].linksaa)
     poss[0].debugLinks();
-    //poss[0].q.color = 0xff0000;
 }
 function onDragStart(event) {
     this.dragstart = { x: event.data.global.x, y: event.data.global.y };
@@ -158,7 +156,7 @@ let done_time = 0;
 let iteration = 0;
 let iteration_wanted = 0;
 let last_timestamp = 0;
-let last_t_found = -1; // only for DELAY_BETWEEN_TIME_STEPS
+let last_t_found = -1;
 restart();
 requestAnimationFrame(animate);
 function animate(timestamp) {
