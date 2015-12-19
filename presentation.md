@@ -23,9 +23,7 @@ header-includes: |
 
 # Procedural Modeling of Cities ![](img/20151124201337.png)
 
-# Goal and Motivation
-
----
+##
 
 **Goal**: *Automatic generation of a realistic-looking city<br> including road structure and buildings*
 
@@ -86,7 +84,6 @@ Need some type of contextual information
 ## Street growth
 
 - branch with some probability at ≈ 90 degrees
-- label fully connected street segments as done
 
 <iframe style="height:600px" data-src="demo.html#
     segment_count_limit = 20;
@@ -171,24 +168,29 @@ Normal streets branching from highways have an additional delay (*blue*)
     iteration_speedup = 0.2;
     two_segments_initially = 0;
     skip_iterations = 0;
+    HIGHWAY_POPULATION_SAMPLE_SIZE = 0;
     normal_branch_time_delay_from_highway = 8;
-    seed = 0.018001661728973477;
+    seed = 0.384021194207972;
+    // or = 0.14609342411312398;
     restart_after_seconds = 3;
     priority_future_colors = 1;
 "></iframe>
 
 This prevents highways from being cut off by normal streets
 
-## Conflict resolution <br> (intersections, obstacles)
+## Conflict resolution
 
-> - If the new segment ends in an obstacle (e.g. water, park):  
-Shorten or rotate segment to fit
-> - If new segment intersects with existing street:  Shorten and create intersection
-> - If existing street / intersection is near: Join road to intersection
+If a new segment
+
+- is near an existing street:  Shorten and create intersection
 
 . . .
 
 ![<small>@cities2001</small>](img/20151213214559.png)
+
+. . .
+
+- ends in an obstacle (e.g. water, park): Shorten or rotate segment to fit
 
 ## Global goals (1)
 
@@ -199,9 +201,9 @@ Population map (generated with layered simplex noise):
 
 ```javascript
 function populationAt(x, y) {
-    const value1 = noise.simplex2(x / 10      , y / 10      ) / 2 + 0.5;
-    const value2 = noise.simplex2(x / 20 + 0.5, y / 20 + 0.5) / 2 + 0.5;
-    const value3 = noise.simplex2(x / 20 + 1.0, y / 20 + 1.0) / 2 + 0.5;
+    value1 = simplex2(x / 10      , y / 10      ) / 2 + 0.5;
+    value2 = simplex2(x / 20 + 0.5, y / 20 + 0.5) / 2 + 0.5;
+    value3 = simplex2(x / 20 + 1.0, y / 20 + 1.0) / 2 + 0.5;
     return Math.pow((value1 * value2 + value3) / 2, 2);
 }
 ```
@@ -220,9 +222,13 @@ function populationAt(x, y) {
 
 ## Global goals (2)
 
-Highways try to connect population centers
+Highways try to connect population centers.
 
 Possible new directions are sampled, the one with largest population is chosen
+
+![](img/20151215171754.png)
+
+. . .
 
 <iframe style="height:400px;" data-src="demo.html#
     segment_count_limit = 1000;
@@ -236,7 +242,6 @@ Possible new directions are sampled, the one with largest population is chosen
     seed = 0.8163482854142785;
 "></iframe>
 
-![](img/20151215171754.png)
 
 ## Global goals (3)
 
@@ -257,9 +262,11 @@ Streets only branch if population is larger than some threshold:
 
 Different patterns found in cities:
 
+<div class=notes>
 - Rectangular raster (≈ 90° angles)
 - Radial
 - Branching / random
+</div>
 
 ![<small>[@cities2001]</small>](img/20151213214501.png)
 
@@ -313,13 +320,14 @@ p9: ?I(roadAttr,state) : state!=UNASSIGNED -> e
 
 ## Implementation with priority queue
 
-Implementation by @harmful
+originally from @harmful
 
 ```javascript
 function generate() {
     let Q = new PriorityQueue<Segment>();
     Q.enqueueAll(makeInitialSegments());
     let segments = [];
+
     while (!Q.empty() && segments.length < SEG_LIMIT) {
         let minSegment = Q.dequeue();
         // resolve conflicts
@@ -335,6 +343,17 @@ function generate() {
 
 <small>(+ a quadtree in *applyLocalConstraints*)</small>
 
+## Complete demo
+
+(10000 segments, not full speed)
+
+<iframe data-src="demo.html#
+    iteration_speedup = 1;
+    segment_count_limit = 10000;
+    restart_after_seconds = 3;
+    seed = 0.14140297517183242;
+"></iframe>
+
 # Modeling of buildings blocks and architecture
 
 ## Input parameters
@@ -344,7 +363,8 @@ function generate() {
 
 ## Lot subdivision
 
-![<small>@cities2001</small>](img/20151108215824.png)
+<img src="img/20151108215824.png" width=1000>
+<br><small>@cities2001</small>
 
 1. Calculate areas by scaling from street crossings
 2. Assume convex and mostly rectangular regions
@@ -353,7 +373,8 @@ function generate() {
 
 ## Architecture
 
-- L-systems, split grammars, etc.
+- L-systems
+- Split grammars
 
 (todo?)
 
@@ -367,9 +388,9 @@ function generate() {
 
 ![](img/20151124201337.png)
 
-# Example projects
+# 
 
-##
+## Example projects
 
 - CityEngine (large commercial application originating from @cities2001)
 - ...
