@@ -1,12 +1,12 @@
 #!/bin/bash
 
-# use `FMT=tex ./build.sh` to get the .tex file
+# use `FMT=tex ./build-paper.sh` to get the .tex file
 
 pandoc \
-	ausarbeitung.md \
+	paper.md \
 	--filter pandoc-crossref \
 	--filter pandoc-citeproc \
 	--standalone \
-	--template ausarbeitung-template.tex \
+	--template paper-template.tex \
 	--chapters \
 	-o ausarbeitung.${FMT:-pdf}
