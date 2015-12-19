@@ -70,8 +70,8 @@ Need some type of contextual information
 
 <iframe data-src="demo.html#
     segment_count_limit = 10;
-    arrowhead_size = 80;
-    draw_circle_on_segment_base = 30;
+    arrowhead_size = 110;
+    draw_circle_on_segment_base = 25;
     iterations_per_second = 1;
     smooth_zoom_start = 1;
     highway_branch_probability = 0;
@@ -81,7 +81,7 @@ Need some type of contextual information
     seed = 0.4010764153208;
 "></iframe>
 
-## Street growth
+## Branching
 
 - branch with some probability at ≈ 90 degrees
 
@@ -95,9 +95,9 @@ Need some type of contextual information
     two_segments_initially = 0;
     HIGHWAY_POPULATION_SAMPLE_SIZE = 0;
     only_highways = 1;
-    seed = 0.03153736749663949;
+    seed = 0.03;
     restart_after_seconds = 3;
-    highway_branch_probability = 0.08;
+    highway_branch_probability = 0.12;
 "></iframe>
 
 ## Street hierarchy
@@ -270,10 +270,6 @@ Different patterns found in cities:
 
 ![<small>[@cities2001]</small>](img/20151213214501.png)
 
-. . .
-
-Reality is a bit more complicated
-
 ## Street patterns — Examples
 
 
@@ -387,12 +383,6 @@ function generate() {
 ## Time simulation
 
 ![<small>Weber, Basil, Pascal Müller, Peter Wonka, and Markus Gross. 2009. “Interactive Geometric Simulation of 4D Cities.” <em>Computer Graphics Forum</em> 28 (2): 481–92. doi:<a href="http://doi.org/10.1111/j.1467-8659.2009.01387.x" class="uri">http://doi.org/10.1111/j.1467-8659.2009.01387.x</a>.</small>](img/20151124201337.png)
-
-#
-
-## Example projects
-
-- CityEngine (large commercial application originating from @cities2001)
 
 ## References
 

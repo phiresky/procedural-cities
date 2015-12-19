@@ -56,7 +56,7 @@ export const graphics = new PIXI.Graphics();
 export const stage = new PIXI.Container();
 stage.addChild(graphics);
 stage.interactive = true;
-stage.hitArea = new PIXI.Rectangle(-1e5, -1e5, 2e5, 2e5);
+stage.hitArea = new PIXI.Rectangle(-1e7, -1e7, 2e7, 2e7);
 let has_interacted = false;
 function renderSegment(seg: Segment, color = 0x000000) {
     if (!color) color = seg.q.color;
