@@ -1,17 +1,25 @@
 # Material related to procedural city generation
 
-### implementation/
+### Demo Implementation
 
-Demonstration program (https://phiresky.github.io/procedural-cities/demo.html)
+Source Code: [implementation/ folder](implementation/)
 
-### `presentation.md`
+Compiled: https://phiresky.github.io/procedural-cities/demo.html
 
-Presentation (https://phiresky.github.io/procedural-cities/presentation.html)
+### Presentation
 
-### `paper.pdf` (source: `paper.md`)
+Source Code: [presentation.md](presentation.md)
+
+Compiled: https://phiresky.github.io/procedural-cities/presentation.html
+
+Built using [build-presentation.sh](build-presentation.sh).
+
+### Paper
 
 15-page overview over various approaches to city modeling.
 
-### `build-*.sh`
+Source Code: [paper.md](paper.md)
 
-build scripts
+Compiled: [paper.pdf](paper.pdf)
+
+Built using [build-paper.sh](build-paper.sh).
