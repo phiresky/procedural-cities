@@ -75,7 +75,8 @@ Need some type of contextual information
     highway_branch_probability = 0;
     only_highways = 1;
     restart_after_seconds = 2;
-    HIGHWAY_POPULATION_SAMPLE_SIZE = 0;
+    highway_population_sample_size = 0;
+    iteration_speedup = 0.05;
     seed = 0.4010764153208;
 "></iframe>
 
@@ -91,11 +92,12 @@ Need some type of contextual information
     iterations_per_second = 1;
     target_zoom = 0.8;
     two_segments_initially = 0;
-    HIGHWAY_POPULATION_SAMPLE_SIZE = 0;
+    highway_population_sample_size = 0;
     only_highways = 1;
     seed = 0.03;
     restart_after_seconds = 3;
     highway_branch_probability = 0.12;
+    iteration_speedup = 0.05;
 "></iframe>
 
 ## Street hierarchy
@@ -120,6 +122,7 @@ Primary, secondary, tertiary streets are used in urban planning
     smooth_zoom_start = 1;
     seed = 0.1;
     restart_after_seconds = 3;
+    iteration_speedup = 0.05;
 "></iframe>
 <iframe style="height:400px;width:500px;" data-src="demo.html#
     segment_count_limit = 40;
@@ -132,6 +135,7 @@ Primary, secondary, tertiary streets are used in urban planning
     seed = 0.1;
     restart_after_seconds = 3;
     start_with_normal_streets = 1;
+    iteration_speedup = 0.05;
 "></iframe>
 
 ## Parallel growth
@@ -149,6 +153,7 @@ New potential segments are evaluated after existing ones
     restart_after_seconds = 3;
     start_with_normal_streets = 1;
     priority_future_colors = 1;
+    iteration_speedup = 0.05;
 "></iframe>
 
 *red* = current step
@@ -215,6 +220,7 @@ function populationAt(x, y) {
     heatmap_pixel_dim = 7;
     heatmap_as_threshold = 0;
     target_zoom = 0.01;
+    iteration_speedup = 0.05;
 "></iframe>
 
 
@@ -238,6 +244,7 @@ Possible new directions are sampled, the one with largest population is chosen
     only_highways = 1;
     restart_after_seconds = 10;
     seed = 0.8163482854142785;
+    iteration_speedup = 0.05;
 "></iframe>
 
 

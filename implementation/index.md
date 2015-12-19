@@ -28,11 +28,11 @@ header-includes: |
 
 ### Hosted version of the presentation slides:
 
-<https://phiresky.github.io/procedural-cities/presentation.html>
+[./presentation.html](presentation.html)
 
 ### Hosted version of the demonstration:
 
-<https://phiresky.github.io/procedural-cities/demo.html>
+[./demo.html](demo.html)
 
 Configuration options can be passed as URL parameters, see [the slides source](https://raw.githubusercontent.com/phiresky/procedural-cities/master/presentation.md) and [the configuration interface](https://github.com/phiresky/procedural-cities/blob/master/implementation/config.ts).
 

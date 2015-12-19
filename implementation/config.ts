@@ -21,7 +21,7 @@ export const config = {
     /** ignore intersections with less than this degrees angle */
     MINIMUM_INTERSECTION_DEVIATION: 30,
     /** stop generation after x steps */
-    SEGMENT_COUNT_LIMIT: 5000,
+    SEGMENT_COUNT_LIMIT: 7000,
     /** maximum distance to connect roads */
     ROAD_SNAP_DISTANCE: 50,
     /** resolution of the heatmap overlay */
@@ -41,9 +41,9 @@ export const config = {
     DRAW_CIRCLE_ON_SEGMENT_BASE: 0,
     /** disable collision checks (ignore localConstraints evaluation) */
     IGNORE_CONFLICTS: false,
-    ITERATIONS_PER_SECOND: 100,
+    ITERATIONS_PER_SECOND: 60,
     /** speedup of iterations per second over time */
-    ITERATION_SPEEDUP: 0.01,
+    ITERATION_SPEEDUP: 0.4,
     /** color future segments according to their position in the priority queue */
     PRIORITY_FUTURE_COLORS: false,
     /** start smooth zooming after n iterations */
