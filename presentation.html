@@ -71,7 +71,7 @@ code > span.in { color: #60a0b0; font-weight: bold; font-style: italic; } /* Inf
     <div class="slides">
 
 
-<section><section id="procedural-modeling-of-cities" class="titleslide slide level1"><h1>Procedural Modeling of Cities <img src="img/20151124201337.png" alt="" /></h1></section><section id="section" class="slide level2">
+<section><section id="procedural-modeling-of-cities" class="titleslide slide level1"><h1>Procedural Modeling of Cities</h1></section><section id="section" class="slide level2">
 <h1></h1>
 <p><strong>Goal</strong>: <em>Automatic generation of a realistic-looking city<br> including road structure and buildings</em></p>
 <div class="fragment">
@@ -94,12 +94,12 @@ code > span.in { color: #60a0b0; font-weight: bold; font-style: italic; } /* Inf
 </section></section>
 <section><section id="modeling-of-the-street-network" class="titleslide slide level1"><h1>Modeling of the street network</h1></section><section id="input-parameters" class="slide level2">
 <h1>Input parameters</h1>
-<p>Need some type of contextual information</p>
-<ul>
-<li>map boundaries and obstacles</li>
-<li>street layouting information</li>
-</ul>
-<div class="fragment">
+<p>Need some type of contextual information.</p>
+<!--
+- map boundaries and obstacles
+- street layouting information
+
+. . .-->
 <p><strong>Examples</strong></p>
 <ul>
 <li>elevation and water map</li>
@@ -108,7 +108,6 @@ code > span.in { color: #60a0b0; font-weight: bold; font-style: italic; } /* Inf
 <li>city type and road patterns</li>
 <li>city zones (residential, industrial, etc.)</li>
 </ul>
-</div>
 </section><section id="initialization" class="slide level2">
 <h1>Initialization</h1>
 <ul>
@@ -230,7 +229,7 @@ code > span.in { color: #60a0b0; font-weight: bold; font-style: italic; } /* Inf
 <h1>Conflict resolution</h1>
 <p>If a new segment</p>
 <ul>
-<li>is near an existing street: Shorten and create intersection</li>
+<li>is near an existing street: Adjust endpoint and create intersection</li>
 </ul>
 <div class="fragment">
 <figure>
@@ -401,19 +400,20 @@ p9: ?I(roadAttr,state) : state!=UNASSIGNED -&gt; e</code></pre>
 </section><section id="lot-subdivision" class="slide level2">
 <h1>Lot subdivision</h1>
 <p><img src="img/20151108215824.png" width=1000> <br><small><span class="citation" data-cites="cities2001">Parish and Müller (2001)</span></small></p>
-<ol type="1">
-<li>Calculate areas by scaling from street crossings</li>
-<li>Assume convex and mostly rectangular regions</li>
+<!--
+#. Calculate areas by scaling from street crossings
+#. Assume convex and mostly rectangular regions-->
+<ol>
 <li>Recursively divide along the longest edges that are approximately parallel</li>
 <li>Discard all blocks that do not have street access</li>
 </ol>
 </section><section id="architecture" class="slide level2">
 <h1>Architecture</h1>
+<p>Approaches:</p>
 <ul>
-<li>L-systems</li>
-<li>Split grammars</li>
+<li>L-systems (see <span class="citation" data-cites="cities2001">Parish and Müller (2001)</span>)</li>
+<li>Split grammars (see Wonka et al. (2003) “Instant Architecture.”)</li>
 </ul>
-<p>(todo?)</p>
 </section></section>
 <section><section id="alternative-methods" class="titleslide slide level1"><h1>Alternative Methods</h1></section><section id="tensor-fields" class="slide level2">
 <h1>Tensor fields</h1>
@@ -429,7 +429,7 @@ p9: ?I(roadAttr,state) : state!=UNASSIGNED -&gt; e</code></pre>
 <h1>References</h1>
 <p>Slides including source code:</p>
 <h2 style="text-transform:none">
-<a href="http://cg.studium.sexy" class="uri">http://cg.studium.sexy</a>
+<a href="http://cities.studium.sexy" class="uri">http://cities.studium.sexy</a>
 </h2>
 <p><small></p>
 <div id="references" class="references">
