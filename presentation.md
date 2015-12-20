@@ -44,6 +44,7 @@ Optional interaction between these steps
 
 # Modeling of the street network
 
+<!--
 ## Input parameters
 
 Need some type of contextual information.
@@ -52,7 +53,7 @@ Need some type of contextual information.
 - map boundaries and obstacles
 - street layouting information
 
-. . .-->
+. . . --.>
 
 **Examples**
 
@@ -61,6 +62,7 @@ Need some type of contextual information.
 - vegetation map
 - city type and road patterns
 - city zones (residential, industrial, etc.)
+-->
 
 ## Initialization
 
