@@ -19,7 +19,7 @@ header-includes: |
 ---
 
 
-# Procedural Modeling of Cities ![](img/20151124201337.png)
+# Procedural Modeling of Cities
 
 ##
 
@@ -46,12 +46,13 @@ Optional interaction between these steps
 
 ## Input parameters
 
-Need some type of contextual information
+Need some type of contextual information.
 
+<!--
 - map boundaries and obstacles
 - street layouting information
 
-. . .
+. . .-->
 
 **Examples**
 
@@ -185,7 +186,7 @@ This prevents highways from being cut off by normal streets
 
 If a new segment
 
-- is near an existing street:  Shorten and create intersection
+- is near an existing street:  Adjust endpoint and create intersection
 
 . . .
 
@@ -367,17 +368,18 @@ function generate() {
 <img src="img/20151108215824.png" width=1000>
 <br><small>@cities2001</small>
 
-1. Calculate areas by scaling from street crossings
-2. Assume convex and mostly rectangular regions
-3. Recursively divide along the longest edges that are approximately parallel
-4. Discard all blocks that do not have street access
+<!--
+#. Calculate areas by scaling from street crossings
+#. Assume convex and mostly rectangular regions-->
+#. Recursively divide along the longest edges that are approximately parallel
+#. Discard all blocks that do not have street access
 
 ## Architecture
 
-- L-systems
-- Split grammars
+Approaches:
 
-(todo?)
+- L-systems (see @cities2001)
+- Split grammars (see Wonka et al. (2003) “Instant Architecture.”)
 
 # Alternative Methods
 
@@ -393,6 +395,6 @@ function generate() {
 
 Slides including source code:
 
-<h2 style="text-transform:none"><http://cg.studium.sexy></h2>
+<h2 style="text-transform:none"><http://cities.studium.sexy></h2>
 
 <small>
