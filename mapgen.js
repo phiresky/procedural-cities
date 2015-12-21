@@ -133,6 +133,7 @@ exports.heatmap = {
         return (this.populationAt(r.start.x, r.start.y) + this.populationAt(r.end.x, r.end.y)) / 2;
     },
     populationAt: function (x, y) {
+        // for title page: if(x < 7000 && y < 3500 && x > -7000 && y > 2000) return 0; else if(1) return Math.random()/4+config.NORMAL_BRANCH_POPULATION_THRESHOLD;
         const value1 = (perlin_1.noise.simplex2(x / 10000, y / 10000) + 1) / 2;
         const value2 = (perlin_1.noise.simplex2(x / 20000 + 500, y / 20000 + 500) + 1) / 2;
         const value3 = (perlin_1.noise.simplex2(x / 20000 + 1000, y / 20000 + 1000) + 1) / 2;
