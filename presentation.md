@@ -42,7 +42,7 @@ header-includes: |
 
 Optional interaction between these steps
 
-# Modeling of the street network
+# Modeling of the street network <br><small>@cities2001</small>
 
 <!--
 ## Input parameters
