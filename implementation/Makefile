@@ -1,7 +1,7 @@
 MAKEFLAGS += --no-builtin-rules
 .SUFFIXES:
 
-all: bin bin/demo.html bin/render.browser.js bin/index.html
+all: bin/.git bin/demo.html bin/render.browser.js bin/index.html
 
 bin/index.html: index.md
 	pandoc -i $< --filter pandoc-citeproc -s -S -t html5 -o $@
@@ -18,11 +18,11 @@ bin/%.js: tsc/%.js
 tsc/%.js: %.ts
 	tsc
 
-bin:
-	mkdir -p bin
-
 gh-pages: bin/.git
 	cd bin; git add -A; git commit -m'update binaries'; git push
+
+bin/.git:
+	git worktree add bin gh-pages
 
 clean:
 	rm -r bin/* tsc/*

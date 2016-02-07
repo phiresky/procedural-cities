@@ -12,7 +12,7 @@ Source Code: [presentation.md](presentation.md)
 
 Compiled: https://phiresky.github.io/procedural-cities/presentation.html
 
-Built using [build-presentation.sh](build-presentation.sh).
+Built using [build-presentation.sh](build-presentation.sh) (build implementation first).
 
 ### Paper
 

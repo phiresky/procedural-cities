@@ -18,7 +18,7 @@ header-includes: |
     </style>
 ---
 
-# Procedural Modeling of Cities <img src="img/20151221012636.png" style="position:fixed;top:0;left:0;width:2066px;opacity:0.2;height:1300px;max-height:initial !important;max-width:initial;z-index:-100;margin-left:-280px;margin-top:-590px;">
+# Procedural Modeling of Cities <br><small><small>Press space to continue</small></small><img src="img/20151221012636.png" style="position:fixed;top:0;left:0;width:2066px;opacity:0.2;height:1300px;max-height:initial !important;max-width:initial;z-index:-100;margin-left:-280px;margin-top:-590px;">
 
 ##
 
