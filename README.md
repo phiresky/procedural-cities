@@ -2,6 +2,8 @@
 
 ### Demo Implementation
 
+[**Demo GIF**](https://i.imgur.com/ZXPMaOP.gifv)
+
 Source Code: [implementation/ folder](implementation/)
 
 Compiled: https://phiresky.github.io/procedural-cities/demo.html
