@@ -396,6 +396,6 @@ Approaches:
 
 Slides including source code:
 
-<h2 style="text-transform:none"><http://cities.studium.sexy></h2>
+<h2 style="text-transform:none"><https://phiresky.github.io/procedural-cities/></h2>
 
 <small>
