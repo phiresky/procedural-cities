@@ -4,7 +4,7 @@ MAKEFLAGS += --no-builtin-rules
 all: bin/.git bin/demo.html bin/render.browser.js bin/index.html
 
 bin/index.html: index.md
-	pandoc -i $< --filter pandoc-citeproc -s -S -t html5 -o $@
+	pandoc -i $< --filter pandoc-citeproc -s -t html5 --email-obfuscation=javascript -o $@
 
 bin/%.html: %.html
 	cat $< > $@

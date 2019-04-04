@@ -22,6 +22,13 @@ header-includes: |
     <style>body{margin:40px auto;max-width:650px;line-height:1.6;font-size:18px;color:#333;padding:0 10px;font-family: "Helvetica Neue",Helvetica,Arial,sans-serif;}h1,h2,h3,h4{line-height:1.1;font-weight: 500;}</style>
 ---
 
+<iframe width="100%" height="350px" style="border: 1px solid gray;pointer-events:none;" src="demo.html#
+    iteration_speedup = 1;
+    segment_count_limit = 10000;
+    restart_after_seconds = 3;
+    seed = 0.14140297517183242;
+"></iframe>
+
 ### GitHub Repository (contains paper, presentation, and demo implementation source):
 
 <https://github.com/phiresky/procedural-cities>
