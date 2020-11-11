@@ -6,31 +6,31 @@ margin: 0.05
 theme: white
 slideNumber: true
 nocite: |
-    @subvimpl
+  @subvimpl
 bibliography: prosem.bib
 header-includes: |
-    <style>
-    img { max-height:400px !important; }
-    .reveal h1 { font-size: 1.5em; }
-    iframe {
-        width: 1024px; height: 768px;
-    }
-    </style>
+  <style>
+  img { max-height:400px !important; }
+  .reveal h1 { font-size: 1.5em; }
+  iframe {
+      width: 1024px; height: 768px;
+  }
+  </style>
 ---
 
-# Procedural Modeling of Cities <br><small><small>Press space to continue</small></small><img src="img/20151221012636.png" style="position:fixed;top:0;left:0;width:2066px;opacity:0.2;height:1300px;max-height:initial !important;max-width:initial;z-index:-100;margin-left:-280px;margin-top:-590px;">
+# Procedural Modeling of Cities <br><small><small>Press space to continue</small></small><img src="img/20151221012636.png" style="position:fixed;top:0;left:0;width:2066px;opacity:0.2;height:1300px;max-height:initial !important;max-width:initial;z-index:-100;margin-left:-280px;margin-top:-200px;">
 
 ##
 
-**Goal**: *Automatic generation of a realistic-looking city<br> including road structure and buildings*
+**Goal**: _Automatic generation of a realistic-looking city<br> including road structure and buildings_
 
 . . .
 
 ### Applications
 
-* Entertainment (Movies, Games)
-* Military training
-* Land use planning
+- Entertainment (Movies, Games)
+- Military training
+- Land use planning
 
 ## Approach
 
@@ -65,8 +65,8 @@ Need some type of contextual information.
 
 ## Initialization
 
-* begin with two opposite street segments
-* greedily continue mostly straight from existing segments
+- begin with two opposite street segments
+- greedily continue mostly straight from existing segments
 
 <iframe data-src="demo.html#
     segment_count_limit = 10;
@@ -158,13 +158,13 @@ New potential segments are evaluated after existing ones
     iteration_speedup = 0.05;
 "></iframe>
 
-*red* = current step
+_red_ = current step
 
-*green* = next step
+_green_ = next step
 
 ## Highway branching
 
-Normal streets branching from highways have an additional delay (*blue*)
+Normal streets branching from highways have an additional delay (_blue_)
 
 <iframe style="height:500px;" data-src="demo.html#
     segment_count_limit = 400;
@@ -187,7 +187,7 @@ This prevents highways from being cut off by normal streets
 
 If a new segment
 
-- is near an existing street:  Adjust endpoint and create intersection
+- is near an existing street: Adjust endpoint and create intersection
 
 . . .
 
@@ -206,10 +206,10 @@ Population map (generated with layered simplex noise):
 
 ```javascript
 function populationAt(x, y) {
-    value1 = simplex2(x / 10      , y / 10      ) / 2 + 0.5;
-    value2 = simplex2(x / 20 + 0.5, y / 20 + 0.5) / 2 + 0.5;
-    value3 = simplex2(x / 20 + 1.0, y / 20 + 1.0) / 2 + 0.5;
-    return Math.pow((value1 * value2 + value3) / 2, 2);
+  value1 = simplex2(x / 10, y / 10) / 2 + 0.5;
+  value2 = simplex2(x / 20 + 0.5, y / 20 + 0.5) / 2 + 0.5;
+  value3 = simplex2(x / 20 + 1.0, y / 20 + 1.0) / 2 + 0.5;
+  return Math.pow((value1 * value2 + value3) / 2, 2);
 }
 ```
 
@@ -224,7 +224,6 @@ function populationAt(x, y) {
     target_zoom = 0.01;
     iteration_speedup = 0.05;
 "></iframe>
-
 
 ## Global goals (2)
 
@@ -248,7 +247,6 @@ Possible new directions are sampled, the one with largest population is chosen
     seed = 0.8163482854142785;
     iteration_speedup = 0.05;
 "></iframe>
-
 
 ## Global goals (3)
 
@@ -279,7 +277,6 @@ Different patterns found in cities:
 
 ## Street patterns — Examples
 
-
 <div style="float:left">
 ![San Francisco](img/sanfran.png)
 </div>
@@ -298,6 +295,7 @@ Different patterns found in cities:
 ## Implementation as parametric L-System
 
 Original implementation by @cities2001
+
 ```
 w: R(0, initialRuleAttr) ?I(initRoadAttr, UNASSIGNED)
 p1: R(del, ruleAttr) : del<0 -> e
@@ -319,6 +317,7 @@ p8: ?I(roadAttr,state) : state==UNASSIGNED
     -> ?I(roadAttr, state)
 p9: ?I(roadAttr,state) : state!=UNASSIGNED -> e
 ```
+
 → unnecessarily complicated
 
 ## Implementation with priority queue
@@ -344,7 +343,7 @@ function generate() {
 }
 ```
 
-<small>(+ a quadtree in *applyLocalConstraints*)</small>
+<small>(+ a quadtree in _applyLocalConstraints_)</small>
 
 ## Complete demo
 
@@ -372,6 +371,7 @@ function generate() {
 <!--
 #. Calculate areas by scaling from street crossings
 #. Assume convex and mostly rectangular regions-->
+
 #. Recursively divide along the longest edges that are approximately parallel
 #. Discard all blocks that do not have street access
 

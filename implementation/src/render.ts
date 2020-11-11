@@ -1,7 +1,7 @@
 import { math } from "./math";
 import { Segment, generate, GeneratorResult, heatmap } from "./mapgen";
 import { config } from "./config";
-import * as PIXI from "pixi.js";
+import * as PIXI from "pixi.js-legacy";
 
 (location.search.substr(1) + "&" + location.hash.substr(1))
   .split(/[&;]/)
@@ -12,7 +12,10 @@ import * as PIXI from "pixi.js";
     let val = (v ? decodeURIComponent(v).trim() : "") as string | number;
     const list = key.toUpperCase().trim().split(".");
     const attr = list.pop();
-    const targ = list.reduce((a, b, i, arr) => a[b], config as any);
+    if (!attr) throw Error("no key for " + item);
+    const targ = list.reduce((a, b) => a[b], config as any) as {
+      [k: string]: string | number | boolean;
+    };
     const origValue = targ[attr];
     console.log(`config: ${attr} = ${val}`);
     if (typeof origValue === "undefined" && attr.substr(0, 2) !== "//")
@@ -54,7 +57,9 @@ function restart() {
   iteration_wanted = 0;
   has_interacted = false;
 }
-export const renderer = PIXI.autoDetectRenderer(W, H, {
+export const renderer = PIXI.autoDetectRenderer({
+  width: W,
+  height: H,
   backgroundColor: config.BACKGROUND_COLOR,
   antialias: true,
   transparent: config.TRANSPARENT,
@@ -66,7 +71,7 @@ stage.addChild(graphics);
 stage.interactive = true;
 stage.hitArea = new PIXI.Rectangle(-1e7, -1e7, 2e7, 2e7);
 let has_interacted = false;
-function renderSegment(seg: Segment, color = 0x000000) {
+function renderSegment(seg: Segment, color: number | undefined = 0x000000) {
   if (!color) color = seg.q.color;
   const x1 = seg.start.x;
   const x2 = seg.end.x;
@@ -123,8 +128,12 @@ stage
   .on("mousemove", onDragMove)
   .on("touchmove", onDragMove)
   .on("click", onClick);
-function onClick(event: PIXI.interaction.InteractionEvent) {
-  if (this.wasdragged || !config.DEBUG) return;
+const stageDragInfo = {
+  dragstart: null as { x: number; y: number } | null,
+  wasdragged: false,
+};
+function onClick(this: PIXI.Container, event: PIXI.InteractionEvent) {
+  if (stageDragInfo.wasdragged || !config.DEBUG) return;
   const p = event.data.getLocalPosition(graphics);
   const poss = stuff.qTree.retrieve({
     x: p.x - 10,
@@ -139,24 +148,27 @@ function onClick(event: PIXI.interaction.InteractionEvent) {
   };
   poss.sort((a, b) => dist(a) - dist(b));
   //for(poss[0].linksaa)
-  poss[0].debugLinks();
+  if (poss[0]) poss[0].debugLinks();
   //poss[0].q.color = 0xff0000;
 }
 
-function onDragStart(event: PIXI.interaction.InteractionEvent) {
-  this.dragstart = { x: event.data.global.x, y: event.data.global.y };
-  this.wasdragged = false;
+function onDragStart(this: PIXI.Container, event: PIXI.InteractionEvent) {
+  stageDragInfo.dragstart = { x: event.data.global.x, y: event.data.global.y };
+  stageDragInfo.wasdragged = false;
   has_interacted = true;
 }
 function onDragEnd() {
-  this.dragstart = null;
+  stageDragInfo.dragstart = null;
 }
-function onDragMove(event: PIXI.interaction.InteractionEvent) {
-  this.wasdragged = true;
-  if (this.dragstart) {
-    this.position.x += event.data.global.x - this.dragstart.x;
-    this.position.y += event.data.global.y - this.dragstart.y;
-    this.dragstart = { x: event.data.global.x, y: event.data.global.y };
+function onDragMove(this: PIXI.Container, event: PIXI.InteractionEvent) {
+  stageDragInfo.wasdragged = true;
+  if (stageDragInfo.dragstart) {
+    this.position.x += event.data.global.x - stageDragInfo.dragstart.x;
+    this.position.y += event.data.global.y - stageDragInfo.dragstart.y;
+    stageDragInfo.dragstart = {
+      x: event.data.global.x,
+      y: event.data.global.y,
+    };
   }
 }
 function zoom(x: number, y: number, direction: number) {
@@ -186,7 +198,7 @@ function animate(timestamp: number) {
   let delta = timestamp - last_timestamp;
   last_timestamp = timestamp;
   if (delta > 100) {
-    console.warn("delta = " + delta);
+    console.warn("time delta ms = " + delta);
     delta = 100;
   }
   if (!done) {
@@ -262,6 +274,7 @@ function animate(timestamp: number) {
       for (const seg of stuff.priorityQ) renderSegment(seg, 0xff0000);
     }
     if (config.DELAY_BETWEEN_TIME_STEPS) {
+      if (!stuff.priorityQ[0]) return;
       const first_t = stuff.priorityQ[0].t;
       if (
         first_t !== last_t_found &&

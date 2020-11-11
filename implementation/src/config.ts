@@ -73,5 +73,5 @@ export const config = {
   TRANSPARENT: false,
   BACKGROUND_COLOR: 0xffffff,
   /** seed value for determinism */
-  SEED: null as string,
+  SEED: null as string | null,
 };

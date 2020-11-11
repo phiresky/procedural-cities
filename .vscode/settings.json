@@ -1,0 +1,4 @@
+{
+    "typescript.tsdk": "implementation/node_modules/typescript/lib",
+    "editor.formatOnSave": true
+}

@@ -19,10 +19,9 @@ export class Segment {
   /** links backwards and forwards */
   links = { b: [] as Segment[], f: [] as Segment[] };
   width: number;
-  setupBranchLinks: () => void = undefined;
+  setupBranchLinks: undefined | (() => void) = undefined;
   constructor(public start: Point, public end: Point, t = 0, q?: MetaInfo) {
-    const obj = this;
-    for (const t in q) this.q[t] = q[t];
+    if (q) Object.assign(this.q, q);
     this.width = this.q.highway
       ? config.HIGHWAY_SEGMENT_WIDTH
       : config.DEFAULT_SEGMENT_WIDTH;
@@ -60,13 +59,13 @@ export class Segment {
   startIsBackwards() {
     if (this.links.b.length > 0) {
       return (
-        math.equalV(this.links.b[0].start, this.start) ||
-        math.equalV(this.links.b[0].end, this.start)
+        math.equalV(this.links.b[0]!.start, this.start) ||
+        math.equalV(this.links.b[0]!.end, this.start)
       );
     } else {
       return (
-        math.equalV(this.links.f[0].start, this.end) ||
-        math.equalV(this.links.f[0].end, this.end)
+        math.equalV(this.links.f[0]!.start, this.end) ||
+        math.equalV(this.links.f[0]!.end, this.end)
       );
     }
   }
@@ -77,7 +76,7 @@ export class Segment {
     } else if (this.links.f.indexOf(segment) !== -1) {
       return this.links.f;
     } else {
-      return void 0;
+      return undefined;
     }
   }
 
@@ -130,7 +129,7 @@ export class Segment {
     dir = 90,
     length = config.DEFAULT_SEGMENT_LENGTH,
     t: number,
-    q: MetaInfo,
+    q?: MetaInfo,
   ) {
     var end = {
       x: start.x + length * Math.sin((dir * Math.PI) / 180),
@@ -179,8 +178,8 @@ const localConstraints = function (
   if (config.IGNORE_CONFLICTS) return true;
   const action = {
     priority: 0,
-    func: undefined as () => boolean,
-    t: undefined as number,
+    func: undefined as undefined | (() => boolean),
+    t: undefined as undefined | number,
   };
   for (const other of qTree.retrieve(segment.limits())) {
     // intersection check
@@ -236,7 +235,9 @@ const localConstraints = function (
           }
           links.forEach((link) => {
             // pick links of remaining segments at junction corresponding to other.r.end
-            link.linksForEndContaining(other).push(segment);
+            const containing = link.linksForEndContaining(other);
+            if (!containing) throw Error("isntpossible");
+            containing.push(segment);
             // add junction segments to snapped segment
             segment.links.f.push(link);
           });
@@ -290,7 +291,7 @@ function globalGoalsGenerate(previousSegment: Segment) {
       direction: number,
       length: number,
       t: number,
-      q: MetaInfo,
+      q?: MetaInfo,
     ) =>
       Segment.usingDirection(
         previousSegment.end,
@@ -310,7 +311,6 @@ function globalGoalsGenerate(previousSegment: Segment) {
         previousSegment.q.highway
           ? config.NORMAL_BRANCH_TIME_DELAY_FROM_HIGHWAY
           : 0,
-        null,
       );
     const continueStraight = templateContinue(0);
     const straightPop = heatmap.popOnRoad(continueStraight);
@@ -355,7 +355,9 @@ function globalGoalsGenerate(previousSegment: Segment) {
     branch.setupBranchLinks = function () {
       previousSegment.links.f.forEach((link) => {
         branch.links.b.push(link);
-        link.linksForEndContaining(previousSegment).push(branch);
+        const containing = link.linksForEndContaining(previousSegment);
+        if (!containing) throw Error("impossible");
+        containing.push(branch);
       });
       previousSegment.links.f.push(branch);
       return branch.links.b.push(previousSegment);
@@ -416,6 +418,7 @@ function generationStep(
   qTree: Quadtree<Segment>,
 ) {
   const minSegment = priorityQ.dequeue();
+  if (!minSegment) throw Error("no segment remaining");
   const accepted = localConstraints(minSegment, segments, qTree);
   if (accepted) {
     if (minSegment.setupBranchLinks != null) minSegment.setupBranchLinks();
@@ -443,7 +446,7 @@ export function* generate(seed: string): Iterator<GeneratorResult> {
     generationStep(priorityQ, segments, qTree);
     yield { segments, priorityQ: priorityQ.elements, qTree };
   }
-  console.log(segments.length + " segments generated.");
+  console.log(`${segments.length} segments generated.`);
   yield { segments, qTree, priorityQ: priorityQ.elements };
 }
 (window as any)._mapgen = this;
