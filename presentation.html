@@ -3,61 +3,103 @@
 <head>
   <meta charset="utf-8">
   <meta name="generator" content="pandoc">
-  <title></title>
+  <title>presentation</title>
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, minimal-ui">
-  <link rel="stylesheet" href="reveal.js/css/reveal.css"/>
-  <style type="text/css">code{white-space: pre;}</style>
-  <style type="text/css">
-div.sourceCode { overflow-x: auto; }
-table.sourceCode, tr.sourceCode, td.lineNumbers, td.sourceCode {
-  margin: 0; padding: 0; vertical-align: baseline; border: none; }
-table.sourceCode { width: 100%; line-height: 100%; }
-td.lineNumbers { text-align: right; padding-right: 4px; padding-left: 4px; color: #aaaaaa; border-right: 1px solid #aaaaaa; }
-td.sourceCode { padding-left: 5px; }
-code > span.kw { color: #007020; font-weight: bold; } /* Keyword */
-code > span.dt { color: #902000; } /* DataType */
-code > span.dv { color: #40a070; } /* DecVal */
-code > span.bn { color: #40a070; } /* BaseN */
-code > span.fl { color: #40a070; } /* Float */
-code > span.ch { color: #4070a0; } /* Char */
-code > span.st { color: #4070a0; } /* String */
-code > span.co { color: #60a0b0; font-style: italic; } /* Comment */
-code > span.ot { color: #007020; } /* Other */
-code > span.al { color: #ff0000; font-weight: bold; } /* Alert */
-code > span.fu { color: #06287e; } /* Function */
-code > span.er { color: #ff0000; font-weight: bold; } /* Error */
-code > span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } /* Warning */
-code > span.cn { color: #880000; } /* Constant */
-code > span.sc { color: #4070a0; } /* SpecialChar */
-code > span.vs { color: #4070a0; } /* VerbatimString */
-code > span.ss { color: #bb6688; } /* SpecialString */
-code > span.im { } /* Import */
-code > span.va { color: #19177c; } /* Variable */
-code > span.cf { color: #007020; font-weight: bold; } /* ControlFlow */
-code > span.op { color: #666666; } /* Operator */
-code > span.bu { } /* BuiltIn */
-code > span.ex { } /* Extension */
-code > span.pp { color: #bc7a00; } /* Preprocessor */
-code > span.at { color: #7d9029; } /* Attribute */
-code > span.do { color: #ba2121; font-style: italic; } /* Documentation */
-code > span.an { color: #60a0b0; font-weight: bold; font-style: italic; } /* Annotation */
-code > span.cv { color: #60a0b0; font-weight: bold; font-style: italic; } /* CommentVar */
-code > span.in { color: #60a0b0; font-weight: bold; font-style: italic; } /* Information */
+  <link rel="stylesheet" href="https://unpkg.com/reveal.js@^4//dist/reset.css">
+  <link rel="stylesheet" href="https://unpkg.com/reveal.js@^4//dist/reveal.css">
+  <style>
+    code{white-space: pre-wrap;}
+    span.smallcaps{font-variant: small-caps;}
+    span.underline{text-decoration: underline;}
+    div.column{display: inline-block; vertical-align: top; width: 50%;}
+    div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+    ul.task-list{list-style: none;}
+    pre > code.sourceCode { white-space: pre; position: relative; }
+    pre > code.sourceCode > span { display: inline-block; line-height: 1.25; }
+    pre > code.sourceCode > span:empty { height: 1.2em; }
+    code.sourceCode > span { color: inherit; text-decoration: inherit; }
+    div.sourceCode { margin: 1em 0; }
+    pre.sourceCode { margin: 0; }
+    @media screen {
+    div.sourceCode { overflow: auto; }
+    }
+    @media print {
+    pre > code.sourceCode { white-space: pre-wrap; }
+    pre > code.sourceCode > span { text-indent: -5em; padding-left: 5em; }
+    }
+    pre.numberSource code
+      { counter-reset: source-line 0; }
+    pre.numberSource code > span
+      { position: relative; left: -4em; counter-increment: source-line; }
+    pre.numberSource code > span > a:first-child::before
+      { content: counter(source-line);
+        position: relative; left: -1em; text-align: right; vertical-align: baseline;
+        border: none; display: inline-block;
+        -webkit-touch-callout: none; -webkit-user-select: none;
+        -khtml-user-select: none; -moz-user-select: none;
+        -ms-user-select: none; user-select: none;
+        padding: 0 4px; width: 4em;
+        color: #aaaaaa;
+      }
+    pre.numberSource { margin-left: 3em; border-left: 1px solid #aaaaaa;  padding-left: 4px; }
+    div.sourceCode
+      {   }
+    @media screen {
+    pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
+    }
+    code span.al { color: #ff0000; font-weight: bold; } /* Alert */
+    code span.an { color: #60a0b0; font-weight: bold; font-style: italic; } /* Annotation */
+    code span.at { color: #7d9029; } /* Attribute */
+    code span.bn { color: #40a070; } /* BaseN */
+    code span.bu { } /* BuiltIn */
+    code span.cf { color: #007020; font-weight: bold; } /* ControlFlow */
+    code span.ch { color: #4070a0; } /* Char */
+    code span.cn { color: #880000; } /* Constant */
+    code span.co { color: #60a0b0; font-style: italic; } /* Comment */
+    code span.cv { color: #60a0b0; font-weight: bold; font-style: italic; } /* CommentVar */
+    code span.do { color: #ba2121; font-style: italic; } /* Documentation */
+    code span.dt { color: #902000; } /* DataType */
+    code span.dv { color: #40a070; } /* DecVal */
+    code span.er { color: #ff0000; font-weight: bold; } /* Error */
+    code span.ex { } /* Extension */
+    code span.fl { color: #40a070; } /* Float */
+    code span.fu { color: #06287e; } /* Function */
+    code span.im { } /* Import */
+    code span.in { color: #60a0b0; font-weight: bold; font-style: italic; } /* Information */
+    code span.kw { color: #007020; font-weight: bold; } /* Keyword */
+    code span.op { color: #666666; } /* Operator */
+    code span.ot { color: #007020; } /* Other */
+    code span.pp { color: #bc7a00; } /* Preprocessor */
+    code span.sc { color: #4070a0; } /* SpecialChar */
+    code span.ss { color: #bb6688; } /* SpecialString */
+    code span.st { color: #4070a0; } /* String */
+    code span.va { color: #19177c; } /* Variable */
+    code span.vs { color: #4070a0; } /* VerbatimString */
+    code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } /* Warning */
+    .display.math{display: block; text-align: center; margin: 0.5rem auto;}
+    div.csl-bib-body { }
+    div.csl-entry {
+      clear: both;
+    }
+    .hanging div.csl-entry {
+      margin-left:2em;
+      text-indent:-2em;
+    }
+    div.csl-left-margin {
+      min-width:2em;
+      float:left;
+    }
+    div.csl-right-inline {
+      margin-left:2em;
+      padding-left:1em;
+    }
+    div.csl-indent {
+      margin-left: 2em;
+    }
   </style>
-  <link rel="stylesheet" href="reveal.js/css/theme/white.css" id="theme">
-  <!-- Printing and PDF exports -->
-  <script>
-    var link = document.createElement( 'link' );
-    link.rel = 'stylesheet';
-    link.type = 'text/css';
-    link.href = window.location.search.match( /print-pdf/gi ) ? 'reveal.js/css/print/pdf.css' : 'reveal.js/css/print/paper.css';
-    document.getElementsByTagName( 'head' )[0].appendChild( link );
-  </script>
-  <!--[if lt IE 9]>
-  <script src="reveal.js/lib/js/html5shiv.js"></script>
-  <![endif]-->
+  <link rel="stylesheet" href="https://unpkg.com/reveal.js@^4//dist/theme/white.css" id="theme">
   <style>
   img { max-height:400px !important; }
   .reveal h1 { font-size: 1.5em; }
@@ -71,8 +113,13 @@ code > span.in { color: #60a0b0; font-weight: bold; font-style: italic; } /* Inf
     <div class="slides">
 
 
-<section><section id="procedural-modeling-of-cities-press-space-to-continue" class="titleslide slide level1"><h1>Procedural Modeling of Cities <br><small><small>Press space to continue</small></small><img src="img/20151221012636.png" style="position:fixed;top:0;left:0;width:2066px;opacity:0.2;height:1300px;max-height:initial !important;max-width:initial;z-index:-100;margin-left:-280px;margin-top:-590px;"></h1></section><section id="section" class="slide level2">
-<h1></h1>
+<section>
+<section id="procedural-modeling-of-cities-press-space-to-continue" class="title-slide slide level1">
+<h1>Procedural Modeling of Cities <br><small><small>Press space to continue</small></small><img src="img/20151221012636.png" style="position:fixed;top:0;left:0;width:2066px;opacity:0.2;height:1300px;max-height:initial !important;max-width:initial;z-index:-100;margin-left:-280px;margin-top:-200px;"></h1>
+
+</section>
+<section id="section" class="slide level2">
+<h2></h2>
 <p><strong>Goal</strong>: <em>Automatic generation of a realistic-looking city<br> including road structure and buildings</em></p>
 <div class="fragment">
 <h3 id="applications">Applications</h3>
@@ -82,8 +129,9 @@ code > span.in { color: #60a0b0; font-weight: bold; font-style: italic; } /* Inf
 <li>Land use planning</li>
 </ul>
 </div>
-</section><section id="approach" class="slide level2">
-<h1>Approach</h1>
+</section>
+<section id="approach" class="slide level2">
+<h2>Approach</h2>
 <ol type="1">
 <li>Choose/Process input parameters</li>
 <li>Generate street network</li>
@@ -92,8 +140,31 @@ code > span.in { color: #60a0b0; font-weight: bold; font-style: italic; } /* Inf
 </ol>
 <p>Optional interaction between these steps</p>
 </section></section>
-<section><section id="modeling-of-the-street-network-cities2001" class="titleslide slide level1"><h1>Modeling of the street network <br><small><span class="citation" data-cites="cities2001">Parish and Müller (2001)</span></small></h1></section><section id="initialization" class="slide level2">
-<h1>Initialization</h1>
+<section>
+<section id="modeling-of-the-street-network-cities2001" class="title-slide slide level1">
+<h1>Modeling of the street network <br><small><span class="citation" data-cites="cities2001">Parish and Müller (2001)</span></small></h1>
+<!--
+## Input parameters
+
+Need some type of contextual information.
+
+<!--
+- map boundaries and obstacles
+- street layouting information
+
+. . . --.>
+
+**Examples**
+
+- elevation and water map
+- population density map
+- vegetation map
+- city type and road patterns
+- city zones (residential, industrial, etc.)
+-->
+</section>
+<section id="initialization" class="slide level2">
+<h2>Initialization</h2>
 <ul>
 <li>begin with two opposite street segments</li>
 <li>greedily continue mostly straight from existing segments</li>
@@ -112,8 +183,9 @@ code > span.in { color: #60a0b0; font-weight: bold; font-style: italic; } /* Inf
     seed = 0.4010764153208;
 ">
 </iframe>
-</section><section id="branching" class="slide level2">
-<h1>Branching</h1>
+</section>
+<section id="branching" class="slide level2">
+<h2>Branching</h2>
 <ul>
 <li>branch with some probability at ≈ 90 degrees</li>
 </ul>
@@ -133,8 +205,9 @@ code > span.in { color: #60a0b0; font-weight: bold; font-style: italic; } /* Inf
     iteration_speedup = 0.05;
 ">
 </iframe>
-</section><section id="street-hierarchy" class="slide level2">
-<h1>Street hierarchy</h1>
+</section>
+<section id="street-hierarchy" class="slide level2">
+<h2>Street hierarchy</h2>
 <p>Primary, secondary, tertiary streets are used in urban planning</p>
 <p>→ Simplified distinction between “highways” and normal streets</p>
 <div class="fragment">
@@ -171,8 +244,9 @@ code > span.in { color: #60a0b0; font-weight: bold; font-style: italic; } /* Inf
 ">
 </iframe>
 </div>
-</section><section id="parallel-growth" class="slide level2">
-<h1>Parallel growth</h1>
+</section>
+<section id="parallel-growth" class="slide level2">
+<h2>Parallel growth</h2>
 <p>New potential segments are evaluated after existing ones</p>
 <iframe style="height:500px;" data-src="demo.html#
     segment_count_limit = 40;
@@ -190,8 +264,9 @@ code > span.in { color: #60a0b0; font-weight: bold; font-style: italic; } /* Inf
 </iframe>
 <p><em>red</em> = current step</p>
 <p><em>green</em> = next step</p>
-</section><section id="highway-branching" class="slide level2">
-<h1>Highway branching</h1>
+</section>
+<section id="highway-branching" class="slide level2">
+<h2>Highway branching</h2>
 <p>Normal streets branching from highways have an additional delay (<em>blue</em>)</p>
 <iframe style="height:500px;" data-src="demo.html#
     segment_count_limit = 400;
@@ -209,15 +284,16 @@ code > span.in { color: #60a0b0; font-weight: bold; font-style: italic; } /* Inf
 ">
 </iframe>
 <p>This prevents highways from being cut off by normal streets</p>
-</section><section id="conflict-resolution" class="slide level2">
-<h1>Conflict resolution</h1>
+</section>
+<section id="conflict-resolution" class="slide level2">
+<h2>Conflict resolution</h2>
 <p>If a new segment</p>
 <ul>
 <li>is near an existing street: Adjust endpoint and create intersection</li>
 </ul>
 <div class="fragment">
 <figure>
-<img src="img/20151213214559.png" alt="Parish and Müller (2001)" /><figcaption><small><span class="citation" data-cites="cities2001">Parish and Müller (2001)</span></small></figcaption>
+<img data-src="img/20151213214559.png" alt="Parish and Müller (2001)" /><figcaption aria-hidden="true"><small><span class="citation" data-cites="cities2001">Parish and Müller (2001)</span></small></figcaption>
 </figure>
 </div>
 <div class="fragment">
@@ -225,18 +301,19 @@ code > span.in { color: #60a0b0; font-weight: bold; font-style: italic; } /* Inf
 <li>ends in an obstacle (e.g. water, park): Shorten or rotate segment to fit</li>
 </ul>
 </div>
-</section><section id="global-goals-1" class="slide level2">
-<h1>Global goals (1)</h1>
+</section>
+<section id="global-goals-1" class="slide level2">
+<h2>Global goals (1)</h2>
 <div style="float:right;border:1px">
 <small>Simplex noise</small><br><img src="img/20151215214538.png" style="margin-top:-1ex;border:none;height:200px;">
 </div>
 <p>Population map (generated with layered simplex noise):</p>
-<div class="sourceCode"><pre class="sourceCode javascript"><code class="sourceCode javascript"><span class="kw">function</span> <span class="at">populationAt</span>(x<span class="op">,</span> y) <span class="op">{</span>
-    value1 <span class="op">=</span> <span class="at">simplex2</span>(x / <span class="dv">10</span>      <span class="op">,</span> y / <span class="dv">10</span>      ) / <span class="dv">2</span> <span class="op">+</span> <span class="fl">0.5</span><span class="op">;</span>
-    value2 <span class="op">=</span> <span class="at">simplex2</span>(x / <span class="dv">20</span> <span class="op">+</span> <span class="fl">0.5</span><span class="op">,</span> y / <span class="dv">20</span> <span class="op">+</span> <span class="fl">0.5</span>) / <span class="dv">2</span> <span class="op">+</span> <span class="fl">0.5</span><span class="op">;</span>
-    value3 <span class="op">=</span> <span class="at">simplex2</span>(x / <span class="dv">20</span> <span class="op">+</span> <span class="fl">1.0</span><span class="op">,</span> y / <span class="dv">20</span> <span class="op">+</span> <span class="fl">1.0</span>) / <span class="dv">2</span> <span class="op">+</span> <span class="fl">0.5</span><span class="op">;</span>
-    <span class="cf">return</span> <span class="va">Math</span>.<span class="at">pow</span>((value1 <span class="op">*</span> value2 <span class="op">+</span> value3) / <span class="dv">2</span><span class="op">,</span> <span class="dv">2</span>)<span class="op">;</span>
-<span class="op">}</span></code></pre></div>
+<div class="sourceCode" id="cb1"><pre class="sourceCode javascript"><code class="sourceCode javascript"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="kw">function</span> <span class="fu">populationAt</span>(x<span class="op">,</span> y) {</span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a>  value1 <span class="op">=</span> <span class="fu">simplex2</span>(x <span class="op">/</span> <span class="dv">10</span><span class="op">,</span> y <span class="op">/</span> <span class="dv">10</span>) <span class="op">/</span> <span class="dv">2</span> <span class="op">+</span> <span class="fl">0.5</span><span class="op">;</span></span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a>  value2 <span class="op">=</span> <span class="fu">simplex2</span>(x <span class="op">/</span> <span class="dv">20</span> <span class="op">+</span> <span class="fl">0.5</span><span class="op">,</span> y <span class="op">/</span> <span class="dv">20</span> <span class="op">+</span> <span class="fl">0.5</span>) <span class="op">/</span> <span class="dv">2</span> <span class="op">+</span> <span class="fl">0.5</span><span class="op">;</span></span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a>  value3 <span class="op">=</span> <span class="fu">simplex2</span>(x <span class="op">/</span> <span class="dv">20</span> <span class="op">+</span> <span class="fl">1.0</span><span class="op">,</span> y <span class="op">/</span> <span class="dv">20</span> <span class="op">+</span> <span class="fl">1.0</span>) <span class="op">/</span> <span class="dv">2</span> <span class="op">+</span> <span class="fl">0.5</span><span class="op">;</span></span>
+<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a>  <span class="cf">return</span> <span class="bu">Math</span><span class="op">.</span><span class="fu">pow</span>((value1 <span class="op">*</span> value2 <span class="op">+</span> value3) <span class="op">/</span> <span class="dv">2</span><span class="op">,</span> <span class="dv">2</span>)<span class="op">;</span></span>
+<span id="cb1-6"><a href="#cb1-6" aria-hidden="true" tabindex="-1"></a>}</span></code></pre></div>
 <iframe style="height:500px" data-src="demo.html#
     segment_count_limit = 0;
     iterations_per_second = Infinity;
@@ -249,13 +326,12 @@ code > span.in { color: #60a0b0; font-weight: bold; font-style: italic; } /* Inf
     iteration_speedup = 0.05;
 ">
 </iframe>
-</section><section id="global-goals-2" class="slide level2">
-<h1>Global goals (2)</h1>
+</section>
+<section id="global-goals-2" class="slide level2">
+<h2>Global goals (2)</h2>
 <p>Highways try to connect population centers.</p>
 <p>Possible new directions are sampled, the one with largest population is chosen</p>
-<figure>
-<img src="img/20151215171754.png" alt="" />
-</figure>
+<p><img data-src="img/20151215171754.png" /></p>
 <div class="fragment">
 <iframe style="height:400px;" data-src="demo.html#
     segment_count_limit = 1000;
@@ -271,8 +347,9 @@ code > span.in { color: #60a0b0; font-weight: bold; font-style: italic; } /* Inf
 ">
 </iframe>
 </div>
-</section><section id="global-goals-3" class="slide level2">
-<h1>Global goals (3)</h1>
+</section>
+<section id="global-goals-3" class="slide level2">
+<h2>Global goals (3)</h2>
 <p>Streets only branch if population is larger than some threshold:</p>
 <iframe data-src="demo.html#
     segment_count_limit = 10000;
@@ -285,8 +362,9 @@ code > span.in { color: #60a0b0; font-weight: bold; font-style: italic; } /* Inf
     restart_after_seconds = 7;
 ">
 </iframe>
-</section><section id="global-goals-4-street-patterns" class="slide level2">
-<h1>Global Goals (4) — Street patterns</h1>
+</section>
+<section id="global-goals-4-street-patterns" class="slide level2">
+<h2>Global Goals (4) — Street patterns</h2>
 <p>Different patterns found in cities:</p>
 <aside class="notes">
 <ul>
@@ -296,33 +374,35 @@ code > span.in { color: #60a0b0; font-weight: bold; font-style: italic; } /* Inf
 </ul>
 </aside>
 <figure>
-<img src="img/20151213214501.png" alt="(Parish and Müller 2001)" /><figcaption><small><span class="citation" data-cites="cities2001">(Parish and Müller 2001)</span></small></figcaption>
+<img data-src="img/20151213214501.png" alt="(Parish and Müller 2001)" /><figcaption aria-hidden="true"><small><span class="citation" data-cites="cities2001">(Parish and Müller 2001)</span></small></figcaption>
 </figure>
-</section><section id="street-patterns-examples" class="slide level2">
-<h1>Street patterns — Examples</h1>
+</section>
+<section id="street-patterns-examples" class="slide level2">
+<h2>Street patterns — Examples</h2>
 <div style="float:left">
 <figure>
-<img src="img/sanfran.png" alt="San Francisco" /><figcaption>San Francisco</figcaption>
-</figure>
-</div>
-<div style="float:left">
-<figure>
-<img src="img/20151215222027.png" alt="Sao Paolo" /><figcaption>Sao Paolo</figcaption>
+<img data-src="img/sanfran.png" alt="San Francisco" /><figcaption aria-hidden="true">San Francisco</figcaption>
 </figure>
 </div>
 <div style="float:left">
 <figure>
-<img src="img/newdelhi.png" alt="New Delhi" /><figcaption>New Delhi</figcaption>
+<img data-src="img/20151215222027.png" alt="Sao Paolo" /><figcaption aria-hidden="true">Sao Paolo</figcaption>
 </figure>
 </div>
 <div style="float:left">
 <figure>
-<img src="img/20151215221746.png" alt="Tokyo" /><figcaption>Tokyo</figcaption>
+<img data-src="img/newdelhi.png" alt="New Delhi" /><figcaption aria-hidden="true">New Delhi</figcaption>
+</figure>
+</div>
+<div style="float:left">
+<figure>
+<img data-src="img/20151215221746.png" alt="Tokyo" /><figcaption aria-hidden="true">Tokyo</figcaption>
 </figure>
 </div>
 <p><small>http://maps.stamen.com/</small></p>
-</section><section id="implementation-as-parametric-l-system" class="slide level2">
-<h1>Implementation as parametric L-System</h1>
+</section>
+<section id="implementation-as-parametric-l-system" class="slide level2">
+<h2>Implementation as parametric L-System</h2>
 <p>Original implementation by <span class="citation" data-cites="cities2001">Parish and Müller (2001)</span></p>
 <pre><code>w: R(0, initialRuleAttr) ?I(initRoadAttr, UNASSIGNED)
 p1: R(del, ruleAttr) : del&lt;0 -&gt; e
@@ -344,28 +424,30 @@ p8: ?I(roadAttr,state) : state==UNASSIGNED
     -&gt; ?I(roadAttr, state)
 p9: ?I(roadAttr,state) : state!=UNASSIGNED -&gt; e</code></pre>
 <p>→ unnecessarily complicated</p>
-</section><section id="implementation-with-priority-queue" class="slide level2">
-<h1>Implementation with priority queue</h1>
+</section>
+<section id="implementation-with-priority-queue" class="slide level2">
+<h2>Implementation with priority queue</h2>
 <p>originally from <span class="citation" data-cites="harmful">Sean Barrett (2008)</span></p>
-<div class="sourceCode"><pre class="sourceCode javascript"><code class="sourceCode javascript"><span class="kw">function</span> <span class="at">generate</span>() <span class="op">{</span>
-    <span class="kw">let</span> Q <span class="op">=</span> <span class="kw">new</span> PriorityQueue<span class="op">&lt;</span>Segment<span class="op">&gt;</span>()<span class="op">;</span>
-    <span class="va">Q</span>.<span class="at">enqueueAll</span>(<span class="at">makeInitialSegments</span>())<span class="op">;</span>
-    <span class="kw">let</span> segments <span class="op">=</span> []<span class="op">;</span>
-
-    <span class="cf">while</span> (<span class="op">!</span><span class="va">Q</span>.<span class="at">empty</span>() <span class="op">&amp;&amp;</span> <span class="va">segments</span>.<span class="at">length</span> <span class="op">&lt;</span> SEG_LIMIT) <span class="op">{</span>
-        <span class="kw">let</span> minSegment <span class="op">=</span> <span class="va">Q</span>.<span class="at">dequeue</span>()<span class="op">;</span>
-        <span class="co">// resolve conflicts</span>
-        <span class="kw">let</span> accepted <span class="op">=</span> <span class="at">applyLocalConstraints</span>(minSegment<span class="op">,</span> segments)<span class="op">;</span>
-        <span class="cf">if</span> (accepted) <span class="op">{</span>
-            <span class="va">segments</span>.<span class="at">push</span>(minSegment)<span class="op">;</span>
-            <span class="co">// create new segments</span>
-            <span class="va">Q</span>.<span class="at">enqueueAll</span>(<span class="at">globalGoalsGenerate</span>(minSegment))<span class="op">;</span>
-        <span class="op">}</span>
-    <span class="op">}</span>
-<span class="op">}</span></code></pre></div>
+<div class="sourceCode" id="cb3"><pre class="sourceCode javascript"><code class="sourceCode javascript"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="kw">function</span> <span class="fu">generate</span>() {</span>
+<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a>    <span class="kw">let</span> Q <span class="op">=</span> <span class="kw">new</span> PriorityQueue<span class="op">&lt;</span>Segment<span class="op">&gt;</span>()<span class="op">;</span></span>
+<span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a>    Q<span class="op">.</span><span class="fu">enqueueAll</span>(<span class="fu">makeInitialSegments</span>())<span class="op">;</span></span>
+<span id="cb3-4"><a href="#cb3-4" aria-hidden="true" tabindex="-1"></a>    <span class="kw">let</span> segments <span class="op">=</span> []<span class="op">;</span></span>
+<span id="cb3-5"><a href="#cb3-5" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-6"><a href="#cb3-6" aria-hidden="true" tabindex="-1"></a>    <span class="cf">while</span> (<span class="op">!</span>Q<span class="op">.</span><span class="fu">empty</span>() <span class="op">&amp;&amp;</span> segments<span class="op">.</span><span class="at">length</span> <span class="op">&lt;</span> SEG_LIMIT) {</span>
+<span id="cb3-7"><a href="#cb3-7" aria-hidden="true" tabindex="-1"></a>        <span class="kw">let</span> minSegment <span class="op">=</span> Q<span class="op">.</span><span class="fu">dequeue</span>()<span class="op">;</span></span>
+<span id="cb3-8"><a href="#cb3-8" aria-hidden="true" tabindex="-1"></a>        <span class="co">// resolve conflicts</span></span>
+<span id="cb3-9"><a href="#cb3-9" aria-hidden="true" tabindex="-1"></a>        <span class="kw">let</span> accepted <span class="op">=</span> <span class="fu">applyLocalConstraints</span>(minSegment<span class="op">,</span> segments)<span class="op">;</span></span>
+<span id="cb3-10"><a href="#cb3-10" aria-hidden="true" tabindex="-1"></a>        <span class="cf">if</span> (accepted) {</span>
+<span id="cb3-11"><a href="#cb3-11" aria-hidden="true" tabindex="-1"></a>            segments<span class="op">.</span><span class="fu">push</span>(minSegment)<span class="op">;</span></span>
+<span id="cb3-12"><a href="#cb3-12" aria-hidden="true" tabindex="-1"></a>            <span class="co">// create new segments</span></span>
+<span id="cb3-13"><a href="#cb3-13" aria-hidden="true" tabindex="-1"></a>            Q<span class="op">.</span><span class="fu">enqueueAll</span>(<span class="fu">globalGoalsGenerate</span>(minSegment))<span class="op">;</span></span>
+<span id="cb3-14"><a href="#cb3-14" aria-hidden="true" tabindex="-1"></a>        }</span>
+<span id="cb3-15"><a href="#cb3-15" aria-hidden="true" tabindex="-1"></a>    }</span>
+<span id="cb3-16"><a href="#cb3-16" aria-hidden="true" tabindex="-1"></a>}</span></code></pre></div>
 <p><small>(+ a quadtree in <em>applyLocalConstraints</em>)</small></p>
-</section><section id="complete-demo" class="slide level2">
-<h1>Complete demo</h1>
+</section>
+<section id="complete-demo" class="slide level2">
+<h2>Complete demo</h2>
 <p>(10000 segments, not full speed)</p>
 <iframe data-src="demo.html#
     iteration_speedup = 1;
@@ -375,14 +457,20 @@ p9: ?I(roadAttr,state) : state!=UNASSIGNED -&gt; e</code></pre>
 ">
 </iframe>
 </section></section>
-<section><section id="modeling-of-buildings-blocks-and-architecture" class="titleslide slide level1"><h1>Modeling of buildings blocks and architecture</h1></section><section id="input-parameters" class="slide level2">
-<h1>Input parameters</h1>
+<section>
+<section id="modeling-of-buildings-blocks-and-architecture" class="title-slide slide level1">
+<h1>Modeling of buildings blocks and architecture</h1>
+
+</section>
+<section id="input-parameters" class="slide level2">
+<h2>Input parameters</h2>
 <ul>
 <li>Street network</li>
 <li>Building information (e.g. height / type / age)</li>
 </ul>
-</section><section id="lot-subdivision" class="slide level2">
-<h1>Lot subdivision</h1>
+</section>
+<section id="lot-subdivision" class="slide level2">
+<h2>Lot subdivision</h2>
 <p><img src="img/20151108215824.png" width=1000> <br><small><span class="citation" data-cites="cities2001">Parish and Müller (2001)</span></small></p>
 <!--
 #. Calculate areas by scaling from street crossings
@@ -391,73 +479,83 @@ p9: ?I(roadAttr,state) : state!=UNASSIGNED -&gt; e</code></pre>
 <li>Recursively divide along the longest edges that are approximately parallel</li>
 <li>Discard all blocks that do not have street access</li>
 </ol>
-</section><section id="architecture" class="slide level2">
-<h1>Architecture</h1>
+</section>
+<section id="architecture" class="slide level2">
+<h2>Architecture</h2>
 <p>Approaches:</p>
 <ul>
 <li>L-systems (see <span class="citation" data-cites="cities2001">Parish and Müller (2001)</span>)</li>
-<li>Split grammars (see Wonka et al. (2003) “Instant Architecture.”)</li>
+<li>Split grammars (see Wonka et al. (2003) “Instant Architecture.”)</li>
 </ul>
 </section></section>
-<section><section id="alternative-methods" class="titleslide slide level1"><h1>Alternative Methods</h1></section><section id="tensor-fields" class="slide level2">
-<h1>Tensor fields</h1>
+<section>
+<section id="alternative-methods" class="title-slide slide level1">
+<h1>Alternative Methods</h1>
+
+</section>
+<section id="tensor-fields" class="slide level2">
+<h2>Tensor fields</h2>
 <figure>
-<img src="img/20151215231757.png" alt="Chen, Guoning, Gregory Esch, Peter Wonka, Pascal Müller, and Eugene Zhang. 2008. Interactive Procedural Street Modeling. In ACM SIGGRAPH 2008 Papers, 103:1–103:10. SIGGRAPH ’08. New York, NY, USA: ACM. doi:http://doi.org/10.1145/1399504.1360702." /><figcaption><small>Chen, Guoning, Gregory Esch, Peter Wonka, Pascal Müller, and Eugene Zhang. 2008. “Interactive Procedural Street Modeling.” In <em>ACM SIGGRAPH 2008 Papers</em>, 103:1–103:10. SIGGRAPH ’08. New York, NY, USA: ACM. doi:<a href="http://doi.org/10.1145/1399504.1360702" class="uri">http://doi.org/10.1145/1399504.1360702</a>.</small></figcaption>
+<img data-src="img/20151215231757.png" alt="Chen, Guoning, Gregory Esch, Peter Wonka, Pascal Müller, and Eugene Zhang. 2008. “Interactive Procedural Street Modeling.” In ACM SIGGRAPH 2008 Papers, 103:1–103:10. SIGGRAPH ’08. New York, NY, USA: ACM. doi:http://doi.org/10.1145/1399504.1360702." /><figcaption aria-hidden="true"><small>Chen, Guoning, Gregory Esch, Peter Wonka, Pascal Müller, and Eugene Zhang. 2008. “Interactive Procedural Street Modeling.” In <em>ACM SIGGRAPH 2008 Papers</em>, 103:1–103:10. SIGGRAPH ’08. New York, NY, USA: ACM. doi:<a href="http://doi.org/10.1145/1399504.1360702" class="uri">http://doi.org/10.1145/1399504.1360702</a>.</small></figcaption>
 </figure>
-</section><section id="time-simulation" class="slide level2">
-<h1>Time simulation</h1>
+</section>
+<section id="time-simulation" class="slide level2">
+<h2>Time simulation</h2>
 <figure>
-<img src="img/20151124201337.png" alt="Weber, Basil, Pascal Müller, Peter Wonka, and Markus Gross. 2009. Interactive Geometric Simulation of 4D Cities. Computer Graphics Forum 28 (2): 481–92. doi:http://doi.org/10.1111/j.1467-8659.2009.01387.x." /><figcaption><small>Weber, Basil, Pascal Müller, Peter Wonka, and Markus Gross. 2009. “Interactive Geometric Simulation of 4D Cities.” <em>Computer Graphics Forum</em> 28 (2): 481–92. doi:<a href="http://doi.org/10.1111/j.1467-8659.2009.01387.x" class="uri">http://doi.org/10.1111/j.1467-8659.2009.01387.x</a>.</small></figcaption>
+<img data-src="img/20151124201337.png" alt="Weber, Basil, Pascal Müller, Peter Wonka, and Markus Gross. 2009. “Interactive Geometric Simulation of 4D Cities.” Computer Graphics Forum 28 (2): 481–92. doi:http://doi.org/10.1111/j.1467-8659.2009.01387.x." /><figcaption aria-hidden="true"><small>Weber, Basil, Pascal Müller, Peter Wonka, and Markus Gross. 2009. “Interactive Geometric Simulation of 4D Cities.” <em>Computer Graphics Forum</em> 28 (2): 481–92. doi:<a href="http://doi.org/10.1111/j.1467-8659.2009.01387.x" class="uri">http://doi.org/10.1111/j.1467-8659.2009.01387.x</a>.</small></figcaption>
 </figure>
-</section><section id="references" class="slide level2">
-<h1>References</h1>
+</section>
+<section id="references" class="slide level2">
+<h2>References</h2>
 <p>Slides including source code:</p>
 <h2 style="text-transform:none">
-<a href="http://cities.studium.sexy" class="uri">http://cities.studium.sexy</a>
+<a href="https://phiresky.github.io/procedural-cities/" class="uri">https://phiresky.github.io/procedural-cities/</a>
 </h2>
 <p><small></p>
-<div id="references" class="references">
-<div id="ref-cities2001">
-<p>Parish, Yoav I. H., and Pascal Müller. 2001. “Procedural Modeling of Cities.” In <em>Proceedings of the 28th Annual Conference on Computer Graphics and Interactive Techniques</em>, 301–8. SIGGRAPH ’01. New York, NY, USA: ACM. doi:<a href="http://doi.org/10.1145/383259.383292" class="uri">http://doi.org/10.1145/383259.383292</a>.</p>
+<div id="refs" class="references csl-bib-body hanging-indent" role="doc-bibliography">
+<div id="ref-cities2001" class="csl-entry" role="doc-biblioentry">
+Parish, Yoav I. H., and Pascal Müller. 2001. <span>“Procedural <span>Modeling</span> of <span>Cities</span>.”</span> In <em>Proceedings of the 28th <span>Annual</span> <span>Conference</span> on <span>Computer</span> <span>Graphics</span> and <span>Interactive</span> <span>Techniques</span></em>, 301–8. <span>SIGGRAPH</span> ’01. New <span>York</span>, <span>NY</span>, <span>USA</span>: <span>ACM</span>. <a href="https://doi.org/10.1145/383259.383292">https://doi.org/10.1145/383259.383292</a>.
 </div>
-<div id="ref-subvimpl">
-<p>“Procedural City Generation - Projects.” 2015. Accessed November 5. <a href="http://www.tmwhere.com/city_generation.html" class="uri">http://www.tmwhere.com/city_generation.html</a>.</p>
+<div id="ref-subvimpl" class="csl-entry" role="doc-biblioentry">
+<span>“Procedural <span>City</span> <span>Generation</span> - <span>Projects</span>.”</span> n.d. Accessed November 5, 2015. <a href="http://www.tmwhere.com/city_generation.html">http://www.tmwhere.com/city_generation.html</a>.
 </div>
-<div id="ref-harmful">
-<p>Sean Barrett. 2008. “L-Systems Considered Harmful.” <a href="http://nothings.org/gamedev/l_systems.html" class="uri">http://nothings.org/gamedev/l_systems.html</a>.</p>
+<div id="ref-harmful" class="csl-entry" role="doc-biblioentry">
+Sean Barrett. 2008. <span>“<span>L</span>-<span>Systems</span> <span>Considered</span> <span>Harmful</span>.”</span> 2008. <a href="http://nothings.org/gamedev/l_systems.html">http://nothings.org/gamedev/l_systems.html</a>.
 </div>
 </div>
 </section></section>
     </div>
   </div>
 
-  <script src="reveal.js/lib/js/head.min.js"></script>
-  <script src="reveal.js/js/reveal.js"></script>
+  <script src="https://unpkg.com/reveal.js@^4//dist/reveal.js"></script>
+
+  // reveal.js plugins
+  <script src="https://unpkg.com/reveal.js@^4//plugin/notes/notes.js"></script>
+  <script src="https://unpkg.com/reveal.js@^4//plugin/search/search.js"></script>
+  <script src="https://unpkg.com/reveal.js@^4//plugin/zoom/zoom.js"></script>
 
   <script>
 
       // Full list of configuration options available at:
-      // https://github.com/hakimel/reveal.js#configuration
+      // https://revealjs.com/config/
       Reveal.initialize({
         // Display the page number of the current slide
         slideNumber: true,
         // Push each slide change to the browser history
         history: true,
-        // Vertical centering of slides
-        center: true,
         // The "normal" size of the presentation, aspect ratio will be preserved
         // when the presentation is scaled to fit different resolutions. Can be
         // specified using percentage units.
         width: 1280,
         height: 960,
         // Factor of the display size that should remain empty around the content
-        margin: 5.0e-2,
+        margin: 0.05,
 
-        // Optional reveal.js plugins
-        dependencies: [
-          { src: 'reveal.js/lib/js/classList.js', condition: function() { return !document.body.classList; } },
-          { src: 'reveal.js/plugin/zoom-js/zoom.js', async: true },
-          { src: 'reveal.js/plugin/notes/notes.js', async: true }
+        // reveal.js plugins
+        plugins: [
+          RevealNotes,
+          RevealSearch,
+          RevealZoom
         ]
       });
     </script>
