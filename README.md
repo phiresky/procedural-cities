@@ -8,7 +8,7 @@ Source Code: [implementation/ folder](implementation/)
 
 Compiled: https://phiresky.github.io/procedural-cities/demo.html
 
-To build, first run `yarn install`. Then run `git worktree add bin gh-pages` to set up the bin directory.
+To build, first `cd implementation`. Then run `yarn install`. Then run `git worktree add bin gh-pages` to set up the bin directory.
 Then run `yarn dev` to open a development server that auto-recompiles when needed. `yarn build` to build the production version.
 
 ### Presentation
