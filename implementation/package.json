@@ -1,0 +1,13 @@
+{
+  "scripts": {
+    "ci": "prettier --check . && eslint . && webpack"
+  },
+  "dependencies": {
+    "prettier": "^2.1.2",
+    "typescript": "^4.2.0-dev.20201109",
+    "webpack": "^5.4.0"
+  },
+  "prettier": {
+    "trailingComma": "all"
+  }
+}
