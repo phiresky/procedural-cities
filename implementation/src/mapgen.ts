@@ -172,7 +172,7 @@ class DebugData {
 }
 const debugData = new DebugData();
 
-const localConstraints = function (
+function localConstraints(
   segment: Segment,
   segments: Segment[],
   qTree: Quadtree<Segment>,
@@ -284,7 +284,7 @@ const localConstraints = function (
   }
   if (action.func) return action.func();
   return true;
-};
+}
 
 function globalGoalsGenerate(previousSegment: Segment) {
   const newBranches = [] as Segment[];
@@ -439,9 +439,7 @@ function generationStep(
   }
 }
 export function* generate(seed: string): Iterator<GeneratorResult> {
-  ((Math as unknown) as { seedrandom: (seed: string) => void }).seedrandom(
-    seed,
-  );
+  seedRandom(seed);
   noise.seed(Math.random());
   const priorityQ = new PriorityQueue<Segment>((s) => s.t);
 
@@ -458,5 +456,11 @@ export function* generate(seed: string): Iterator<GeneratorResult> {
   }
   console.log(`${segments.length} segments generated.`);
   yield { segments, qTree, priorityQ: priorityQ.elements };
+}
+function seedRandom(seed: string) {
+  // hack to be able to use legacy seedrandom function
+  ((Math as unknown) as { seedrandom: (seed: string) => void }).seedrandom(
+    seed,
+  );
 }
 Object.assign(window, { _mapgen: this });
