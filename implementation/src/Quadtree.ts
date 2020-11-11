@@ -27,7 +27,7 @@ export class Quadtree<T> {
   ) {}
 
   /** split this node, moving all objects to their corresponding subnode */
-  split() {
+  split(): void {
     const level = this.level + 1,
       width = this.bounds.width / 2,
       height = this.bounds.height / 2,
@@ -93,7 +93,7 @@ export class Quadtree<T> {
     }
   }
 
-  getRelevantNodes(r: Bounds) {
+  getRelevantNodes(r: Bounds): Quadtree<T>[] {
     if (this.node.type === "leaf")
       throw Error("cant get relevant nodes in leaf");
     const midX = this.bounds.x + this.bounds.width / 2;
@@ -119,7 +119,7 @@ export class Quadtree<T> {
    * Insert object into the tree.
    * If the tree exceeds the capacity, it will be split.
    */
-  insert(pRect: Bounds, obj: T) {
+  insert(pRect: Bounds, obj: T): void {
     if (this.node.type !== "leaf") {
       for (const node of this.getRelevantNodes(pRect)) node.insert(pRect, obj);
       return;
@@ -138,7 +138,7 @@ export class Quadtree<T> {
   /**
    * Return all objects that could collide with the given bounds
    */
-  retrieve(pRect: Bounds) {
+  retrieve(pRect: Bounds): T[] {
     if (this.node.type === "leaf") return this.node.objectsO;
     let relevant: T[] = [];
     for (const node of this.getRelevantNodes(pRect))

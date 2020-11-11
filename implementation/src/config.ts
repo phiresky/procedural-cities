@@ -6,11 +6,11 @@ export const config = {
   DEFAULT_SEGMENT_WIDTH: 6,
   HIGHWAY_SEGMENT_WIDTH: 16,
   /** branch with 90° angle + randomness */
-  RANDOM_BRANCH_ANGLE: function () {
+  RANDOM_BRANCH_ANGLE: function (): number {
     return math.randomNearCubic(3);
   },
   /** sample possible highway continuation with this angle */
-  RANDOM_STRAIGHT_ANGLE: function () {
+  RANDOM_STRAIGHT_ANGLE: function (): number {
     return math.randomNearCubic(15);
   },
   /** probability of branching normal streets (including from highways) */

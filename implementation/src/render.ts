@@ -13,7 +13,10 @@ import * as PIXI from "pixi.js-legacy";
     const list = key.toUpperCase().trim().split(".");
     const attr = list.pop();
     if (!attr) throw Error("no key for " + item);
-    const targ = list.reduce((a, b) => a[b], config as any) as {
+    const targ = list.reduce(
+      (a, b) => (a as { [x: string]: unknown })[b],
+      config as unknown,
+    ) as {
       [k: string]: string | number | boolean;
     };
     const origValue = targ[attr];
@@ -25,12 +28,12 @@ import * as PIXI from "pixi.js-legacy";
     targ[attr] = val;
   });
 
-let seed = config.SEED || Math.random() + "";
+let seed = config.SEED || `${Math.random()}`;
 export let generator: Iterator<GeneratorResult>;
 let W = window.innerWidth,
   H = window.innerHeight;
 
-export const dobounds = function (segs: Segment[], interpolate = 1) {
+export const dobounds = function (segs: Segment[], interpolate = 1): void {
   const lim = segs.map((s) => s.limits());
   const bounds = {
     minx: Math.min(...lim.map((s) => s.x)),
@@ -173,7 +176,7 @@ function onDragMove(this: PIXI.Container, event: PIXI.InteractionEvent) {
 }
 function zoom(x: number, y: number, direction: number) {
   const beforeTransform = stage.toLocal(new PIXI.Point(x, y));
-  var factor = 1 + direction * 0.1;
+  const factor = 1 + direction * 0.1;
   stage.scale.x *= factor;
   stage.scale.y *= factor;
   const afterTransform = stage.toLocal(new PIXI.Point(x, y));
@@ -198,7 +201,7 @@ function animate(timestamp: number) {
   let delta = timestamp - last_timestamp;
   last_timestamp = timestamp;
   if (delta > 100) {
-    console.warn("time delta ms = " + delta);
+    console.warn(`time delta ms = ${delta}`);
     delta = 100;
   }
   if (!done) {
@@ -214,7 +217,7 @@ function animate(timestamp: number) {
         break;
       } else {
         stuff = iter.value;
-        stuff = stuff;
+        // stuff = stuff;
         iteration++;
       }
     }
@@ -224,7 +227,7 @@ function animate(timestamp: number) {
       done_time + config.RESTART_AFTER_SECONDS * 1000 < timestamp
     ) {
       if (config.RESEED_AFTER_RESTART) {
-        seed = Math.random() + "";
+        seed = `${Math.random()}`;
       }
       restart();
     }
@@ -296,4 +299,4 @@ function onResize() {
   renderer.resize(W, H);
 }
 window.addEventListener("resize", onResize);
-(window as any)._render = this;
+Object.assign(window, { _render: this });

@@ -30,7 +30,7 @@ export class Segment {
   }
 
   // clockwise direction
-  dir() {
+  dir(): number {
     const vector = math.subtractPoints(this.end, this.start);
     return (
       -1 *
@@ -38,7 +38,7 @@ export class Segment {
       math.angleBetween({ x: 0, y: 1 }, vector)
     );
   }
-  length() {
+  length(): number {
     return math.length(this.start, this.end);
   }
   limits(): Bounds {
@@ -50,27 +50,29 @@ export class Segment {
     };
   }
 
-  debugLinks() {
+  debugLinks(): void {
     this.q.color = 0x00ff00;
     this.links.b.forEach((backwards) => (backwards.q.color = 0xff0000));
     this.links.f.forEach((forwards) => (forwards.q.color = 0x0000ff));
   }
 
-  startIsBackwards() {
+  startIsBackwards(): boolean {
     if (this.links.b.length > 0) {
+      if (!this.links.b[0]) throw Error("impossib");
       return (
-        math.equalV(this.links.b[0]!.start, this.start) ||
-        math.equalV(this.links.b[0]!.end, this.start)
+        math.equalV(this.links.b[0].start, this.start) ||
+        math.equalV(this.links.b[0].end, this.start)
       );
     } else {
+      if (!this.links.f[0]) throw Error("impossib");
       return (
-        math.equalV(this.links.f[0]!.start, this.end) ||
-        math.equalV(this.links.f[0]!.end, this.end)
+        math.equalV(this.links.f[0].start, this.end) ||
+        math.equalV(this.links.f[0].end, this.end)
       );
     }
   }
 
-  linksForEndContaining(segment: Segment) {
+  linksForEndContaining(segment: Segment): Segment[] | undefined {
     if (this.links.b.indexOf(segment) !== -1) {
       return this.links.b;
     } else if (this.links.f.indexOf(segment) !== -1) {
@@ -85,7 +87,7 @@ export class Segment {
     segment: Segment,
     segmentList: Segment[],
     qTree: Quadtree<Segment>,
-  ) {
+  ): void {
     const splitPart = this.clone();
     const startIsBackwards = this.startIsBackwards();
     segmentList.push(splitPart);
@@ -108,7 +110,7 @@ export class Segment {
       fixLinks = splitPart.links.f;
     }
     fixLinks.forEach((link) => {
-      var index = link.links.b.indexOf(this);
+      let index = link.links.b.indexOf(this);
       if (index !== -1) {
         link.links.b[index] = splitPart;
       } else {
@@ -121,7 +123,7 @@ export class Segment {
     segment.links.f.push(firstSplit);
     segment.links.f.push(secondSplit);
   }
-  clone(t = this.t, q = this.q) {
+  clone(t = this.t, q = this.q): Segment {
     return new Segment(this.start, this.end, t, q);
   }
   static usingDirection(
@@ -130,14 +132,14 @@ export class Segment {
     length = config.DEFAULT_SEGMENT_LENGTH,
     t: number,
     q?: MetaInfo,
-  ) {
-    var end = {
+  ): Segment {
+    const end = {
       x: start.x + length * Math.sin((dir * Math.PI) / 180),
       y: start.y + length * Math.cos((dir * Math.PI) / 180),
     };
     return new Segment(start, end, t, q);
   }
-  intersectWith(s: Segment) {
+  intersectWith(s: Segment): { x: number; y: number; t: number } | null {
     return math.doLineSegmentsIntersect(
       this.start,
       this.end,
@@ -148,14 +150,14 @@ export class Segment {
   }
 }
 export const heatmap = {
-  popOnRoad: function (r: Segment) {
+  popOnRoad: function (r: Segment): number {
     return (
       (this.populationAt(r.start.x, r.start.y) +
         this.populationAt(r.end.x, r.end.y)) /
       2
     );
   },
-  populationAt: function (x: number, y: number) {
+  populationAt: function (x: number, y: number): number {
     // for title page: if(x < 7000 && y < 3500 && x > -7000 && y > 2000) return 0; else if(1) return Math.random()/4+config.NORMAL_BRANCH_POPULATION_THRESHOLD;
     const value1 = (noise.simplex2(x / 10000, y / 10000) + 1) / 2;
     const value2 = (noise.simplex2(x / 20000 + 500, y / 20000 + 500) + 1) / 2;
@@ -168,7 +170,7 @@ class DebugData {
   intersectionsRadius: Point[] = [];
   intersections: { x: number; t: number; y: number }[] = [];
 }
-let debugData = new DebugData();
+const debugData = new DebugData();
 
 const localConstraints = function (
   segment: Segment,
@@ -332,10 +334,12 @@ function globalGoalsGenerate(previousSegment: Segment) {
           newBranches.push(
             templateContinue(-90 + config.RANDOM_BRANCH_ANGLE()),
           );
-        } else if (Math.random() < config.HIGHWAY_BRANCH_PROBABILITY) {
-          newBranches.push(
-            templateContinue(+90 + config.RANDOM_BRANCH_ANGLE()),
-          );
+        } else {
+          if (Math.random() < config.HIGHWAY_BRANCH_PROBABILITY) {
+            newBranches.push(
+              templateContinue(+90 + config.RANDOM_BRANCH_ANGLE()),
+            );
+          }
         }
       }
     } else if (straightPop > config.NORMAL_BRANCH_POPULATION_THRESHOLD) {
@@ -345,8 +349,12 @@ function globalGoalsGenerate(previousSegment: Segment) {
       if (straightPop > config.NORMAL_BRANCH_POPULATION_THRESHOLD) {
         if (Math.random() < config.DEFAULT_BRANCH_PROBABILITY) {
           newBranches.push(templateBranch(-90 + config.RANDOM_BRANCH_ANGLE()));
-        } else if (Math.random() < config.DEFAULT_BRANCH_PROBABILITY) {
-          newBranches.push(templateBranch(+90 + config.RANDOM_BRANCH_ANGLE()));
+        } else {
+          if (Math.random() < config.DEFAULT_BRANCH_PROBABILITY) {
+            newBranches.push(
+              templateBranch(+90 + config.RANDOM_BRANCH_ANGLE()),
+            );
+          }
         }
       }
   }
@@ -431,7 +439,9 @@ function generationStep(
   }
 }
 export function* generate(seed: string): Iterator<GeneratorResult> {
-  Math.seedrandom(seed);
+  ((Math as unknown) as { seedrandom: (seed: string) => void }).seedrandom(
+    seed,
+  );
   noise.seed(Math.random());
   const priorityQ = new PriorityQueue<Segment>((s) => s.t);
 
@@ -449,4 +459,4 @@ export function* generate(seed: string): Iterator<GeneratorResult> {
   console.log(`${segments.length} segments generated.`);
   yield { segments, qTree, priorityQ: priorityQ.elements };
 }
-(window as any)._mapgen = this;
+Object.assign(window, { _mapgen: this });
