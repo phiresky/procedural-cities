@@ -5,6 +5,14 @@ object-assign
 */
 
 /*!
+ * @pixi/canvas-sprite-tiling - v5.3.3
+ * Compiled Tue, 04 Aug 2020 16:23:09 UTC
+ *
+ * @pixi/canvas-sprite-tiling is licensed under the MIT License.
+ * http://www.opensource.org/licenses/mit-license
+ */
+
+/*!
  * @pixi/math - v5.3.3
  * Compiled Tue, 04 Aug 2020 16:23:09 UTC
  *
