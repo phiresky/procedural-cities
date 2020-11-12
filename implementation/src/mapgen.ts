@@ -16,7 +16,13 @@ export class Segment {
   t: number;
   /** meta-information relevant to global goals */
   q: MetaInfo = {};
-  /** links backwards and forwards */
+  /**
+   * links backwards and forwards:
+   * each segment has a direction given by how the road network grows
+   *
+   * the backwards links are which segments merge with this road segment at it's this.start point,
+   * the forwards links are which segments split off at the end point
+   */
   links = { b: [] as Segment[], f: [] as Segment[] };
   width: number;
   setupBranchLinks: undefined | (() => void) = undefined;
@@ -56,15 +62,20 @@ export class Segment {
     this.links.f.forEach((forwards) => (forwards.q.color = 0x0000ff));
   }
 
+  // check if the start of this segment is in the backwards links or forward links
+  // should pretty much always be true (todo: is it ever not?)
   startIsBackwards(): boolean {
     if (this.links.b.length > 0) {
       if (!this.links.b[0]) throw Error("impossib");
-      return (
+      const ba =
         math.equalV(this.links.b[0].start, this.start) ||
-        math.equalV(this.links.b[0].end, this.start)
-      );
+        math.equalV(this.links.b[0].end, this.start);
+      if (!ba) console.log("warning: backward", ba);
+      return ba;
     } else {
+      // just in case we have no backwards links (we are start segment)
       if (!this.links.f[0]) throw Error("impossib");
+      console.log("startSegment.startIsBackwards()");
       return (
         math.equalV(this.links.f[0].start, this.end) ||
         math.equalV(this.links.f[0].end, this.end)
@@ -82,22 +93,32 @@ export class Segment {
     }
   }
 
+  /**
+   * split this segment into two segments, connecting the given segment to the newly created crossing
+   *
+   * left example in https://phiresky.github.io/procedural-cities/img/20151213214559.png
+   *
+   * @param point the coordinates the split will be at
+   * @param thirdSegment the third segment that will be joined to the newly created crossing
+   * @param segmentList the full list of all segments (new segment will be added here)
+   * @param qTree quadtree for faster finding of segments (new segment will be added here)
+   */
   split(
     point: Point,
-    segment: Segment,
+    thirdSegment: Segment,
     segmentList: Segment[],
     qTree: Quadtree<Segment>,
   ): void {
     const splitPart = this.clone();
     const startIsBackwards = this.startIsBackwards();
     segmentList.push(splitPart);
-    qTree.insert(splitPart.limits(), splitPart);
+    qTree.insert(splitPart.limits(), splitPart); // todo: shouldn't this be done after the start and end points are fixed?
     splitPart.end = point;
     this.start = point;
-    // links are not copied using the preceding factory method.
+    // links are not copied in the constructor, so
     // copy link array for the split part, keeping references the same
-    splitPart.links.b = this.links.b.slice(0);
-    splitPart.links.f = this.links.f.slice(0);
+    splitPart.links.b = this.links.b.slice();
+    splitPart.links.f = this.links.f.slice();
     let firstSplit: Segment, fixLinks: Segment[], secondSplit: Segment;
     // determine which links correspond to which end of the split segment
     if (startIsBackwards) {
@@ -109,19 +130,24 @@ export class Segment {
       secondSplit = splitPart;
       fixLinks = splitPart.links.f;
     }
+    // one of the ends of our segment is now instead part of the newly created segment
+    // go through all linked roads at that end, and replace their inverse references from referring to this to referring to the newly created segment
     fixLinks.forEach((link) => {
       let index = link.links.b.indexOf(this);
       if (index !== -1) {
         link.links.b[index] = splitPart;
       } else {
         index = link.links.f.indexOf(this);
+        if (index === -1)
+          throw Error("impossible, link is either backwards or forwards");
         link.links.f[index] = splitPart;
       }
     });
-    firstSplit.links.f = [segment, secondSplit];
-    secondSplit.links.b = [segment, firstSplit];
-    segment.links.f.push(firstSplit);
-    segment.links.f.push(secondSplit);
+    // new crossing is between firstSplit, secondSplit, and thirdSegment
+    firstSplit.links.f = [thirdSegment, secondSplit];
+    secondSplit.links.b = [thirdSegment, firstSplit];
+    thirdSegment.links.f.push(firstSplit);
+    thirdSegment.links.f.push(secondSplit);
   }
   clone(t = this.t, q = this.q): Segment {
     return new Segment(this.start, this.end, t, q);
@@ -158,7 +184,7 @@ export const heatmap = {
     );
   },
   populationAt: function (x: number, y: number): number {
-    // for title page: if(x < 7000 && y < 3500 && x > -7000 && y > 2000) return 0; else if(1) return Math.random()/4+config.NORMAL_BRANCH_POPULATION_THRESHOLD;
+    // to generate title page of the presentation: if(x < 7000 && y < 3500 && x > -7000 && y > 2000) return 0; else if(1) return Math.random()/4+config.NORMAL_BRANCH_POPULATION_THRESHOLD;
     const value1 = (noise.simplex2(x / 10000, y / 10000) + 1) / 2;
     const value2 = (noise.simplex2(x / 20000 + 500, y / 20000 + 500) + 1) / 2;
     const value3 = (noise.simplex2(x / 20000 + 1000, y / 20000 + 1000) + 1) / 2;

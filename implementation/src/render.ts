@@ -3,6 +3,7 @@ import { Segment, generate, GeneratorResult, heatmap } from "./mapgen";
 import { config } from "./config";
 import * as PIXI from "pixi.js-legacy";
 
+// parse url parameters such as ?a.b.c=x&d=y and assign them to config.a.b.c
 (location.search.substr(1) + "&" + location.hash.substr(1))
   .split(/[&;]/)
   .forEach((item) => {
